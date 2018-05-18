@@ -26,19 +26,21 @@ const (
 	INVALID DatabaseType = iota
 	MONGO
 	MEMORY
+	BOLT
 )
 
 const (
 	invalidStr = "invalid"
 	mongoStr   = "mongodb"
 	memoryStr  = "memorydb"
+	boltStr    = "boltdb"
 )
 
 // Add in order declared in Struct for string value
-var databaseArr = [...]string{invalidStr, mongoStr, memoryStr}
+var databaseArr = [...]string{invalidStr, mongoStr, memoryStr, boltStr}
 
 func (db DatabaseType) String() string {
-	if db >= INVALID && db <= MEMORY {
+	if db >= INVALID && db <= BOLT {
 		return databaseArr[db]
 	}
 	return invalidStr
@@ -51,6 +53,8 @@ func GetDatabaseType(db string) DatabaseType {
 		return MONGO
 	case memoryStr:
 		return MEMORY
+	case boltStr:
+		return BOLT
 	default:
 		return INVALID
 	}
@@ -108,6 +112,7 @@ var ErrNotFound error = errors.New("Item not found")
 var ErrUnsupportedDatabase error = errors.New("Unsuppored database type")
 var ErrInvalidObjectId error = errors.New("Invalid object ID")
 var ErrNotUnique error = errors.New("Resource already exists")
+var ErrNameFound error = errors.New("Object name found")
 
 // Return the dbClient interface
 func NewDBClient(config DBConfiguration) (DBClient, error) {
@@ -121,6 +126,13 @@ func NewDBClient(config DBConfiguration) (DBClient, error) {
 		return mc, nil
 	case MEMORY:
 		return &memDB{}, nil
+	case BOLT:
+		// Create the bolt client
+		bc, err := newBoltClient(config)
+		if err != nil {
+			return nil, fmt.Errorf("Error creating the bolt client: " + err.Error())
+		}
+		return bc, nil
 	default:
 		return nil, ErrUnsupportedDatabase
 	}
