@@ -26,6 +26,7 @@ const (
 	MONGO DatabaseType = iota
 	MOCK
 	INFLUX
+	BOLT
 )
 
 type DBClient interface {
@@ -227,6 +228,14 @@ func NewDBClient(config DBConfiguration) (DBClient, error) {
 		//Create the mock client
 		mock := &MockDb{}
 		return mock, nil
+	case BOLT:
+		// Create the bolt client
+		bc, err := newBoltClient(config)
+		if err != nil {
+			fmt.Println("Error creating the bolt client: " + err.Error())
+			return nil, err
+		}
+		return bc, nil
 	default:
 		return nil, ErrUnsupportedDatabase
 	}
