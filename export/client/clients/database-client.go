@@ -112,7 +112,6 @@ var ErrNotFound error = errors.New("Item not found")
 var ErrUnsupportedDatabase error = errors.New("Unsuppored database type")
 var ErrInvalidObjectId error = errors.New("Invalid object ID")
 var ErrNotUnique error = errors.New("Resource already exists")
-var ErrNameFound error = errors.New("Object name found")
 
 // Return the dbClient interface
 func NewDBClient(config DBConfiguration) (DBClient, error) {

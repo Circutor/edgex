@@ -14,8 +14,7 @@
 package clients
 
 import (
-	//	"encoding/json"
-	"log"
+	"errors"
 	"time"
 
 	bolt "github.com/coreos/bbolt"
@@ -72,26 +71,21 @@ func (bc *BoltClient) getRegistrations(q bson.M) ([]export.Registration, error) 
 	regs := []export.Registration{}
 	err := bc.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(REGISTRATION_COLLECTION))
-		//json := jsoniter.ConfigCompatibleWithStandardLibrary
+		if b == nil {
+			return ErrUnsupportedDatabase
+		}
+		json := jsoniter.ConfigCompatibleWithStandardLibrary
 		err := b.ForEach(func(id, encoded []byte) error {
 			var reg export.Registration
-
-			iter := jsoniter.ConfigFastest.BorrowIterator(encoded)
-			defer jsoniter.ConfigFastest.ReturnIterator(iter)
-			iter.ReadVal(&reg)
-			//		err := json.Unmarshal(encoded, &reg)
-			//if err != nil {
-			//return err
-			if iter.Error != nil {
-				return iter.Error
+			err := json.Unmarshal(encoded, &reg)
+			if err != nil {
+				return err
 			}
 			regs = append(regs, reg)
-
 			return nil
 		})
 		return err
 	})
-
 	return regs, err
 }
 
@@ -100,33 +94,22 @@ func (bc *BoltClient) getRegistrations(q bson.M) ([]export.Registration, error) 
 func (bc *BoltClient) AddRegistration(reg *export.Registration) (bson.ObjectId, error) {
 	reg.ID = bson.NewObjectId()
 	reg.Created = time.Now().UnixNano() / int64(time.Millisecond)
-	//json := jsoniter.ConfigCompatibleWithStandardLibrary
+
 	err := bc.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(REGISTRATION_COLLECTION))
-
-		encoded := jsoniter.ConfigFastest.BorrowStream(nil)
-		defer jsoniter.ConfigFastest.ReturnStream(encoded)
-		encoded.WriteVal(reg)
-		if encoded.Error != nil {
-			return encoded.Error
+		if b == nil {
+			return ErrUnsupportedDatabase
 		}
-		//os.Stdout.Write(encoded.Buffer())
-
-		/*
-			b, err := Marshal(group)
-			if err != nil {
-				fmt.Println("error:", err)
-			}
-			os.Stdout.Write(b)
-
-
-
-			encoded, err := json.Marshal(reg)
-			if err != nil {
-				return err
-			}
-		*/
-		return b.Put([]byte(reg.ID), encoded.Buffer())
+		json := jsoniter.ConfigCompatibleWithStandardLibrary
+		encoded, err := json.Marshal(reg)
+		if err != nil {
+			return err
+		}
+		err = b.Put([]byte(reg.ID), encoded)
+		if err != nil {
+			return ErrNotFound
+		}
+		return nil
 	})
 
 	return reg.ID, err
@@ -136,25 +119,28 @@ func (bc *BoltClient) AddRegistration(reg *export.Registration) (bson.ObjectId, 
 // UnexpectedError - problem updating in database
 // NotFound - no registration with the ID was found
 func (bc *BoltClient) UpdateRegistration(reg export.Registration) error {
+	_, err := bc.RegistrationById(reg.ID.Hex())
+	if err != nil {
+		return ErrNotFound
+	}
+
 	reg.Modified = time.Now().UnixNano() / int64(time.Millisecond)
 
-	err := bc.db.Update(func(tx *bolt.Tx) error {
+	err = bc.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(REGISTRATION_COLLECTION))
-		//json := jsoniter.ConfigCompatibleWithStandardLibrary
-
-		encoded := jsoniter.ConfigFastest.BorrowStream(nil)
-		defer jsoniter.ConfigFastest.ReturnStream(encoded)
-		encoded.WriteVal(reg)
-		if encoded.Error != nil {
-			return encoded.Error
+		if b == nil {
+			return ErrUnsupportedDatabase
 		}
-
-		/*encoded, err := json.Marshal(reg)
+		json := jsoniter.ConfigCompatibleWithStandardLibrary
+		encoded, err := json.Marshal(reg)
 		if err != nil {
 			return err
 		}
-		*/
-		return b.Put([]byte(reg.ID), encoded.Buffer())
+		err = b.Put([]byte(reg.ID), encoded)
+		if err != nil {
+			return ErrNotFound
+		}
+		return nil
 	})
 	return err
 }
@@ -168,24 +154,19 @@ func (bc *BoltClient) RegistrationById(id string) (export.Registration, error) {
 		err := bc.db.View(func(tx *bolt.Tx) error {
 			b := tx.Bucket([]byte(REGISTRATION_COLLECTION))
 			if b == nil {
-				return ErrNotFound
+				return ErrUnsupportedDatabase
 			}
-			//json := jsoniter.ConfigCompatibleWithStandardLibrary
 			encoded := b.Get([]byte(bson.ObjectIdHex(id)))
 			if encoded == nil {
 				return ErrNotFound
 			}
-			iter := jsoniter.ConfigFastest.BorrowIterator(encoded)
-			defer jsoniter.ConfigFastest.ReturnIterator(iter)
-			iter.ReadVal(&reg)
-			return iter.Error
-
-			//ret := json.Unmarshal(encoded, &reg)
-			//return ret
+			json := jsoniter.ConfigCompatibleWithStandardLibrary
+			ret := json.Unmarshal(encoded, &reg)
+			return ret
 		})
 		return reg, err
 	} else {
-		return export.Registration{}, ErrNotFound
+		return reg, ErrNotFound
 	}
 }
 
@@ -197,10 +178,12 @@ func (bc *BoltClient) DeleteRegistrationById(id string) error {
 		err := bc.db.Update(func(tx *bolt.Tx) error {
 			b := tx.Bucket([]byte(REGISTRATION_COLLECTION))
 			if b == nil {
+				return ErrUnsupportedDatabase
+			}
+			err := b.Delete([]byte(bson.ObjectIdHex(id)))
+			if err != nil {
 				return ErrNotFound
 			}
-			//json := jsoniter.ConfigCompatibleWithStandardLibrary
-			b.Delete([]byte(bson.ObjectIdHex(id)))
 			return nil
 		})
 		return err
@@ -213,53 +196,33 @@ func (bc *BoltClient) DeleteRegistrationById(id string) error {
 // UnexpectedError - problem getting in database
 // NotFound - no registration with the name was found
 func (bc *BoltClient) RegistrationByName(name string) (export.Registration, error) {
-	log.Println("Ini RegistrationByName")
-	start := time.Now()
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
-
 	reg := export.Registration{}
 	err := bc.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(REGISTRATION_COLLECTION))
+		if b == nil {
+			return ErrUnsupportedDatabase
+		}
 		err := b.ForEach(func(id, encoded []byte) error {
-			var data map[string]interface{}
-			iter := jsoniter.ConfigFastest.BorrowIterator(encoded)
-			defer jsoniter.ConfigFastest.ReturnIterator(iter)
-			iter.ReadVal(&data)
-			if iter.Error != nil {
-				return iter.Error
-			}
-			//err := json.Unmarshal(encoded, &data)
-			//if err != nil {
-			//	return err
-			//}
-
-			if data["name"] == name {
-				//			iter := jsoniter.ConfigFastest.BorrowIterator(encoded)
-				//			defer jsoniter.ConfigFastest.ReturnIterator(iter)
-				//			iter.ReadVal(&reg)
-				//	err := Unmarshal(jsonBlob, &animals)
+			value := jsoniter.Get(encoded, "name").ToString()
+			if value == name {
 				err := json.Unmarshal(encoded, &reg)
-				//if iter.Error != nil {
 				if err != nil {
 					return err
 				}
-				// The only way to leave the ForEach is using an error, so let's trick it
-				return ErrNameFound
+				err = errors.New("Object name found")
+				return err
 			}
 			return nil
 		})
 		if err == nil {
-			err = ErrNotFound
-		} else if err == ErrNameFound {
+			return ErrNotFound
+		} else if err.Error() == "Object name found" {
 			return nil
 		}
 		return err
 	})
-	elapsed := time.Since(start)
-	log.Println("Total time. Post RegistrationByName", elapsed)
-
 	return reg, err
-
 }
 
 // Delete a registration by name
@@ -268,30 +231,24 @@ func (bc *BoltClient) RegistrationByName(name string) (export.Registration, erro
 func (bc *BoltClient) DeleteRegistrationByName(name string) error {
 	err := bc.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(REGISTRATION_COLLECTION))
-		//json := jsoniter.ConfigCompatibleWithStandardLibrary
+		if b == nil {
+			return ErrUnsupportedDatabase
+		}
 		err := b.ForEach(func(id, encoded []byte) error {
-			var data map[string]interface{}
-			iter := jsoniter.ConfigFastest.BorrowIterator(encoded)
-			defer jsoniter.ConfigFastest.ReturnIterator(iter)
-			iter.ReadVal(&data)
-			/*if iter.Error != nil {
-				return iter.Error
-			}
-			err := json.Unmarshal(encoded, &data)
-			if err != nil {
+			value := jsoniter.Get(encoded, "name").ToString()
+			if value == name {
+				err := b.Delete([]byte(id))
+				if err != nil {
+					return ErrNotFound
+				}
+				err = errors.New("Object name found")
 				return err
 			}
-			*/
-			if data["name"] == name {
-				b.Delete([]byte(id))
-				return ErrNameFound
-			}
-			// The only way to leave the ForEach is using an error, so let's trick it
 			return nil
 		})
 		if err == nil {
-			err = ErrNotFound
-		} else if err == ErrNameFound {
+			return ErrNotFound
+		} else if err.Error() == "Object name found" {
 			return nil
 		}
 		return err

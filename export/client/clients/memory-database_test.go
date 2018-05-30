@@ -7,6 +7,7 @@
 package clients
 
 import (
+	"strconv"
 	"testing"
 
 	"github.com/edgexfoundry/edgex-go/export"
@@ -94,4 +95,196 @@ func testDB(t *testing.T, db DBClient) {
 func TestMemoryDB(t *testing.T) {
 	memory := &memDB{}
 	testDB(t, memory)
+}
+
+func BenchmarkAddRegistrationMongoDB(b *testing.B) {
+
+	b.StopTimer()
+	config := DBConfiguration{
+		DbType:       MONGO,
+		Host:         "0.0.0.0",
+		Port:         27017,
+		DatabaseName: "coredata",
+		Timeout:      1000,
+	}
+
+	// Create the mongo client
+	mc, err := newMongoClient(config)
+	if err != nil {
+		b.Fatalf("Could not connect with mongodb: %v", err)
+	}
+	b.N = 100
+	registration := export.Registration{}
+	b.StartTimer()
+
+	for i := 0; i < b.N; i++ {
+		registration.Name = "test" + strconv.Itoa(i)
+		id, err := mc.AddRegistration(&registration)
+		if err != nil {
+			b.Fatalf("Error adding registration %v: %v", id, err)
+		}
+	}
+
+	b.StopTimer()
+	mc.CloseSession()
+	b.StartTimer()
+}
+
+func BenchmarkGetRegistrationbyNameMongoDB(b *testing.B) {
+
+	b.StopTimer()
+	config := DBConfiguration{
+		DbType:       MONGO,
+		Host:         "0.0.0.0",
+		Port:         27017,
+		DatabaseName: "coredata",
+		Timeout:      1000,
+	}
+
+	// Create the mongo client
+	mc, err := newMongoClient(config)
+	if err != nil {
+		b.Fatalf("Could not connect with mongodb: %v", err)
+	}
+	b.N = 100
+
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		name := "test" + strconv.Itoa(i)
+		_, err := mc.RegistrationByName(name)
+		if err != nil {
+			b.Fatalf("Error getting registration test: %v", err)
+		}
+	}
+
+	b.StopTimer()
+	mc.CloseSession()
+	b.StartTimer()
+}
+
+func BenchmarkDeleteRegistrationbyNameMongoDB(b *testing.B) {
+
+	b.StopTimer()
+	config := DBConfiguration{
+		DbType:       MONGO,
+		Host:         "0.0.0.0",
+		Port:         27017,
+		DatabaseName: "coredata",
+		Timeout:      1000,
+	}
+	// Create the mongo client
+	mc, err := newMongoClient(config)
+	if err != nil {
+		b.Fatalf("Could not connect with mongodb: %v", err)
+	}
+	b.N = 100
+
+	b.StartTimer()
+	var name string
+	for i := 0; i < b.N; i++ {
+		name = "test" + strconv.Itoa(i)
+		err := mc.DeleteRegistrationByName(name)
+		if err != nil {
+			b.Fatalf("Error deleting registration %v: %v", name, err)
+		}
+	}
+
+	b.StopTimer()
+	mc.CloseSession()
+	b.StartTimer()
+}
+
+func BenchmarkAddRegistrationBoltDB(b *testing.B) {
+
+	b.StopTimer()
+	config := DBConfiguration{
+		DbType:       BOLT,
+		Host:         "0.0.0.0",
+		Port:         27017,
+		DatabaseName: "coredata",
+		Timeout:      1000,
+	}
+	// Create the bolt client
+	bolt, err := newBoltClient(config)
+	if err != nil {
+		b.Fatalf("Could not connect with boltdb: %v", err)
+	}
+	b.N = 100
+	registration := export.Registration{}
+
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		registration.Name = "test" + strconv.Itoa(i)
+		id, err := bolt.AddRegistration(&registration)
+		if err != nil {
+			b.Fatalf("Error adding registration %v: %v", id, err)
+		}
+
+	}
+
+	b.StopTimer()
+	bolt.CloseSession()
+	b.StartTimer()
+}
+func BenchmarkGetRegistrationbyNameBoltDB(b *testing.B) {
+
+	b.StopTimer()
+	config := DBConfiguration{
+		DbType:       BOLT,
+		Host:         "0.0.0.0",
+		Port:         27017,
+		DatabaseName: "coredata",
+		Timeout:      1000,
+	}
+	// Create the bolt client
+	bolt, err := newBoltClient(config)
+	if err != nil {
+		b.Fatalf("Could not connect with boltdb: %v", err)
+	}
+	b.N = 100
+
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		name := "test" + strconv.Itoa(i)
+		_, err := bolt.RegistrationByName(name)
+		if err != nil {
+			b.Fatalf("Error getting registration test: %v", err)
+		}
+	}
+
+	b.StopTimer()
+	bolt.CloseSession()
+	b.StartTimer()
+}
+
+func BenchmarkDeleteRegistrationbyNameBoltDB(b *testing.B) {
+
+	b.StopTimer()
+	config := DBConfiguration{
+		DbType:       BOLT,
+		Host:         "0.0.0.0",
+		Port:         27017,
+		DatabaseName: "coredata",
+		Timeout:      1000,
+	}
+	// Create the bolt client
+	bolt, err := newBoltClient(config)
+	if err != nil {
+		b.Fatalf("Could not connect with boltdb: %v", err)
+	}
+	b.N = 100
+
+	b.StartTimer()
+	var name string
+	for i := 0; i < b.N; i++ {
+		name = "test" + strconv.Itoa(i)
+		err := bolt.DeleteRegistrationByName(name)
+		if err != nil {
+			b.Fatalf("Error deleting registration %v: %v", name, err)
+		}
+	}
+
+	b.StopTimer()
+	bolt.CloseSession()
+	b.StartTimer()
 }
