@@ -997,6 +997,25 @@ func (bc *BoltClient) ValueDescriptorsByType(t string) ([]models.ValueDescriptor
 	return vds, err
 }
 
+// Delete all value descriptors
+func (bc *BoltClient) ScrubAllValueDescriptors() error {
+	err := bc.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(VALUE_DESCRIPTOR_COLLECTION))
+		if b == nil {
+			return ErrUnsupportedDatabase
+		}
+		err := b.ForEach(func(id, encoded []byte) error {
+			err := bc.deleteById(string(id), VALUE_DESCRIPTOR_COLLECTION)
+			if err != nil {
+				return err
+			}
+			return nil
+		})
+		return err
+	})
+	return err
+}
+
 // Delete from the collection based on ID
 func (bc *BoltClient) deleteById(id string, col string) error {
 	// Check if id is a hexstring
