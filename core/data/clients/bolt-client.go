@@ -14,6 +14,7 @@
 package clients
 
 import (
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"time"
@@ -167,7 +168,27 @@ func (bc *BoltClient) AddEvent(e *models.Event) (bson.ObjectId, error) {
 // UnexpectedError - problem updating in database
 // NotFound - no event with the ID was found
 func (bc *BoltClient) UpdateEvent(e models.Event) error {
-	return nil
+	e.Modified = time.Now().UnixNano() / int64(time.Millisecond)
+
+	json := jsoniter.ConfigCompatibleWithStandardLibrary
+	err := bc.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(EVENTS_COLLECTION))
+		if b == nil {
+			return ErrUnsupportedDatabase
+		}
+		// Handle DB references
+		be := BoltEvent{Event: e}
+		b = tx.Bucket([]byte(EVENTS_COLLECTION))
+		if b == nil {
+			return ErrUnsupportedDatabase
+		}
+		encoded, err := json.Marshal(be)
+		if err != nil {
+			return err
+		}
+		return b.Put([]byte(e.ID), encoded)
+	})
+	return err
 }
 
 // Get an event by id
@@ -180,18 +201,36 @@ func (bc *BoltClient) EventById(id string) (models.Event, error) {
 			if b == nil {
 				return ErrUnsupportedDatabase
 			}
-			br := tx.Bucket([]byte(READINGS_COLLECTION))
-			if br == nil {
-				return ErrUnsupportedDatabase
-			}
+			var be BoltEvent
 			encoded := b.Get([]byte(bson.ObjectIdHex(id)))
 			if encoded == nil {
 				return ErrNotFound
 			}
+			err := json.Unmarshal(encoded, &be)
+			if err != nil {
+				return err
+			}
 
-			ret := json.Unmarshal(encoded, &ev)
-			return ret
+			br := tx.Bucket([]byte(READINGS_COLLECTION))
+			if b == nil {
+				return ErrUnsupportedDatabase
+			}
+			for _, id := range be.Readings {
+				encoded := br.Get([]byte(bson.ObjectIdHex(id)))
+				if encoded == nil {
+					return ErrNotFound
+				}
+				var reading models.Reading
+				err = json.Unmarshal(encoded, &reading)
+				if err != nil {
+					return err
+				}
+				be.Event.Readings = append(be.Event.Readings, reading)
+			}
+			ev = be.Event
+			return nil
 		})
+
 		return ev, err
 	} else {
 		return ev, ErrInvalidObjectId
@@ -214,22 +253,15 @@ func (bc *BoltClient) EventCount() (int, error) {
 
 // Get the number of events in bolt for the device
 func (bc *BoltClient) EventCountByDeviceId(devid string) (int, error) {
-	var bstat int
+	bstat := 0
 	err := bc.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(EVENTS_COLLECTION))
 		if b == nil {
 			return ErrUnsupportedDatabase
 		}
-		bstat = 0
-		ev := models.Event{}
-		json := jsoniter.ConfigCompatibleWithStandardLibrary
 		err := b.ForEach(func(id, encoded []byte) error {
 			value := jsoniter.Get(encoded, "device").ToString()
 			if value == devid {
-				err := json.Unmarshal(encoded, &ev)
-				if err != nil {
-					return err
-				}
 				bstat++
 				return nil
 			}
@@ -250,7 +282,31 @@ func (bc *BoltClient) DeleteEventById(id string) error {
 			if b == nil {
 				return ErrUnsupportedDatabase
 			}
-			b.Delete([]byte(bson.ObjectIdHex(id)))
+			json := jsoniter.ConfigCompatibleWithStandardLibrary
+			var be BoltEvent
+			encoded := b.Get([]byte(bson.ObjectIdHex(id)))
+			if encoded == nil {
+				return ErrNotFound
+			}
+			err := json.Unmarshal(encoded, &be)
+			if err != nil {
+				return err
+			}
+
+			br := tx.Bucket([]byte(READINGS_COLLECTION))
+			if b == nil {
+				return ErrUnsupportedDatabase
+			}
+			for _, id := range be.Readings {
+				ret := br.Delete([]byte(bson.ObjectIdHex(id)))
+				if ret != nil {
+					return ret
+				}
+			}
+			ret := b.Delete([]byte(bson.ObjectIdHex(id)))
+			if ret != nil {
+				return ret
+			}
 			return nil
 		})
 		return err
@@ -267,31 +323,29 @@ func (bc *BoltClient) EventsForDeviceLimit(ide string, limit int) ([]models.Even
 		return evs, nil
 	}
 	var cnt int
-	json := jsoniter.ConfigCompatibleWithStandardLibrary
+	//json := jsoniter.ConfigCompatibleWithStandardLibrary
 	err := bc.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(READINGS_COLLECTION))
+		b := tx.Bucket([]byte(EVENTS_COLLECTION))
 		if b == nil {
 			return ErrUnsupportedDatabase
 		}
 		err := b.ForEach(func(id, encoded []byte) error {
-			ev := models.Event{}
+			//ev := models.Event{}
 			value := jsoniter.Get(encoded, "device").ToString()
 			if value == ide {
-				err := json.Unmarshal(encoded, &ev)
+				hexid := hex.EncodeToString([]byte(id))
+				ev, err := bc.EventById(hexid)
 				if err != nil {
 					return err
 				}
 				evs = append(evs, ev)
 				cnt++
 				if cnt >= limit {
-					//err = errors.New("Limit reached")
-					//return err
 					return ErrLimReached
 				}
 			}
 			return nil
 		})
-		//if err.Error() == "Limit reached" {
 		if err == ErrLimReached {
 			return nil
 		}
@@ -303,18 +357,16 @@ func (bc *BoltClient) EventsForDeviceLimit(ide string, limit int) ([]models.Even
 // Get a list of events based on the device id
 func (bc *BoltClient) EventsForDevice(ide string) ([]models.Event, error) {
 	evs := []models.Event{}
-
-	json := jsoniter.ConfigCompatibleWithStandardLibrary
 	err := bc.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(READINGS_COLLECTION))
+		b := tx.Bucket([]byte(EVENTS_COLLECTION))
 		if b == nil {
 			return ErrUnsupportedDatabase
 		}
 		err := b.ForEach(func(id, encoded []byte) error {
-			ev := models.Event{}
 			value := jsoniter.Get(encoded, "device").ToString()
 			if value == ide {
-				err := json.Unmarshal(encoded, &ev)
+				hexid := hex.EncodeToString([]byte(id))
+				ev, err := bc.EventById(hexid)
 				if err != nil {
 					return err
 				}
@@ -341,31 +393,28 @@ func (bc *BoltClient) EventsByCreationTime(startTime, endTime int64, limit int) 
 		return evs, nil
 	}
 	var cnt int
-	json := jsoniter.ConfigCompatibleWithStandardLibrary
+	//json := jsoniter.ConfigCompatibleWithStandardLibrary
 	err := bc.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(READINGS_COLLECTION))
+		b := tx.Bucket([]byte(EVENTS_COLLECTION))
 		if b == nil {
 			return ErrUnsupportedDatabase
 		}
 		err := b.ForEach(func(id, encoded []byte) error {
-			ev := models.Event{}
 			value := jsoniter.Get(encoded, "created").ToInt64()
 			if (value >= int64(startTime)) && (value <= endTime) {
-				err := json.Unmarshal(encoded, &ev)
+				hexid := hex.EncodeToString([]byte(id))
+				ev, err := bc.EventById(hexid)
 				if err != nil {
 					return err
 				}
 				evs = append(evs, ev)
 				cnt++
 				if cnt >= limit {
-					//err = errors.New("Limit reached")
-					//return err
 					return ErrLimReached
 				}
 			}
 			return nil
 		})
-		//if err.Error() == "Limit reached" {
 		if err == ErrLimReached {
 			return nil
 		}
@@ -376,7 +425,35 @@ func (bc *BoltClient) EventsByCreationTime(startTime, endTime int64, limit int) 
 
 // Get Events that are older than the given age (defined by age = now - created)
 func (bc *BoltClient) EventsOlderThanAge(age int64) ([]models.Event, error) {
-	return []models.Event{}, nil
+	evs := []models.Event{}
+
+	err := bc.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(EVENTS_COLLECTION))
+		if b == nil {
+			return ErrUnsupportedDatabase
+		}
+		err := b.ForEach(func(id, encoded []byte) error {
+			//ev := models.Event{}
+			value := jsoniter.Get(encoded, "created").ToInt64()
+			value = (time.Now().UnixNano() / int64(time.Millisecond)) - value
+			if value >= age {
+				hexid := hex.EncodeToString([]byte(id))
+				ev, err := bc.EventById(hexid)
+				if err != nil {
+					return err
+				}
+				evs = append(evs, ev)
+			}
+			return nil
+		})
+		if evs == nil {
+			return ErrNotFound
+		} else {
+			return nil
+		}
+		return err
+	})
+	return evs, err
 }
 
 // Get all of the events that have been pushed
@@ -423,70 +500,6 @@ func (bc *BoltClient) ScrubAllEvents() error {
 	return err
 }
 
-/*
-// Get events for the passed query
-func (mc *MongoClient) getEvents(q bson.M) ([]models.Event, error) {
-	s := mc.getSessionCopy()
-	defer s.Close()
-
-	// Handle DBRefs
-	var me []MongoEvent
-	events := []models.Event{}
-	err := s.DB(mc.Database.Name).C(EVENTS_COLLECTION).Find(q).All(&me)
-	if err != nil {
-		return events, err
-	}
-
-	// Append all the events
-	for _, e := range me {
-		events = append(events, e.Event)
-	}
-
-	return events, nil
-}
-
-// Get events with a limit
-func (mc *MongoClient) getEventsLimit(q bson.M, limit int) ([]models.Event, error) {
-	s := mc.getSessionCopy()
-	defer s.Close()
-
-	// Handle DBRefs
-	var me []MongoEvent
-	events := []models.Event{}
-
-	// Check if limit is 0
-	if limit == 0 {
-		return events, nil
-	}
-
-	err := s.DB(mc.Database.Name).C(EVENTS_COLLECTION).Find(q).Limit(limit).All(&me)
-	if err != nil {
-		return events, err
-	}
-
-	// Append all the events
-	for _, e := range me {
-		events = append(events, e.Event)
-	}
-
-	return events, nil
-}
-
-// Get a single event for the passed query
-func (mc *MongoClient) getEvent(q bson.M) (models.Event, error) {
-	s := mc.getSessionCopy()
-	defer s.Close()
-
-	// Handle DBRef
-	var me MongoEvent
-	err := s.DB(mc.Database.Name).C(EVENTS_COLLECTION).Find(q).One(&me)
-	if err == mgo.ErrNotFound {
-		return me.Event, ErrNotFound
-	}
-
-	return me.Event, err
-}
-*/
 // ************************ READINGS ************************************
 
 // Return a list of readings sorted by reading id
@@ -1067,15 +1080,12 @@ func (bc *BoltClient) getByName(v interface{}, c string, gn string) error {
 					return err
 				}
 				// The only way to leave the ForEach is using an error, so let's trick it
-				//err = errors.New("Object name found")
-				//return err
 				return ErrObjFound
 			}
 			return nil
 		})
 		if err == nil {
 			return ErrNotFound
-			//		} else if err.Error() == "Object name found" {
 		} else if err == ErrObjFound {
 			return nil
 		}
