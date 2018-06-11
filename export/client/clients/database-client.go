@@ -96,6 +96,9 @@ type DBClient interface {
 	// UnexpectedError - problem getting in database
 	// NotFound - no registration with the ID was found
 	DeleteRegistrationByName(name string) error
+
+	// Delete all registrations
+	ScrubAllRegistrations() error
 }
 
 type DBConfiguration struct {
@@ -123,11 +126,7 @@ func NewDBClient(config DBConfiguration) (DBClient, error) {
 		return &memDB{}, nil
 	case BOLT:
 		// Create the bolt client
-		bc, err := newBoltClient(config)
-		if err != nil {
-			return nil, fmt.Errorf("Error creating the bolt client: " + err.Error())
-		}
-		return bc, nil
+		return newBoltClient(config)
 	default:
 		return nil, ErrUnsupportedDatabase
 	}

@@ -11,6 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  *******************************************************************************/
+
 package clients
 
 import (
@@ -24,7 +25,7 @@ import (
 )
 
 const (
-	REGISTRATION_COLLECTION = "registration"
+	ExportCollection = "export"
 )
 
 /*
@@ -36,7 +37,7 @@ type BoltClient struct {
 	db *bolt.DB // Bolt database
 }
 
-// Return a pointer to the MongoClient
+// Return a pointer to the BoltClient
 func newBoltClient(config DBConfiguration) (*BoltClient, error) {
 
 	db, err := bolt.Open("./export-client.db", 0600, nil)
@@ -45,7 +46,7 @@ func newBoltClient(config DBConfiguration) (*BoltClient, error) {
 	}
 
 	db.Update(func(tx *bolt.Tx) error {
-		tx.CreateBucketIfNotExists([]byte(REGISTRATION_COLLECTION))
+		tx.CreateBucketIfNotExists([]byte(ExportCollection))
 		return nil
 	})
 
@@ -53,8 +54,9 @@ func newBoltClient(config DBConfiguration) (*BoltClient, error) {
 	return boltClient, nil
 }
 
-func (mc *BoltClient) CloseSession() {
-	mc.db.Close()
+// Close current session
+func (bc *BoltClient) CloseSession() {
+	bc.db.Close()
 }
 
 // ****************************** REGISTRATIONS ********************************
@@ -62,15 +64,9 @@ func (mc *BoltClient) CloseSession() {
 // Return all the registrations
 // UnexpectedError - failed to retrieve registrations from the database
 func (bc *BoltClient) Registrations() ([]export.Registration, error) {
-	return bc.getRegistrations(bson.M{})
-}
-
-// Get registrations for the passed query
-func (bc *BoltClient) getRegistrations(q bson.M) ([]export.Registration, error) {
-
 	regs := []export.Registration{}
 	err := bc.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(REGISTRATION_COLLECTION))
+		b := tx.Bucket([]byte(ExportCollection))
 		if b == nil {
 			return ErrUnsupportedDatabase
 		}
@@ -96,7 +92,7 @@ func (bc *BoltClient) AddRegistration(reg *export.Registration) (bson.ObjectId, 
 	reg.Created = time.Now().UnixNano() / int64(time.Millisecond)
 
 	err := bc.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(REGISTRATION_COLLECTION))
+		b := tx.Bucket([]byte(ExportCollection))
 		if b == nil {
 			return ErrUnsupportedDatabase
 		}
@@ -105,11 +101,7 @@ func (bc *BoltClient) AddRegistration(reg *export.Registration) (bson.ObjectId, 
 		if err != nil {
 			return err
 		}
-		err = b.Put([]byte(reg.ID), encoded)
-		if err != nil {
-			return ErrNotFound
-		}
-		return nil
+		return b.Put([]byte(reg.ID), encoded)
 	})
 
 	return reg.ID, err
@@ -119,29 +111,25 @@ func (bc *BoltClient) AddRegistration(reg *export.Registration) (bson.ObjectId, 
 // UnexpectedError - problem updating in database
 // NotFound - no registration with the ID was found
 func (bc *BoltClient) UpdateRegistration(reg export.Registration) error {
-	_, err := bc.RegistrationById(reg.ID.Hex())
-	if err != nil {
-		return ErrNotFound
-	}
 
 	reg.Modified = time.Now().UnixNano() / int64(time.Millisecond)
 
-	err = bc.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(REGISTRATION_COLLECTION))
+	err := bc.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(ExportCollection))
 		if b == nil {
 			return ErrUnsupportedDatabase
+		}
+		if b.Get([]byte(reg.ID)) == nil {
+			return ErrNotFound
 		}
 		json := jsoniter.ConfigCompatibleWithStandardLibrary
 		encoded, err := json.Marshal(reg)
 		if err != nil {
 			return err
 		}
-		err = b.Put([]byte(reg.ID), encoded)
-		if err != nil {
-			return ErrNotFound
-		}
-		return nil
+		return b.Put([]byte(reg.ID), encoded)
 	})
+
 	return err
 }
 
@@ -149,69 +137,45 @@ func (bc *BoltClient) UpdateRegistration(reg export.Registration) error {
 // UnexpectedError - problem getting in database
 // NotFound - no registration with the ID was found
 func (bc *BoltClient) RegistrationById(id string) (export.Registration, error) {
-	reg := export.Registration{}
-	if bson.IsObjectIdHex(id) {
-		err := bc.db.View(func(tx *bolt.Tx) error {
-			b := tx.Bucket([]byte(REGISTRATION_COLLECTION))
-			if b == nil {
-				return ErrUnsupportedDatabase
-			}
-			encoded := b.Get([]byte(bson.ObjectIdHex(id)))
-			if encoded == nil {
-				return ErrNotFound
-			}
-			json := jsoniter.ConfigCompatibleWithStandardLibrary
-			ret := json.Unmarshal(encoded, &reg)
-			return ret
-		})
-		return reg, err
-	} else {
-		return reg, ErrNotFound
+	if !bson.IsObjectIdHex(id) {
+		return export.Registration{}, ErrInvalidObjectId
 	}
-}
 
-// Delete a registration by ID
-// UnexpectedError - problem getting in database
-// NotFound - no registration with the ID was found
-func (bc *BoltClient) DeleteRegistrationById(id string) error {
-	if bson.IsObjectIdHex(id) {
-		err := bc.db.Update(func(tx *bolt.Tx) error {
-			b := tx.Bucket([]byte(REGISTRATION_COLLECTION))
-			if b == nil {
-				return ErrUnsupportedDatabase
-			}
-			err := b.Delete([]byte(bson.ObjectIdHex(id)))
-			if err != nil {
-				return ErrNotFound
-			}
-			return nil
-		})
-		return err
-	} else {
-		return ErrNotFound
-	}
+	reg := export.Registration{}
+	err := bc.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(ExportCollection))
+		if b == nil {
+			return ErrUnsupportedDatabase
+		}
+		encoded := b.Get([]byte(bson.ObjectIdHex(id)))
+		if encoded == nil {
+			return ErrNotFound
+		}
+		json := jsoniter.ConfigCompatibleWithStandardLibrary
+		return json.Unmarshal(encoded, &reg)
+	})
+	return reg, err
 }
 
 // Get a registration by name
 // UnexpectedError - problem getting in database
 // NotFound - no registration with the name was found
 func (bc *BoltClient) RegistrationByName(name string) (export.Registration, error) {
-	json := jsoniter.ConfigCompatibleWithStandardLibrary
 	reg := export.Registration{}
 	err := bc.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(REGISTRATION_COLLECTION))
+		b := tx.Bucket([]byte(ExportCollection))
 		if b == nil {
 			return ErrUnsupportedDatabase
 		}
 		err := b.ForEach(func(id, encoded []byte) error {
 			value := jsoniter.Get(encoded, "name").ToString()
 			if value == name {
+				json := jsoniter.ConfigCompatibleWithStandardLibrary
 				err := json.Unmarshal(encoded, &reg)
 				if err != nil {
 					return err
 				}
-				err = errors.New("Object name found")
-				return err
+				return errors.New("Object name found")
 			}
 			return nil
 		})
@@ -225,12 +189,31 @@ func (bc *BoltClient) RegistrationByName(name string) (export.Registration, erro
 	return reg, err
 }
 
+// Delete a registration by ID
+// UnexpectedError - problem getting in database
+// NotFound - no registration with the ID was found
+func (bc *BoltClient) DeleteRegistrationById(id string) error {
+	if !bson.IsObjectIdHex(id) {
+		return ErrInvalidObjectId
+	}
+
+	err := bc.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(ExportCollection))
+		if b == nil {
+			return ErrUnsupportedDatabase
+		}
+		return b.Delete([]byte(bson.ObjectIdHex(id)))
+	})
+
+	return err
+}
+
 // Delete a registration by name
 // UnexpectedError - problem getting in database
 // NotFound - no registration with the ID was found
 func (bc *BoltClient) DeleteRegistrationByName(name string) error {
 	err := bc.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(REGISTRATION_COLLECTION))
+		b := tx.Bucket([]byte(ExportCollection))
 		if b == nil {
 			return ErrUnsupportedDatabase
 		}
@@ -253,5 +236,16 @@ func (bc *BoltClient) DeleteRegistrationByName(name string) error {
 		}
 		return err
 	})
+	return err
+}
+
+// Delete all registrations
+func (bc *BoltClient) ScrubAllRegistrations() error {
+	err := bc.db.Update(func(tx *bolt.Tx) error {
+		tx.DeleteBucket([]byte(ExportCollection))
+		tx.CreateBucketIfNotExists([]byte(ExportCollection))
+		return nil
+	})
+
 	return err
 }

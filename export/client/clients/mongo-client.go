@@ -157,6 +157,15 @@ func (mc *MongoClient) getRegistrations(q bson.M) ([]export.Registration, error)
 	return regs, nil
 }
 
+// Delete all registrations
+func (mc *MongoClient) ScrubAllRegistrations() error {
+	s := mc.GetSessionCopy()
+	defer s.Close()
+
+	_, err := s.DB(mc.Database.Name).C(EXPORT_COLLECTION).RemoveAll(nil)
+	return err
+}
+
 // Get a single registration for the passed query
 func (mc *MongoClient) getRegistration(q bson.M) (export.Registration, error) {
 	s := mc.GetSessionCopy()

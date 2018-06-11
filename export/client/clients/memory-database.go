@@ -93,3 +93,8 @@ func (mc *memDB) DeleteRegistrationByName(name string) error {
 	}
 	return ErrNotFound
 }
+
+func (mc *memDB) ScrubAllRegistrations() error {
+	mc.regs = nil
+	return nil
+}
