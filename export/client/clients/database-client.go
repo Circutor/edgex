@@ -15,7 +15,6 @@ package clients
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/edgexfoundry/edgex-go/export"
 	"gopkg.in/mgo.v2/bson"
