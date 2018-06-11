@@ -21,7 +21,6 @@ import (
 
 // Struct used to pase the JSON configuration file
 type ConfigurationStruct struct {
-	ApplicationName                     string
 	DBType                              string
 	MongoDatabaseName                   string
 	MongoDBUserName                     string
@@ -31,7 +30,6 @@ type ConfigurationStruct struct {
 	MongoDBConnectTimeout               int
 	ReadMaxLimit                        int
 	Protocol                            string
-	ServiceName                         string
 	ServiceAddress                      string
 	ServicePort                         int
 	ServiceTimeout                      int
@@ -71,7 +69,6 @@ var (
 	DBUSER              = "meta"
 	DBPASS              = "password"
 	MONGODATABASE       = "metadata"
-	METADATASERVICENAME = "core-metadata"
 
 	MAX_LIMIT int = 1000
 

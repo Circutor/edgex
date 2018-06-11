@@ -15,17 +15,17 @@ package clients
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/edgexfoundry/edgex-go/core/domain/models"
+	"github.com/edgexfoundry/edgex-go/support/logging-client"
 	"gopkg.in/mgo.v2/bson"
 )
 
 type DatabaseType int8 // Database type enum
 const (
 	MONGO DatabaseType = iota
-	MOCK
 	INFLUX
+	MEMORY
 )
 
 type DBClient interface {
@@ -96,6 +96,7 @@ type DBClient interface {
 	// Get events that have been pushed (pushed field is not 0)
 	EventsPushed() ([]models.Event, error)
 
+	// Delete all readings and events
 	ScrubAllEvents() error
 
 	// ********************* READING FUNCTIONS *************************
@@ -187,6 +188,9 @@ type DBClient interface {
 
 	// Return a list of value descriptors based on their type
 	ValueDescriptorsByType(t string) ([]models.ValueDescriptor, error)
+
+	// Delete all value descriptors
+	ScrubAllValueDescriptors() error
 }
 
 type DBConfiguration struct {
@@ -203,6 +207,8 @@ var ErrNotFound error = errors.New("Item not found")
 var ErrUnsupportedDatabase error = errors.New("Unsuppored database type")
 var ErrInvalidObjectId error = errors.New("Invalid object ID")
 var ErrNotUnique error = errors.New("Resource already exists")
+var DataClient = "dataClient"
+var loggingClient = logger.NewClient(DataClient, false, "")
 
 // Return the dbClient interface
 func NewDBClient(config DBConfiguration) (DBClient, error) {
@@ -211,7 +217,7 @@ func NewDBClient(config DBConfiguration) (DBClient, error) {
 		// Create the mongo client
 		mc, err := newMongoClient(config)
 		if err != nil {
-			fmt.Println("Error creating the mongo client: " + err.Error())
+			loggingClient.Error("Error creating the mongo client: " + err.Error())
 			return nil, err
 		}
 		return mc, nil
@@ -219,14 +225,14 @@ func NewDBClient(config DBConfiguration) (DBClient, error) {
 		// Create the influx client
 		ic, err := newInfluxClient(config)
 		if err != nil {
-			fmt.Println("Error creating the influx client: " + err.Error())
+			loggingClient.Error("Error creating the influx client: " + err.Error())
 			return nil, err
 		}
 		return ic, nil
-	case MOCK:
-		//Create the mock client
-		mock := &MockDb{}
-		return mock, nil
+	case MEMORY:
+		// Create the memory client
+		mem := &memDB{}
+		return mem, nil
 	default:
 		return nil, ErrUnsupportedDatabase
 	}

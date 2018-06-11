@@ -10,28 +10,35 @@
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
- *
- * @author: Trevor Conn, Dell
- * @version: 0.5.0
  *******************************************************************************/
-
-package heartbeat
+package metadata
 
 import (
+	"testing"
 	"time"
 
-	"github.com/edgexfoundry/edgex-go/support/logging-client"
+	"github.com/edgexfoundry/edgex-go/core/clients/types"
+	"github.com/edgexfoundry/edgex-go/internal"
 )
 
-func Start(msg string, interval int, logger logger.LoggingClient) {
-	go sendBeats(msg, interval, logger)
-}
+func TestNewDeviceServiceClientWithConsul(t *testing.T) {
+	deviceServiceUrl := "http://localhost:48081" + deviceServiceUriPath
+	params := types.EndpointParams{
+		ServiceKey:internal.CoreMetaDataServiceKey,
+		Path:deviceServiceUriPath,
+		UseRegistry:true,
+		Url:deviceServiceUrl}
 
-// Executes the basic heartbeat for all servicves. Writes entries to the supplied logger.
-func sendBeats(heartbeatMsg string, interval int, logger logger.LoggingClient) {
-	// Loop forever
-	for true {
-		logger.Info(heartbeatMsg)
-		time.Sleep(time.Millisecond * time.Duration(interval)) // Sleep based on supplied interval
+	dsc := NewDeviceServiceClient(params, MockEndpoint{})
+	r, ok := dsc.(*DeviceServiceRestClient)
+	if !ok {
+		t.Error("dsc is not of expected type")
+	}
+
+	time.Sleep(25 * time.Millisecond)
+	if len(r.url) == 0 {
+		t.Error("url was not initialized")
+	} else if r.url != deviceServiceUrl {
+		t.Errorf("unexpected url value %s", r.url)
 	}
 }

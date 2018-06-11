@@ -25,9 +25,10 @@ import (
 
 	"github.com/edgexfoundry/edgex-go"
 	"github.com/edgexfoundry/edgex-go/core/metadata"
-	"github.com/edgexfoundry/edgex-go/pkg/config"
-	"github.com/edgexfoundry/edgex-go/pkg/heartbeat"
-	"github.com/edgexfoundry/edgex-go/pkg/usage"
+	"github.com/edgexfoundry/edgex-go/internal"
+	"github.com/edgexfoundry/edgex-go/internal/pkg/config"
+	"github.com/edgexfoundry/edgex-go/internal/pkg/heartbeat"
+	"github.com/edgexfoundry/edgex-go/internal/pkg/usage"
 	"github.com/edgexfoundry/edgex-go/support/logging-client"
 )
 
@@ -68,10 +69,10 @@ func main() {
 
 	// Setup Logging
 	logTarget := setLoggingTarget(*configuration)
-	loggingClient = logger.NewClient(configuration.ApplicationName, configuration.EnableRemoteLogging, logTarget)
+	loggingClient = logger.NewClient(internal.CoreMetaDataServiceKey, configuration.EnableRemoteLogging, logTarget)
 
 	loggingClient.Info(consulMsg)
-	loggingClient.Info(fmt.Sprintf("Starting %s %s ", metadata.METADATASERVICENAME, edgex.Version))
+	loggingClient.Info(fmt.Sprintf("Starting %s %s ", internal.CoreMetaDataServiceKey, edgex.Version))
 
 	err = metadata.Init(*configuration, loggingClient)
 	if err != nil {
@@ -90,14 +91,14 @@ func main() {
 
 	// Time it took to start service
 	loggingClient.Info("Service started in: "+time.Since(start).String(), "")
-	fmt.Println("Listening on port: " + strconv.Itoa(configuration.ServicePort))
+	loggingClient.Info("Listening on port: " + strconv.Itoa(configuration.ServicePort))
 	c := <-errs
 	metadata.Destruct()
 	loggingClient.Warn(fmt.Sprintf("terminating: %v", c))
 }
 
 func logBeforeTermination(err error) {
-	loggingClient = logger.NewClient(metadata.METADATASERVICENAME, false, "")
+	loggingClient = logger.NewClient(internal.CoreMetaDataServiceKey, false, "")
 	loggingClient.Error(err.Error())
 }
 

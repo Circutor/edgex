@@ -7,7 +7,6 @@
 package logging
 
 type ConfigurationStruct struct {
-	ApplicationName      string
 	Hostname             string
 	Port                 int
 	Persistence          string
@@ -31,6 +30,3 @@ type ConfigurationStruct struct {
 // Configuration data for the support logging service
 var configuration ConfigurationStruct = ConfigurationStruct{}
 
-var (
-	SUPPORTLOGGINGSERVICENAME = "support-logging"
-)

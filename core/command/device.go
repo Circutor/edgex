@@ -15,12 +15,10 @@ package command
 
 import (
 	"bytes"
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 
-	"github.com/edgexfoundry/edgex-go/core/clients/metadataclients"
 	"github.com/edgexfoundry/edgex-go/core/domain/models"
 )
 
@@ -28,14 +26,13 @@ func issueCommand(req *http.Request) (*http.Response, error) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println(err.Error())
+		loggingClient.Error(err.Error())
 	}
 	return resp, err
 }
 
 func commandByDeviceID(did string, cid string, b string, p bool) (string, int) {
-	var dc = metadataclients.NewDeviceClient(configuration.MetaDeviceURL)
-	d, err := dc.Device(did)
+	d, err := mdc.Device(did)
 
 	if err != nil {
 		loggingClient.Error(err.Error(), "")
@@ -49,7 +46,6 @@ func commandByDeviceID(did string, cid string, b string, p bool) (string, int) {
 		return "", http.StatusUnprocessableEntity
 	}
 
-	var cc = metadataclients.NewCommandClient(configuration.MetaCommandURL)
 	c, err := cc.Command(cid)
 	if err != nil {
 		loggingClient.Error(err.Error(), "")
@@ -88,8 +84,7 @@ func commandByDeviceID(did string, cid string, b string, p bool) (string, int) {
 }
 
 func putDeviceAdminState(did string, as string) (int, error) {
-	var dc = metadataclients.NewDeviceClient(configuration.MetaDeviceURL)
-	err := dc.UpdateAdminState(did, as)
+	err := mdc.UpdateAdminState(did, as)
 	if err != nil {
 		loggingClient.Error(err.Error(), "")
 		return http.StatusServiceUnavailable, err
@@ -98,8 +93,7 @@ func putDeviceAdminState(did string, as string) (int, error) {
 }
 
 func putDeviceAdminStateByName(dn string, as string) (int, error) {
-	var dc = metadataclients.NewDeviceClient(configuration.MetaDeviceURL)
-	err := dc.UpdateAdminStateByName(dn, as)
+	err := mdc.UpdateAdminStateByName(dn, as)
 	if err != nil {
 		loggingClient.Error(err.Error(), "")
 		return http.StatusServiceUnavailable, err
@@ -108,8 +102,7 @@ func putDeviceAdminStateByName(dn string, as string) (int, error) {
 }
 
 func putDeviceOpState(did string, as string) (int, error) {
-	var dc = metadataclients.NewDeviceClient(configuration.MetaDeviceURL)
-	err := dc.UpdateOpState(did, as)
+	err := mdc.UpdateOpState(did, as)
 	if err != nil {
 		loggingClient.Error(err.Error(), "")
 		return http.StatusServiceUnavailable, err
@@ -118,8 +111,7 @@ func putDeviceOpState(did string, as string) (int, error) {
 }
 
 func putDeviceOpStateByName(dn string, as string) (int, error) {
-	var dc = metadataclients.NewDeviceClient(configuration.MetaDeviceURL)
-	err := dc.UpdateOpStateByName(dn, as)
+	err := mdc.UpdateOpStateByName(dn, as)
 	if err != nil {
 		loggingClient.Error(err.Error(), "")
 		return http.StatusServiceUnavailable, err
@@ -128,8 +120,7 @@ func putDeviceOpStateByName(dn string, as string) (int, error) {
 }
 
 func getCommands() (int, []models.CommandResponse, error) {
-	var dc = metadataclients.NewDeviceClient(configuration.MetaDeviceURL)
-	devices, err := dc.Devices()
+	devices, err := mdc.Devices()
 	if err != nil {
 		return http.StatusServiceUnavailable, nil, err
 	}
@@ -142,8 +133,7 @@ func getCommands() (int, []models.CommandResponse, error) {
 }
 
 func getCommandsByDeviceID(did string) (int, models.CommandResponse, error) {
-	var dc = metadataclients.NewDeviceClient(configuration.MetaDeviceURL)
-	d, err := dc.Device(did)
+	d, err := mdc.Device(did)
 	if err != nil {
 		return http.StatusServiceUnavailable, models.CommandResponse{}, err
 	}
@@ -151,8 +141,7 @@ func getCommandsByDeviceID(did string) (int, models.CommandResponse, error) {
 }
 
 func getCommandsByDeviceName(dn string) (int, models.CommandResponse, error) {
-	var dc = metadataclients.NewDeviceClient(configuration.MetaDeviceURL)
-	d, err := dc.DeviceForName(dn)
+	d, err := mdc.DeviceForName(dn)
 	if err != nil {
 		return http.StatusServiceUnavailable, models.CommandResponse{}, err
 	}

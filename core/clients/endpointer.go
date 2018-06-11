@@ -10,29 +10,17 @@
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
- *
- * @author: Trevor Conn, Dell
- * @version: 0.5.0
  *******************************************************************************/
-package usage
+package clients
 
-import (
-	"fmt"
-	"os"
-)
+import "github.com/edgexfoundry/edgex-go/core/clients/types"
 
-var usageStr = `
-Usage: %s [options]
-Server Options:
-    -c, --consul                    Indicates service should use Consul
-    -p, --profile <name>            Indicate configuration profile other than default
-Common Options:
-    -h, --help                      Show this message
-`
-
-// usage will print out the flag options for the server.
-func HelpCallback() {
-	msg := fmt.Sprintf(usageStr, os.Args[0])
-	fmt.Printf("%s\n", msg)
-	os.Exit(0)
+//Endpointer is the interface for types that need to implement or simulate integration
+//with a service discovery provider.
+type Endpointer interface {
+	//Monitor is responsible for looking up information about the service endpoint corresponding
+	//to the params.ServiceKey property. The name "Monitor" implies that this lookup will be done
+	//at a regular interval. Information about the service from the discovery provider should be
+	//used to construct a URL which will then be pushed to the supplied channel.
+	Monitor(params types.EndpointParams, ch chan string)
 }

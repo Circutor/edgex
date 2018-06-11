@@ -17,8 +17,9 @@ import (
 
 	"github.com/edgexfoundry/edgex-go"
 	"github.com/edgexfoundry/edgex-go/export/client"
-	"github.com/edgexfoundry/edgex-go/pkg/config"
-	"github.com/edgexfoundry/edgex-go/pkg/usage"
+	"github.com/edgexfoundry/edgex-go/internal"
+	"github.com/edgexfoundry/edgex-go/internal/pkg/config"
+	"github.com/edgexfoundry/edgex-go/internal/pkg/usage"
 	"go.uber.org/zap"
 )
 
@@ -28,7 +29,7 @@ func main() {
 	logger, _ = zap.NewProduction()
 	defer logger.Sync()
 
-	logger.Info(fmt.Sprintf("Starting %s %s", client.ExportClient, edgex.Version))
+	logger.Info(fmt.Sprintf("Starting %s %s", internal.ExportClientServiceKey, edgex.Version))
 
 	var (
 		useConsul  bool
@@ -65,6 +66,10 @@ func main() {
 	logger.Info(consulMsg, zap.String("version", edgex.Version))
 
 	err = client.Init(*configuration, logger)
+	if err != nil {
+		logger.Error("Could not initialize export client", zap.Error(err))
+		return
+	}
 
 	errs := make(chan error, 2)
 

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright 2017 Dell Inc.
+ * Copyright 2018 Dell Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -11,14 +11,24 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  *******************************************************************************/
-package commandclients
 
-import "errors"
+package heartbeat
 
-var (
-	COMMAND    = "command"
-	JSONHEADER = "application/json"
+import (
+	"time"
 
-	ErrResponseNil       = errors.New("Response was nil")
-	ErrorCommandNotFound = errors.New("Command not found")
+	"github.com/edgexfoundry/edgex-go/support/logging-client"
 )
+
+func Start(msg string, interval int, logger logger.LoggingClient) {
+	go sendBeats(msg, interval, logger)
+}
+
+// Executes the basic heartbeat for all servicves. Writes entries to the supplied logger.
+func sendBeats(heartbeatMsg string, interval int, logger logger.LoggingClient) {
+	// Loop forever
+	for true {
+		logger.Info(heartbeatMsg)
+		time.Sleep(time.Millisecond * time.Duration(interval)) // Sleep based on supplied interval
+	}
+}
