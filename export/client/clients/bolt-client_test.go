@@ -17,13 +17,8 @@ import (
 )
 
 func TestBoltDB(t *testing.T) {
-
 	config := DBConfiguration{
-		DbType:       BOLT,
-		Host:         "0.0.0.0",
-		Port:         27017,
-		DatabaseName: "coredata",
-		Timeout:      1000,
+		DbType: BOLT,
 	}
 
 	bolt, err := newBoltClient(config)
@@ -32,4 +27,17 @@ func TestBoltDB(t *testing.T) {
 	}
 
 	testDB(t, bolt)
+}
+
+func BenchmarkBoltDB(b *testing.B) {
+	config := DBConfiguration{
+		DbType: BOLT,
+	}
+
+	bolt, err := newBoltClient(config)
+	if err != nil {
+		b.Fatalf("Could not connect with boltdb: %v", err)
+	}
+
+	benchmarkDB(b, bolt)
 }

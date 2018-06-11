@@ -35,3 +35,23 @@ func TestMongoDB(t *testing.T) {
 
 	testDB(t, mongo)
 }
+
+func BenchmarkMongoDB(b *testing.B) {
+
+	b.Log("This benchmark needs to have a running mongo on localhost")
+
+	config := DBConfiguration{
+		DbType:       MONGO,
+		Host:         "0.0.0.0",
+		Port:         27017,
+		DatabaseName: "coredata",
+		Timeout:      1000,
+	}
+
+	mongo, err := newMongoClient(config)
+	if err != nil {
+		b.Fatalf("Could not connect with mongodb: %v", err)
+	}
+
+	benchmarkDB(b, mongo)
+}
