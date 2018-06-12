@@ -15,7 +15,6 @@ package clients
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/edgexfoundry/edgex-go/core/domain/models"
 	"github.com/edgexfoundry/edgex-go/support/logging-client"
@@ -239,7 +238,7 @@ func NewDBClient(config DBConfiguration) (DBClient, error) {
 		// Create the bolt client
 		bc, err := newBoltClient(config)
 		if err != nil {
-			fmt.Println("Error creating the bolt client: " + err.Error())
+			loggingClient.Error("Error creating the bolt client: " + err.Error())
 			return nil, err
 		}
 		return bc, nil

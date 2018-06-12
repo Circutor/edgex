@@ -10,11 +10,8 @@
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
- *
- * @microservice: core-data-go library
- * @author: Ryan Comer, Dell
- * @version: 0.5.0
  *******************************************************************************/
+
 package clients
 
 import (
@@ -90,28 +87,5 @@ func (be *BoltEvent) UnmarshalJSON(data []byte) error {
 	be.Event.Event = decoded.Event
 	be.Readings = decoded.Readings
 
-	// De-reference the DBRef fields
-	/*bc, err := getCurrentBoltClient()
-	if err != nil {
-		fmt.Println("Error getting a bolt client: " + err.Error())
-		return err
-	}
-	*/
-	/*var readings []models.Reading
-
-	// Get all of the reading objects
-	for _, rRef := range decoded.Readings {
-		var reading models.Reading
-		//err := mc.Database.C(READINGS_COLLECTION).FindId(rRef.Id).One(&reading)
-		//if err != nil {
-		//	return err
-		//}
-
-		readings = append(readings, reading)
-	}
-
-	be.Readings = readings
-	*/
-	
 	return nil
 }
