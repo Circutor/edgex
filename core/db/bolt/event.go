@@ -12,7 +12,7 @@
  * the License.
  *******************************************************************************/
 
-package clients
+package bolt
 
 import (
 	"encoding/json"
@@ -22,13 +22,13 @@ import (
 )
 
 // Struct that wraps an event to handle DB references
-type BoltEvent struct {
+type boltEvent struct {
 	Event    models.Event
 	Readings []string
 }
 
 // Custom marshaling into bolt
-func (be BoltEvent) MarshalJSON() ([]byte, error) {
+func (be boltEvent) MarshalJSON() ([]byte, error) {
 	// Turn the readings into DB references
 	var readings []string
 	for _, reading := range be.Event.Readings {
@@ -52,14 +52,13 @@ func (be BoltEvent) MarshalJSON() ([]byte, error) {
 		Created:  be.Event.Created,
 		Modified: be.Event.Modified,
 		Origin:   be.Event.Origin,
-		Schedule: be.Event.Schedule,
 		Event:    be.Event.Event,
 		Readings: readings,
 	})
 }
 
 // Custom unmarshaling out of bolt
-func (be *BoltEvent) UnmarshalJSON(data []byte) error {
+func (be *boltEvent) UnmarshalJSON(data []byte) error {
 	decoded := new(struct {
 		ID       bson.ObjectId `json:"id,omitempty"`
 		Pushed   int64         `json:"pushed"`
@@ -67,7 +66,6 @@ func (be *BoltEvent) UnmarshalJSON(data []byte) error {
 		Created  int64         `json:"created"`
 		Modified int64         `json:"modified"`
 		Origin   int64         `json:"origin"`
-		Schedule string        `json:"schedule,omitempty"`
 		Event    string        `json:"event"`
 		Readings []string      `json:"readings"`
 	})
@@ -83,7 +81,6 @@ func (be *BoltEvent) UnmarshalJSON(data []byte) error {
 	be.Event.Created = decoded.Created
 	be.Event.Modified = decoded.Modified
 	be.Event.Origin = decoded.Origin
-	be.Event.Schedule = decoded.Schedule
 	be.Event.Event = decoded.Event
 	be.Readings = decoded.Readings
 

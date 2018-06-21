@@ -10,43 +10,45 @@
 // the tests with a command like:
 // go test -tags boltRunning
 
-package clients
+package bolt
 
 import (
 	"testing"
+
+	"github.com/edgexfoundry/edgex-go/core/db"
+	"github.com/edgexfoundry/edgex-go/core/db/test"
 )
 
 func TestBoltDB(t *testing.T) {
 
-	//t.Log("This test needs to have a running bolt on localhost")
-
-	config := DBConfiguration{
-		DbType:       BOLT,
+	config := db.Configuration{
 		Host:         "0.0.0.0",
 		Port:         27017,
 		DatabaseName: "coredata",
 		Timeout:      1000,
 	}
 
-	bolt, err := newBoltClient(config)
+	bolt, err := NewClient(config)
 	if err != nil {
-		t.Fatalf("Could not connect with boltdb: %v", err)
+		t.Fatalf("Could not connect with BoltDB: %v", err)
 	}
 
-	testDB(t, bolt)
+	test.TestDataDB(t, bolt)
 }
 
 func BenchmarkBoltDB(b *testing.B) {
 
-	//b.Log("This benchmark needs to have a running bolt on localhost")
-
-	config := DBConfiguration{
-		DbType:       BOLT,
+	config := db.Configuration{
 		Host:         "0.0.0.0",
 		Port:         27017,
 		DatabaseName: "coredata",
 		Timeout:      1000,
 	}
 
-	benchmarkDB(b, config)
+	bolt, err := NewClient(config)
+	if err != nil {
+		b.Fatalf("Could not connect with BoltDB: %v", err)
+	}
+
+	test.BenchmarkDB(b, bolt)
 }
