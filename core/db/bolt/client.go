@@ -23,6 +23,8 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
+var currentBoltClient *BoltClient
+
 type BoltClient struct {
 	db *bolt.DB // Bolt database
 }
@@ -39,6 +41,7 @@ func NewClient(config db.Configuration) (*BoltClient, error) {
 	}
 
 	boltClient := &BoltClient{db: bdb}
+	currentBoltClient = boltClient
 	return boltClient, nil
 }
 
@@ -48,6 +51,15 @@ func (bc *BoltClient) Connect() error {
 
 func (bc *BoltClient) CloseSession() {
 	bc.db.Close()
+}
+
+// Get the current Bolt Client
+func getCurrentBoltClient() (*BoltClient, error) {
+	if currentBoltClient == nil {
+		return nil, errors.New("No current bolt client, please create a new client before requesting it")
+	}
+
+	return currentBoltClient, nil
 }
 
 // Add an element
@@ -152,6 +164,69 @@ func (bc *BoltClient) getByName(v interface{}, c string, gn string) error {
 	return err
 }
 
+// Get an element by "tag"
+/*func (b *BoltClient) getsBytag(v interface{}, bucket string, tag string, filter interface{}, typefilter string) error {
+	var regsadd []models.Addressable
+	var regadd models.Addressable
+	var regscomm []models.Command
+	var regcomm models.Command
+
+	err := b.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(bucket))
+		if b == nil {
+			return db.ErrUnsupportedDatabase
+		}
+		fv := false
+		json := jsoniter.ConfigCompatibleWithStandardLibrary
+		err := b.ForEach(func(id, encoded []byte) error {
+
+			if typefilter == "string" {
+				value := jsoniter.Get(encoded, tag).ToString()
+				if value == filter {
+					fv = true
+				}
+			} else if typefilter == "int" {
+				value := jsoniter.Get(encoded, tag).ToInt()
+				if value == filter {
+					fv = true
+				}
+			}
+			if fv == true {
+				fv = false
+				if bucket == db.Addressable {
+					err := json.Unmarshal(encoded, &regadd)
+					if err != nil {
+						return err
+					}
+					regsadd = append(regsadd, regadd)
+					v = regsadd
+				} else if bucket == db.Command {
+					err := json.Unmarshal(encoded, &regcomm)
+					if err != nil {
+						return err
+					}
+					regscomm = append(regscomm, regcomm)
+					v = regscomm
+				}
+			}
+			return nil
+		})
+
+		//	fmt.Print(regsadd, "ReggsAdd", "/n")
+		//	fmt.Print(regadd, "ReggAdd")
+		//fmt.Print(regscomm, "ReggsComm")
+		//fmt.Print(regcomm, "ReggComm")
+		fmt.Print(v, "vvvvv")
+		if v == nil {
+			return db.ErrNotFound
+		} else {
+			return nil
+		}
+		return err
+	})
+	return err
+}
+*/
 // Count number of elements
 func (bc *BoltClient) count(bucket string) (int, error) {
 	var bstat int

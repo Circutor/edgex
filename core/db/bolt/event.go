@@ -15,9 +15,8 @@
 package bolt
 
 import (
-	"encoding/json"
-
 	"github.com/edgexfoundry/edgex-go/core/domain/models"
+	jsoniter "github.com/json-iterator/go"
 	"gopkg.in/mgo.v2/bson"
 )
 
@@ -34,7 +33,7 @@ func (be boltEvent) MarshalJSON() ([]byte, error) {
 	for _, reading := range be.Event.Readings {
 		readings = append(readings, reading.Id.Hex())
 	}
-
+	json := jsoniter.ConfigCompatibleWithStandardLibrary
 	return json.Marshal(&struct {
 		ID       bson.ObjectId `json:"id,omitempty"`
 		Pushed   int64         `json:"pushed"`
@@ -69,7 +68,7 @@ func (be *boltEvent) UnmarshalJSON(data []byte) error {
 		Event    string        `json:"event"`
 		Readings []string      `json:"readings"`
 	})
-
+	json := jsoniter.ConfigCompatibleWithStandardLibrary
 	if err := json.Unmarshal(data, &decoded); err != nil {
 		return err
 	}

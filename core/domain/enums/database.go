@@ -23,19 +23,21 @@ const (
 	INVALID DATABASE = iota
 	MONGODB
 	MEMORYDB
+	BOLTDB
 )
 
 const (
 	invalidStr = "invalid"
 	MongoStr   = "mongodb"
 	MemoryStr  = "memorydb"
+	BoltStr    = "boltdb"
 )
 
 // DATABASEArr : Add in order declared in Struct for string value
 var databaseArr = [...]string{invalidStr, MongoStr, MemoryStr}
 
 func (db DATABASE) String() string {
-	if db >= INVALID && db <= MEMORYDB {
+	if db >= INVALID && db <= BOLTDB {
 		return databaseArr[db]
 	}
 	return invalidStr
@@ -47,6 +49,8 @@ func GetDatabaseType(db string) (DATABASE, error) {
 		return MONGODB, nil
 	} else if MemoryStr == db {
 		return MEMORYDB, nil
+	} else if BoltStr == db {
+		return BOLTDB, nil
 	} else {
 		return INVALID, errors.New("Undefined Database Type")
 	}

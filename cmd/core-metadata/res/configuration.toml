@@ -1,4 +1,4 @@
-DBType = 'mongodb'
+DBType = 'boltdb'
 MongoDatabaseName = 'metadata'
 MongoDBUserName = ''
 MongoDBPassword = ''

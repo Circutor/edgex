@@ -18,6 +18,7 @@ import (
 	"strings"
 
 	"github.com/edgexfoundry/edgex-go/core/db"
+	"github.com/edgexfoundry/edgex-go/core/db/bolt"
 	"github.com/edgexfoundry/edgex-go/core/db/memory"
 	"github.com/edgexfoundry/edgex-go/core/db/mongo"
 	"github.com/edgexfoundry/edgex-go/core/domain/enums"
@@ -58,6 +59,8 @@ func getDatabase(dbType string, config db.Configuration) (interfaces.DBClient, e
 		return mongo.NewClient(config), nil
 	case enums.MemoryStr:
 		return &memory.MemDB{}, nil
+	case enums.BoltStr:
+		return bolt.NewClient(config)
 	}
 	return nil, db.ErrNotFound
 }
