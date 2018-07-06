@@ -13,6 +13,7 @@
 package bolt
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/edgexfoundry/edgex-go/core/db"
@@ -32,8 +33,52 @@ func TestBoltDB(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Could not connect with BoltDB: %v", err)
 	}
-
+	fmt.Println("TestDataDB")
 	test.TestDataDB(t, bolt)
+
+	config.DatabaseName = "metadata"
+	bolt, err = NewClient(config)
+	if err != nil {
+		t.Fatalf("Could not connect with BoltDB: %v", err)
+	}
+
+	err = bolt.scrubAll(db.Addressable)
+	if err != nil {
+		t.Fatalf("Error removing previous data: %v", err)
+	}
+	err = bolt.scrubAll(db.DeviceService)
+	if err != nil {
+		t.Fatalf("Error removing previous data: %v", err)
+	}
+	err = bolt.scrubAll(db.DeviceProfile)
+	if err != nil {
+		t.Fatalf("Error removing previous data: %v", err)
+	}
+	err = bolt.scrubAll(db.Device)
+	if err != nil {
+		t.Fatalf("Error removing previous data: %v", err)
+	}
+	err = bolt.scrubAll(db.Command)
+	if err != nil {
+		t.Fatalf("Error removing previous data: %v", err)
+	}
+	/*
+		err = bolt.scrubAll(db.DeviceReport)
+		if err != nil {
+			t.Fatalf("Error removing previous data: %v", err)
+		}
+		err = bolt.scrubAll(db.ScheduleEvent)
+		if err != nil {
+			t.Fatalf("Error removing previous data: %v", err)
+		}
+		err = bolt.scrubAll(db.ProvisionWatcher)
+		if err != nil {
+			t.Fatalf("Error removing previous data: %v", err)
+		}
+	*/
+	fmt.Println("TestMetadataDB")
+	test.TestMetadataDB(t, bolt)
+
 }
 
 func BenchmarkBoltDB(b *testing.B) {

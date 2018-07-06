@@ -21,12 +21,12 @@ import (
 
 // Internal version of the device service struct
 // Use this to handle DB references
-type BoltDeviceService struct {
+type boltDeviceService struct {
 	models.DeviceService
 }
 
 // Custom marshaling into bolt
-func (bds BoltDeviceService) MarshalJSON() ([]byte, error) {
+func (bds boltDeviceService) MarshalJSON() ([]byte, error) {
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
 	return json.Marshal(&struct {
 		models.DescribedObject `json:",inline"`
@@ -52,7 +52,7 @@ func (bds BoltDeviceService) MarshalJSON() ([]byte, error) {
 }
 
 // Custom unmarshaling out of bolt
-func (bds *BoltDeviceService) UnmarshalJSON(data []byte) error {
+func (bds *boltDeviceService) UnmarshalJSON(data []byte) error {
 	decoded := new(struct {
 		models.DescribedObject `json:",inline"`
 		Id                     bson.ObjectId         `json:"id,omitempty"`

@@ -45,15 +45,15 @@ func (bdp boltDeviceProfile) MarshalJSON() ([]byte, error) {
 		Resources              []models.ProfileResource `json:"resources"`
 		Commands               []string                 `json:"commands"` // List of commands to Get/Put information for devices associated with this profile
 	}{
-		DescribedObject: bdp.DeviceProfile.DescribedObject,
-		Id:              bdp.DeviceProfile.Id,
-		Name:            bdp.DeviceProfile.Name,
-		Manufacturer:    bdp.DeviceProfile.Manufacturer,
-		Model:           bdp.DeviceProfile.Model,
-		Labels:          bdp.DeviceProfile.Labels,
-		Objects:         bdp.DeviceProfile.Objects,
-		DeviceResources: bdp.DeviceProfile.DeviceResources,
-		Resources:       bdp.DeviceProfile.Resources,
+		DescribedObject: bdp.DescribedObject,
+		Id:              bdp.Id,
+		Name:            bdp.Name,
+		Manufacturer:    bdp.Manufacturer,
+		Model:           bdp.Model,
+		Labels:          bdp.Labels,
+		Objects:         bdp.Objects,
+		DeviceResources: bdp.DeviceResources,
+		Resources:       bdp.Resources,
 		Commands:        commands,
 	})
 }
@@ -79,15 +79,15 @@ func (bdp *boltDeviceProfile) UnmarshalJSON(data []byte) error {
 	}
 
 	// Copy over the fields
-	bdp.DeviceProfile.DescribedObject = decoded.DescribedObject
-	bdp.DeviceProfile.Id = decoded.Id
-	bdp.DeviceProfile.Name = decoded.Name
-	bdp.DeviceProfile.Manufacturer = decoded.Manufacturer
-	bdp.DeviceProfile.Model = decoded.Model
-	bdp.DeviceProfile.Labels = decoded.Labels
-	bdp.DeviceProfile.Objects = decoded.Objects
-	bdp.DeviceProfile.DeviceResources = decoded.DeviceResources
-	bdp.DeviceProfile.Resources = decoded.Resources
+	bdp.DescribedObject = decoded.DescribedObject
+	bdp.Id = decoded.Id
+	bdp.Name = decoded.Name
+	bdp.Manufacturer = decoded.Manufacturer
+	bdp.Model = decoded.Model
+	bdp.Labels = decoded.Labels
+	bdp.Objects = decoded.Objects
+	bdp.DeviceResources = decoded.DeviceResources
+	bdp.Resources = decoded.Resources
 
 	m, err := getCurrentBoltClient()
 	if err != nil {
