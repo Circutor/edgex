@@ -25,7 +25,6 @@ import (
 
 /* -----------------------Schedule Event ------------------------*/
 func (b *BoltClient) UpdateScheduleEvent(se models.ScheduleEvent) error {
-
 	return nil
 }
 
@@ -45,8 +44,7 @@ func (b *BoltClient) GetScheduleEventById(se *models.ScheduleEvent, id string) e
 	if bson.IsObjectIdHex(id) {
 		return nil
 	} else {
-		err := errors.New("mgoGetScheduleEventById Invalid Object ID " + id)
-		return err
+		return db.ErrInvalidObjectId
 	}
 }
 
@@ -58,8 +56,7 @@ func (b *BoltClient) GetScheduleEventsByAddressableId(se *[]models.ScheduleEvent
 	if bson.IsObjectIdHex(id) {
 		return nil
 	} else {
-		err := errors.New("mgoGetScheduleEventsByAddressableId Invalid Object ID" + id)
-		return err
+		return db.ErrInvalidObjectId
 	}
 }
 
@@ -68,12 +65,10 @@ func (b *BoltClient) GetScheduleEventsByServiceName(se *[]models.ScheduleEvent, 
 }
 
 func (b *BoltClient) GetScheduleEvent(se *models.ScheduleEvent, q bson.M) error {
-
 	return nil
 }
 
 func (b *BoltClient) GetScheduleEvents(se *[]models.ScheduleEvent, q bson.M) error {
-
 	return nil
 }
 
@@ -94,18 +89,15 @@ func (b *BoltClient) GetScheduleById(s *models.Schedule, id string) error {
 	if bson.IsObjectIdHex(id) {
 		return nil
 	} else {
-		err := errors.New("mgoGetScheduleById Invalid Object ID " + id)
-		return err
+		return db.ErrInvalidObjectId
 	}
 }
 
 func (b *BoltClient) AddSchedule(sch *models.Schedule) error {
-
 	return nil
 }
 
 func (b *BoltClient) UpdateSchedule(sch models.Schedule) error {
-
 	return nil
 }
 
@@ -114,12 +106,10 @@ func (b *BoltClient) DeleteSchedule(s models.Schedule) error {
 }
 
 func (b *BoltClient) GetSchedule(sch *models.Schedule, q bson.M) error {
-
 	return nil
 }
 
 func (b *BoltClient) GetSchedules(sch *[]models.Schedule, q bson.M) error {
-
 	return nil
 }
 
@@ -140,8 +130,7 @@ func (b *BoltClient) GetDeviceReportById(d *models.DeviceReport, id string) erro
 	if bson.IsObjectIdHex(id) {
 		return nil
 	} else {
-		err := errors.New("mgoGetDeviceReportById Invalid Object ID " + id)
-		return err
+		return db.ErrInvalidObjectId
 	}
 }
 
@@ -150,22 +139,18 @@ func (b *BoltClient) GetDeviceReportsByScheduleEventName(d *[]models.DeviceRepor
 }
 
 func (b *BoltClient) GetDeviceReports(d *[]models.DeviceReport, q bson.M) error {
-
 	return nil
 }
 
 func (b *BoltClient) GetDeviceReport(d *models.DeviceReport, q bson.M) error {
-
 	return nil
 }
 
 func (b *BoltClient) AddDeviceReport(d *models.DeviceReport) error {
-
 	return nil
 }
 
 func (b *BoltClient) UpdateDeviceReport(dr *models.DeviceReport) error {
-
 	return nil
 }
 
@@ -176,7 +161,7 @@ func (b *BoltClient) DeleteDeviceReport(dr models.DeviceReport) error {
 /* ----------------------------- Device ---------------------------------- */
 func (b *BoltClient) AddDevice(d *models.Device) error {
 
-	// check if the name exist (Device names must be unique)
+	// Check if the name exist (Device names must be unique)
 	var dumy models.Device
 	//err := b.getByName(&dumy, db.Device, d.Name)
 	err := b.GetDeviceByName(&dumy, d.Name)
@@ -233,8 +218,7 @@ func (b *BoltClient) GetDeviceById(d *models.Device, id string) error {
 		*d = bd.Device
 		return err
 	} else {
-		err := errors.New("boltGetDeviceById Invalid Object ID " + id)
-		return err
+		return db.ErrInvalidObjectId
 	}
 }
 
@@ -249,8 +233,7 @@ func (b *BoltClient) GetDevicesByServiceId(d *[]models.Device, sid string) error
 	if bson.IsObjectIdHex(sid) {
 		return b.GetDevicesBy(d, "serviceId", sid)
 	} else {
-		err := errors.New("mgoGetDevicesByServiceId Invalid Object ID " + sid)
-		return err
+		return db.ErrInvalidObjectId
 	}
 }
 
@@ -258,8 +241,7 @@ func (b *BoltClient) GetDevicesByAddressableId(d *[]models.Device, aid string) e
 	if bson.IsObjectIdHex(aid) {
 		return b.GetDevicesBy(d, "addressableId", aid)
 	} else {
-		err := errors.New("mgoGetDevicesByAddressableId Invalid Object ID " + aid)
-		return err
+		return db.ErrInvalidObjectId
 	}
 }
 
@@ -267,8 +249,7 @@ func (b *BoltClient) GetDevicesByProfileId(d *[]models.Device, pid string) error
 	if bson.IsObjectIdHex(pid) {
 		return b.GetDevicesBy(d, "profileId", pid)
 	} else {
-		err := errors.New("mgoGetDevicesByProfileId Invalid Object ID " + pid)
-		return err
+		return db.ErrInvalidObjectId
 	}
 }
 
@@ -332,8 +313,7 @@ func (b *BoltClient) GetDeviceProfileById(dp *models.DeviceProfile, id string) e
 		*dp = bdp.DeviceProfile
 		return err
 	} else {
-		err := errors.New("boltGetDeviceProfileById Invalid Object ID " + id)
-		return err
+		return db.ErrInvalidObjectId
 	}
 }
 
@@ -612,8 +592,7 @@ func (b *BoltClient) GetAddressableById(a *models.Addressable, id string) error 
 	if bson.IsObjectIdHex(id) {
 		return b.getById(a, db.Addressable, id)
 	} else {
-		err := errors.New("boltGetAddressableById Invalid Object ID " + id)
-		return err
+		return db.ErrInvalidObjectId
 	}
 }
 
@@ -671,8 +650,7 @@ func (b *BoltClient) GetDeviceServiceById(d *models.DeviceService, id string) er
 		*d = bds.DeviceService
 		return err
 	} else {
-		err := errors.New("boltGetDeviceServiceByName Invalid Object ID " + id)
-		return err
+		return db.ErrInvalidObjectId
 	}
 }
 
@@ -725,8 +703,7 @@ func (b *BoltClient) GetDeviceServicesByAddressableId(d *[]models.DeviceService,
 		return err
 
 	} else {
-		err := errors.New("boltGetDeviceServicesByAddressableId Invalid Object ID " + ide)
-		return err
+		return db.ErrInvalidObjectId
 	}
 }
 
@@ -800,7 +777,7 @@ func (b *BoltClient) GetProvisionWatchersByServiceId(pw *[]models.ProvisionWatch
 	if bson.IsObjectIdHex(id) {
 		return nil
 	} else {
-		return errors.New("mgoGetProvisionWatchersByServiceId Invalid Object ID " + id)
+		return db.ErrInvalidObjectId
 	}
 }
 
@@ -808,8 +785,7 @@ func (b *BoltClient) GetProvisionWatchersByProfileId(pw *[]models.ProvisionWatch
 	if bson.IsObjectIdHex(id) {
 		return nil
 	} else {
-		err := errors.New("mgoGetProvisionWatcherByProfileId Invalid Object ID " + id)
-		return err
+		return db.ErrInvalidObjectId
 	}
 }
 
@@ -817,33 +793,27 @@ func (b *BoltClient) GetProvisionWatcherById(pw *models.ProvisionWatcher, id str
 	if bson.IsObjectIdHex(id) {
 		return nil
 	} else {
-		err := errors.New("mgoGetProvisionWatcherById Invalid Object ID " + id)
-		return err
+		return db.ErrInvalidObjectId
 	}
 }
 
 func (b *BoltClient) GetProvisionWatcher(pw *models.ProvisionWatcher, q bson.M) error {
-
 	return nil
 }
 
 func (b *BoltClient) GetProvisionWatchers(pw *[]models.ProvisionWatcher, q bson.M) error {
-
 	return nil
 }
 
 func (b *BoltClient) AddProvisionWatcher(pw *models.ProvisionWatcher) error {
-
 	return nil
 }
 
 func (b *BoltClient) UpdateProvisionWatcher(pw models.ProvisionWatcher) error {
-
 	return nil
 }
 
 func (b *BoltClient) DeleteProvisionWatcher(pw models.ProvisionWatcher) error {
-
 	return nil
 }
 
@@ -874,7 +844,7 @@ func (b *BoltClient) GetCommandById(c *models.Command, id string) error {
 	if bson.IsObjectIdHex(id) {
 		return b.getById(c, db.Command, id)
 	} else {
-		return errors.New("boltGetCommandById Invalid Object ID " + id)
+		return db.ErrInvalidObjectId
 	}
 }
 

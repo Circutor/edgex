@@ -103,7 +103,7 @@ func (bc *BoltClient) EventById(id string) (models.Event, error) {
 		var err error
 		b := tx.Bucket([]byte(db.EventsCollection))
 		if b == nil {
-			return db.ErrUnsupportedDatabase
+			return db.ErrNotFound
 		}
 		encoded := b.Get([]byte(bson.ObjectIdHex(id)))
 		ev, err = getEvent(encoded, tx)
@@ -124,7 +124,7 @@ func (bc *BoltClient) EventCountByDeviceId(devid string) (int, error) {
 	err := bc.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(db.EventsCollection))
 		if b == nil {
-			return db.ErrUnsupportedDatabase
+			return nil
 		}
 		err := b.ForEach(func(id, encoded []byte) error {
 			value := jsoniter.Get(encoded, "device").ToString()
@@ -222,7 +222,7 @@ func (bc *BoltClient) getEvents(fn func(encoded []byte) bool, limit int) ([]mode
 	err := bc.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(db.EventsCollection))
 		if b == nil {
-			return db.ErrUnsupportedDatabase
+			return nil
 		}
 		err := b.ForEach(func(id, encoded []byte) error {
 			if fn(encoded) == true {
@@ -253,7 +253,7 @@ func getEvent(encoded []byte, tx *bolt.Tx) (models.Event, error) {
 	ev := models.Event{}
 	b := tx.Bucket([]byte(db.ReadingsCollection))
 	if b == nil {
-		return ev, db.ErrUnsupportedDatabase
+		return ev, db.ErrNotFound
 	}
 	var be boltEvent
 	if encoded == nil {
@@ -404,7 +404,7 @@ func (bc *BoltClient) getReadings(fn func(encoded []byte) bool, limit int) ([]mo
 	err := bc.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(db.ReadingsCollection))
 		if b == nil {
-			return db.ErrUnsupportedDatabase
+			return nil
 		}
 		err := b.ForEach(func(id, encoded []byte) error {
 			if fn(encoded) == true {
@@ -567,7 +567,7 @@ func (bc *BoltClient) getValueDescriptors(fn func(encoded []byte) bool) ([]model
 	err := bc.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(db.ValueDescriptorCollection))
 		if b == nil {
-			return db.ErrUnsupportedDatabase
+			return nil
 		}
 		err := b.ForEach(func(id, encoded []byte) error {
 			if fn(encoded) == true {

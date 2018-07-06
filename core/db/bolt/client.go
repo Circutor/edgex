@@ -122,7 +122,7 @@ func (bc *BoltClient) getById(v interface{}, c string, gid string) error {
 	err := bc.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(c))
 		if b == nil {
-			return db.ErrUnsupportedDatabase
+			return db.ErrNotFound
 		}
 		encoded := b.Get([]byte(bson.ObjectIdHex(gid)))
 		if encoded == nil {
@@ -140,7 +140,7 @@ func (bc *BoltClient) getByName(v interface{}, c string, gn string) error {
 	err := bc.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(c))
 		if b == nil {
-			return db.ErrUnsupportedDatabase
+			return db.ErrNotFound
 		}
 		err := b.ForEach(func(id, encoded []byte) error {
 			value := jsoniter.Get(encoded, "name").ToString()
@@ -166,13 +166,12 @@ func (bc *BoltClient) getByName(v interface{}, c string, gn string) error {
 
 // Count number of elements
 func (bc *BoltClient) count(bucket string) (int, error) {
-	var bstat int
+	bstat := 0
 	err := bc.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(bucket))
-		if b == nil {
-			return db.ErrUnsupportedDatabase
+		if b != nil {
+			bstat = b.Stats().KeyN
 		}
-		bstat = b.Stats().KeyN
 		return nil
 	})
 	return bstat, err
