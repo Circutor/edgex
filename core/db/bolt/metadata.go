@@ -72,7 +72,7 @@ func (b *BoltClient) GetScheduleEvents(se *[]models.ScheduleEvent, q bson.M) err
 	return nil
 }
 
-func (b *BoltClient) DeleteScheduleEvent(se models.ScheduleEvent) error {
+func (b *BoltClient) DeleteScheduleEventById(id string) error {
 	return nil
 }
 
@@ -101,7 +101,7 @@ func (b *BoltClient) UpdateSchedule(sch models.Schedule) error {
 	return nil
 }
 
-func (b *BoltClient) DeleteSchedule(s models.Schedule) error {
+func (b *BoltClient) DeleteScheduleById(id string) error {
 	return nil
 }
 
@@ -154,7 +154,7 @@ func (b *BoltClient) UpdateDeviceReport(dr *models.DeviceReport) error {
 	return nil
 }
 
-func (b *BoltClient) DeleteDeviceReport(dr models.DeviceReport) error {
+func (b *BoltClient) DeleteDeviceReportById(id string) error {
 	return nil
 }
 
@@ -163,7 +163,6 @@ func (b *BoltClient) AddDevice(d *models.Device) error {
 
 	// Check if the name exist (Device names must be unique)
 	var dumy models.Device
-	//err := b.getByName(&dumy, db.Device, d.Name)
 	err := b.GetDeviceByName(&dumy, d.Name)
 	if err == nil {
 		return db.ErrNotUnique
@@ -185,8 +184,8 @@ func (b *BoltClient) UpdateDevice(d models.Device) error {
 	return b.update(db.Device, bd, bd.Id)
 }
 
-func (b *BoltClient) DeleteDevice(d models.Device) error {
-	return b.deleteById(d.Id.Hex(), db.Device)
+func (b *BoltClient) DeleteDeviceById(id string) error {
+	return b.deleteById(id, db.Device)
 }
 
 func (b *BoltClient) GetAllDevices(d *[]models.Device) error {
@@ -485,8 +484,8 @@ func (b *BoltClient) GetDeviceProfilesUsingCommand(dp *[]models.DeviceProfile, c
 	return err
 }
 
-func (b *BoltClient) DeleteDeviceProfile(dp models.DeviceProfile) error {
-	return b.deleteById(dp.Id.Hex(), db.DeviceProfile)
+func (b *BoltClient) DeleteDeviceProfileById(id string) error {
+	return b.deleteById(id, db.DeviceProfile)
 }
 
 //  -----------------------------------Addressable --------------------------*/
@@ -631,8 +630,8 @@ func (b *BoltClient) GetAddressablesByAddress(a *[]models.Addressable, add strin
 	return b.GetAddressablesByTag(a, "address", add)
 }
 
-func (b *BoltClient) DeleteAddressable(a models.Addressable) error {
-	return b.deleteById(a.Id.Hex(), db.Addressable)
+func (b *BoltClient) DeleteAddressableById(id string) error {
+	return b.deleteById(id, db.Addressable)
 }
 
 /* ----------------------------- Device Service ----------------------------------*/
@@ -756,8 +755,8 @@ func (b *BoltClient) UpdateDeviceService(d models.DeviceService) error {
 	return b.update(db.DeviceService, bds, bds.Id)
 }
 
-func (b *BoltClient) DeleteDeviceService(ds models.DeviceService) error {
-	return b.deleteById(ds.Id.Hex(), db.DeviceService)
+func (b *BoltClient) DeleteDeviceServiceById(id string) error {
+	return b.deleteById(id, db.DeviceService)
 }
 
 //  ----------------------Provision Watcher -----------------------------*/
@@ -813,7 +812,7 @@ func (b *BoltClient) UpdateProvisionWatcher(pw models.ProvisionWatcher) error {
 	return nil
 }
 
-func (b *BoltClient) DeleteProvisionWatcher(pw models.ProvisionWatcher) error {
+func (b *BoltClient) DeleteProvisionWatcherById(id string) error {
 	return nil
 }
 

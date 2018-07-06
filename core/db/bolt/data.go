@@ -15,8 +15,6 @@
 package bolt
 
 import (
-	"time"
-
 	"github.com/coreos/bbolt"
 	"github.com/edgexfoundry/edgex-go/core/db"
 	"github.com/edgexfoundry/edgex-go/core/domain/models"
@@ -44,7 +42,7 @@ func (bc *BoltClient) Events() ([]models.Event, error) {
 // UnexpectedError - failed to add to database
 // NoValueDescriptor - no existing value descriptor for a reading in the event
 func (bc *BoltClient) AddEvent(e *models.Event) (bson.ObjectId, error) {
-	e.Created = time.Now().UnixNano() / int64(time.Millisecond)
+	e.Created = db.MakeTimestamp()
 	e.ID = bson.NewObjectId()
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
 	err := bc.db.Update(func(tx *bolt.Tx) error {
@@ -87,7 +85,7 @@ func (bc *BoltClient) AddEvent(e *models.Event) (bson.ObjectId, error) {
 // UnexpectedError - problem updating in database
 // NotFound - no event with the ID was found
 func (bc *BoltClient) UpdateEvent(e models.Event) error {
-	e.Modified = time.Now().UnixNano() / int64(time.Millisecond)
+	e.Modified = db.MakeTimestamp()
 
 	be := boltEvent{Event: e}
 	return bc.update(db.EventsCollection, be, e.ID)
@@ -183,7 +181,7 @@ func (bc *BoltClient) EventsByCreationTime(startTime, endTime int64, limit int) 
 func (bc *BoltClient) EventsOlderThanAge(age int64) ([]models.Event, error) {
 	return bc.getEvents(func(encoded []byte) bool {
 		value := jsoniter.Get(encoded, "created").ToInt64()
-		value = (time.Now().UnixNano() / int64(time.Millisecond)) - value
+		value = (db.MakeTimestamp()) - value
 		if value >= age {
 			return true
 		}
@@ -293,7 +291,7 @@ func (bc *BoltClient) Readings() ([]models.Reading, error) {
 // Post a new reading
 func (bc *BoltClient) AddReading(r models.Reading) (bson.ObjectId, error) {
 	r.Id = bson.NewObjectId()
-	r.Created = time.Now().UnixNano() / int64(time.Millisecond)
+	r.Created = db.MakeTimestamp()
 
 	err := bc.add(db.ReadingsCollection, r, r.Id)
 	return r.Id, err
@@ -304,7 +302,7 @@ func (bc *BoltClient) AddReading(r models.Reading) (bson.ObjectId, error) {
 // 409 - Value descriptor doesn't exist
 // 503 - unknown issues
 func (bc *BoltClient) UpdateReading(r models.Reading) error {
-	r.Modified = time.Now().UnixNano() / int64(time.Millisecond)
+	r.Modified = db.MakeTimestamp()
 
 	return bc.update(db.ReadingsCollection, r, r.Id)
 }
@@ -445,7 +443,7 @@ func (bc *BoltClient) AddValueDescriptor(v models.ValueDescriptor) (bson.ObjectI
 	}
 
 	v.Id = bson.NewObjectId()
-	v.Created = time.Now().UnixNano() / int64(time.Millisecond)
+	v.Created = db.MakeTimestamp()
 
 	// Add the value descriptor
 	err = bc.add(db.ValueDescriptorCollection, v, v.Id)
@@ -477,7 +475,7 @@ func (bc *BoltClient) UpdateValueDescriptor(v models.ValueDescriptor) error {
 			return db.ErrNotUnique
 		}
 	}
-	v.Modified = time.Now().UnixNano() / int64(time.Millisecond)
+	v.Modified = db.MakeTimestamp()
 
 	return bc.update(db.ValueDescriptorCollection, v, v.Id)
 }
