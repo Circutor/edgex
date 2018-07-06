@@ -476,7 +476,6 @@ func (m *MongoClient) AddDeviceProfile(dp *models.DeviceProfile) error {
 	} else if count > 0 {
 		return db.ErrNotUnique
 	}
-
 	for i := 0; i < len(dp.Commands); i++ {
 		if err := m.AddCommand(&dp.Commands[i]); err != nil {
 			return err

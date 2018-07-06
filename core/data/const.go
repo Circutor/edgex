@@ -28,14 +28,13 @@ type ConfigurationStruct struct {
 	ServiceAddress             string
 	DeviceUpdateLastConnected  bool
 	ServiceUpdateLastConnected bool
+	DBType                     string
 	MongoDBUserName            string
 	MongoDBPassword            string
 	MongoDatabaseName          string
 	MongoDBHost                string
 	MongoDBPort                int
 	MongoDBConnectTimeout      int
-	MongoDBMaxWaitTime         int
-	MongoDBKeepAlive           bool
 	ConsulHost                 string
 	ConsulCheckAddress         string
 	ConsulPort                 int
@@ -46,9 +45,9 @@ type ConfigurationStruct struct {
 	MetaAddressableURL         string
 	MetaAddressablePath        string
 	MetaDeviceServiceURL       string
-	MetaDeviceServicePath	   string
+	MetaDeviceServicePath      string
 	MetaDeviceProfileURL       string
-	MetaDeviceProfilePath	   string
+	MetaDeviceProfilePath      string
 	MetaDeviceURL              string
 	MetaDevicePath             string
 	MetaDeviceReportURL        string
@@ -68,4 +67,3 @@ type ConfigurationStruct struct {
 }
 
 var configuration ConfigurationStruct = ConfigurationStruct{} //  Needs to be initialized before used
-

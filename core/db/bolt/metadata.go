@@ -603,11 +603,6 @@ func (b *BoltClient) GetAddressablesByTag(d *[]models.Addressable, tag string, f
 			}
 			return nil
 		})
-		if *d == nil {
-			return db.ErrNotFound
-		} else {
-			return nil
-		}
 		return err
 	})
 	return err
@@ -884,7 +879,7 @@ func (b *BoltClient) GetCommandById(c *models.Command, id string) error {
 }
 
 func (b *BoltClient) GetCommandByName(c *[]models.Command, n string) error {
-	//don't use getByName, can be various commands with same name
+	// Don't use getByName, can be various commands with same name
 	err := b.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(db.Command))
 		if b == nil {
@@ -904,11 +899,6 @@ func (b *BoltClient) GetCommandByName(c *[]models.Command, n string) error {
 			}
 			return nil
 		})
-		if *c == nil {
-			return db.ErrNotFound
-		} else {
-			return nil
-		}
 		return err
 	})
 	return err

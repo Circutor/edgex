@@ -384,6 +384,7 @@ func clearDeviceProfiles(t *testing.T, db interfaces.DBClient) {
 	if err != nil {
 		t.Fatalf("Error getting deviceProfiles %v", err)
 	}
+
 	for _, ds := range dps {
 		if err = db.DeleteDeviceProfile(ds); err != nil {
 			t.Fatalf("Error removing deviceProfile %v: %v", ds, err)

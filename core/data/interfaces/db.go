@@ -18,14 +18,6 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-type DatabaseType int8 // Database type enum
-const (
-	MONGO DatabaseType = iota
-	INFLUX
-	MEMORY
-	BOLT
-)
-
 type DBClient interface {
 	CloseSession()
 

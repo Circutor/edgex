@@ -19,8 +19,6 @@ import (
 	"github.com/edgexfoundry/edgex-go/core/domain/models"
 )
 
-const ()
-
 func TestHttpSender(t *testing.T) {
 	const (
 		msgStr = "test message"
@@ -101,7 +99,7 @@ func TestHttpSender(t *testing.T) {
 				addressableTest.Port = port
 			}
 			sender := NewHTTPSender(addressableTest)
-			sender.Send(msg)
+			sender.Send(msg, nil)
 		})
 	}
 }
