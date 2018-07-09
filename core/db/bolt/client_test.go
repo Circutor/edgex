@@ -13,7 +13,6 @@
 package bolt
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/edgexfoundry/edgex-go/core/db"
@@ -33,7 +32,6 @@ func TestBoltDB(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Could not connect with BoltDB: %v", err)
 	}
-	fmt.Println("TestDataDB")
 	test.TestDataDB(t, bolt)
 
 	config.DatabaseName = "metadata"
@@ -76,7 +74,6 @@ func TestBoltDB(t *testing.T) {
 			t.Fatalf("Error removing previous data: %v", err)
 		}
 	*/
-	fmt.Println("TestMetadataDB")
 	test.TestMetadataDB(t, bolt)
 
 }

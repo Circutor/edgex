@@ -36,7 +36,7 @@ func (bds boltDeviceService) MarshalJSON() ([]byte, error) {
 		LastReported           int64                 `json:"lastReported"`   // operational state - either enabled or disabled
 		OperatingState         models.OperatingState `json:"operatingState"` // operational state - ether enabled or disableddc
 		Labels                 []string              `json:"labels"`         // tags or other labels applied to the device service for search or other identification needs
-		Addressable            bson.ObjectId         `json:"addressableId"`  // address (MQTT topic, HTTP address, serial bus, etc.) for reaching the service
+		AddressableID          string                `json:"addressableId"`  // address (MQTT topic, HTTP address, serial bus, etc.) for reaching the service
 		AdminState             models.AdminState     `json:"adminState"`     // Device Service Admin State
 	}{
 		DescribedObject: bds.Service.DescribedObject,
@@ -46,7 +46,7 @@ func (bds boltDeviceService) MarshalJSON() ([]byte, error) {
 		LastReported:    bds.Service.LastReported,
 		OperatingState:  bds.Service.OperatingState,
 		Labels:          bds.Service.Labels,
-		Addressable:     bds.Service.Addressable.Id,
+		AddressableID:   bds.Service.Addressable.Id.Hex(),
 		AdminState:      bds.AdminState,
 	})
 }
@@ -61,7 +61,7 @@ func (bds *boltDeviceService) UnmarshalJSON(data []byte) error {
 		LastReported           int64                 `json:"lastReported"`   // operational state - either enabled or disabled
 		OperatingState         models.OperatingState `json:"operatingState"` // operational state - ether enabled or disableddc
 		Labels                 []string              `json:"labels"`         // tags or other labels applied to the device service for search or other identification needs
-		Addressable            bson.ObjectId         `json:"addressableId"`  // address (MQTT topic, HTTP address, serial bus, etc.) for reaching the service
+		AddressableID          string                `json:"addressableId"`  // address (MQTT topic, HTTP address, serial bus, etc.) for reaching the service
 		AdminState             models.AdminState     `json:"adminState"`     // Device Service Admin State
 	})
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
@@ -84,6 +84,5 @@ func (bds *boltDeviceService) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	return m.GetAddressableById(&bds.Service.Addressable, decoded.Addressable.Hex())
-
+	return m.GetAddressableById(&bds.Service.Addressable, decoded.AddressableID)
 }

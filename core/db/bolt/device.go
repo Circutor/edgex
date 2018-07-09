@@ -14,7 +14,6 @@
 package bolt
 
 import (
-	"github.com/edgexfoundry/edgex-go/core/db"
 	"github.com/edgexfoundry/edgex-go/core/domain/models"
 	jsoniter "github.com/json-iterator/go"
 	"gopkg.in/mgo.v2/bson"
@@ -40,8 +39,8 @@ func (bd boltDevice) MarshalJSON() ([]byte, error) {
 		LastReported           int64                 `json:"lastReported"`   // Time (milliseconds) that the device reported data to the core microservice
 		Labels                 []string              `json:"labels"`         // Other labels applied to the device to help with searching
 		Location               interface{}           `json:"location"`       // Device service specific location (interface{} is an empty interface so it can be anything)
-		Service                bson.ObjectId         `json:"serviceId"`      // Associated Device Service - One per device
-		Profile                bson.ObjectId         `json:"profileId"`
+		ServiceID              string                `json:"serviceId"`      // Associated Device Service - One per device
+		ProfileID              string                `json:"profileId"`
 	}{
 		DescribedObject: bd.DescribedObject,
 		Id:              bd.Id,
@@ -52,8 +51,8 @@ func (bd boltDevice) MarshalJSON() ([]byte, error) {
 		LastConnected:   bd.LastConnected,
 		LastReported:    bd.LastReported,
 		Labels:          bd.Labels,
-		Service:         bd.Service.Id,
-		Profile:         bd.Profile.Id,
+		ServiceID:       bd.Service.Id.Hex(),
+		ProfileID:       bd.Profile.Id.Hex(),
 	})
 }
 
@@ -70,8 +69,8 @@ func (bd *boltDevice) UnmarshalJSON(data []byte) error {
 		LastReported           int64                 `json:"lastReported"`   // Time (milliseconds) that the device reported data to the core microservice
 		Labels                 []string              `json:"labels"`         // Other labels applied to the device to help with searching
 		Location               interface{}           `json:"location"`       // Device service specific location (interface{} is an empty interface so it can be anything)
-		Service                bson.ObjectId         `json:"serviceId"`      // Associated Device Service - One per device
-		Profile                bson.ObjectId         `json:"profileId"`
+		ServiceID              string                `json:"serviceId"`      // Associated Device Service - One per device
+		ProfileID              string                `json:"profileId"`
 	})
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
 	if err := json.Unmarshal(data, &decoded); err != nil {
@@ -93,27 +92,28 @@ func (bd *boltDevice) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return err
 	}
-	var a models.Addressable
-	var bdp boltDeviceProfile
-	var bds boltDeviceService
 
+	var a models.Addressable
 	err = m.GetAddressableById(&a, decoded.Addressable.Hex())
 	if err != nil {
 		return err
 	}
-	err = m.getById(&bds, db.DeviceService, decoded.Service.Hex())
+
+	var ds models.DeviceService
+	err = m.GetDeviceServiceById(&ds, decoded.ServiceID)
 	if err != nil {
 		return err
 	}
 
-	err = m.getById(&bdp, db.DeviceProfile, decoded.Profile.Hex())
+	var dp models.DeviceProfile
+	err = m.GetDeviceProfileById(&dp, decoded.ProfileID)
 	if err != nil {
 		return err
 	}
 
 	bd.Addressable = a
-	bd.Profile = bdp.DeviceProfile
-	bd.Service = bds.DeviceService
+	bd.Profile = dp
+	bd.Service = ds
 
 	return nil
 }

@@ -93,8 +93,9 @@ func (bdp *boltDeviceProfile) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return err
 	}
-	var commands []models.Command
+
 	// Get all of the commands from the references
+	var commands []models.Command
 	for _, cRef := range decoded.Commands {
 		var c models.Command
 		err := m.GetCommandById(&c, cRef)
