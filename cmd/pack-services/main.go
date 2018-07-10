@@ -289,7 +289,7 @@ func main() {
 	fmt.Println("Pack Services started in: " + time.Since(start2).String())
 
 	// There can be another receivers that can be initialiced here
-	distro.ZeroMQReceiver(eventCh)
+	distro.MangosReceiver(eventCh)
 	distro.Loop(errs, eventCh)
 
 	metadata.Destruct()

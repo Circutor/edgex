@@ -125,10 +125,9 @@ func Init(conf ConfigurationStruct, l logger.LoggingClient, useConsul bool) erro
 	msc = metadata.NewDeviceServiceClient(params, types.Endpoint{})
 
 	// Create the event publisher
-	ep = messaging.NewZeroMQPublisher(messaging.ZeroMQConfiguration{
+	ep = messaging.NewMangosPublisher(messaging.MangosConfiguration{
 		AddressPort: conf.ZeroMQAddressPort,
 	})
-
 	return nil
 }
 

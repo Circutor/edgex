@@ -79,7 +79,7 @@ func main() {
 	}()
 
 	// There can be another receivers that can be initialiced here
-	distro.ZeroMQReceiver(eventCh)
+	distro.MangosReceiver(eventCh)
 
 	distro.Loop(errs, eventCh)
 
