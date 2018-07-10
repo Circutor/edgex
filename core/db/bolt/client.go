@@ -35,7 +35,7 @@ var ErrObjFound error = errors.New("Object name found")
 // Return a pointer to the BoltClient
 func NewClient(config db.Configuration) (*BoltClient, error) {
 
-	bdb, err := bolt.Open("./database.db", 0600, nil)
+	bdb, err := bolt.Open("./"+config.DatabaseName+".db", 0600, nil)
 	if err != nil {
 		return nil, err
 	}
