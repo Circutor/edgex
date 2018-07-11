@@ -1,3 +1,4 @@
+DBType = 'boltdb'
 ConsulProfilesActive = 'go'
 ReadMaxLimit = 100
 MetaDataCheck = false
@@ -14,7 +15,7 @@ DeviceUpdateLastConnected = false
 ServiceUpdateLastConnected = false
 MongoDBUserName = 'core'
 MongoDBPassword = 'password'
-MongoDatabaseName = 'coredata'
+MongoDatabaseName = 'coredata.db'
 MongoDBHost = 'localhost'
 MongoDBPort = 27017
 MongoDBConnectTimeout = 60000

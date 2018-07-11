@@ -40,7 +40,7 @@ type BoltClient struct {
 // Return a pointer to the BoltClient
 func newBoltClient(config DBConfiguration) (*BoltClient, error) {
 
-	db, err := bolt.Open("./export-client.db", 0600, nil)
+	db, err := bolt.Open(config.DatabaseName, 0600, nil)
 	if err != nil {
 		return nil, err
 	}

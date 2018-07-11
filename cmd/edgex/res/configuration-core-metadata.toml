@@ -1,5 +1,5 @@
 DBType = 'boltdb'
-MongoDatabaseName = 'metadata'
+MongoDatabaseName = 'metadata.db'
 MongoDBUserName = ''
 MongoDBPassword = ''
 MongoDBHost = 'localhost'
