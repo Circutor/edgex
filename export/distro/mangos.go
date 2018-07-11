@@ -7,6 +7,7 @@
 package distro
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
@@ -64,4 +65,14 @@ func initMangos(eventCh chan *models.Event) {
 		}
 	}
 
+}
+
+func parseEvent(str string) *models.Event {
+	event := models.Event{}
+
+	if err := json.Unmarshal([]byte(str), &event); err != nil {
+		logger.Error("Failed to parse event", zap.Error(err))
+		return nil
+	}
+	return &event
 }

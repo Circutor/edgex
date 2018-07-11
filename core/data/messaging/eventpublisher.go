@@ -10,10 +10,6 @@
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
- *
- * @microservice: core-data-go library
- * @author: Ryan Comer, Dell
- * @version: 0.5.0
  *******************************************************************************/
 package messaging
 
@@ -24,20 +20,14 @@ import (
 
 // Types of messaging protocols
 const (
-	ZEROMQ int = iota
-	MQTT
+	MQTT int = iota
 	MANGOS
 )
 
 // Publisher to send events to northbound services
 type EventPublisher struct {
 	protocol int
-	zmq      zeroMQEventPublisher
-	mangos   mangosEventPublisher
-}
-
-func NewZeroMQPublisher(configuration ZeroMQConfiguration) *EventPublisher {
-	return &EventPublisher{protocol: ZEROMQ, zmq: newZeroMQEventPublisher(configuration)}
+	mangos mangosEventPublisher
 }
 
 func NewMangosPublisher(configuration MangosConfiguration) *EventPublisher {
@@ -48,8 +38,6 @@ func NewMangosPublisher(configuration MangosConfiguration) *EventPublisher {
 func (ep *EventPublisher) SendEventMessage(e models.Event) error {
 	// Switch based on the protocol you're using
 	switch ep.protocol {
-	case ZEROMQ:
-		return ep.zmq.SendEventMessage(e)
 	case MANGOS:
 		return ep.mangos.SendEventMessage(e)
 	default:

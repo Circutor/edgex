@@ -30,7 +30,7 @@ cmd/core-metadata/core-metadata:
 	$(GO) build $(GOFLAGS) -o $@ ./cmd/core-metadata
 
 cmd/core-data/core-data:
-	$(GOCGO) build $(GOFLAGS) -o $@ ./cmd/core-data
+	$(GO) build $(GOFLAGS) -o $@ ./cmd/core-data
 
 cmd/core-command/core-command:
 	$(GO) build $(GOFLAGS) -o $@ ./cmd/core-command
@@ -39,7 +39,7 @@ cmd/export-client/export-client:
 	$(GO) build $(GOFLAGS) -o $@ ./cmd/export-client
 
 cmd/export-distro/export-distro:
-	$(GOCGO) build $(GOFLAGS) -o $@ ./cmd/export-distro
+	$(GO) build $(GOFLAGS) -o $@ ./cmd/export-distro
 
 cmd/support-logging/support-logging:
 	$(GO) build $(GOFLAGS) -o $@ ./cmd/support-logging
