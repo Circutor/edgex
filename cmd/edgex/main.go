@@ -40,11 +40,53 @@ import (
 func main() {
 	start := time.Now()
 	start2 := start
+
 	var useProfile string
+	//-----------------------------------------
+	//Data //First init Data than Metadata (problem with dbClient  getCurrentBoltClient )
+	//-----------------------------------------
+	flag.StringVar(&useProfile, "profile-core-data", "core-data", "Specify a profile other than default.")
+	flag.StringVar(&useProfile, "pcd", "core-data", "Specify a profile other than default.")
+	flag.Usage = usage.HelpCallback
+	flag.Parse()
+
+	var loggingClient_core_data logger.LoggingClient
+	//Read Configuration
+	configuration_cd := &data.ConfigurationStruct{}
+	err := config.LoadFromFile(useProfile, configuration_cd)
+	if err != nil {
+		loggingClient_core_data = logger.NewClient(internal.CoreDataServiceKey, false, "")
+		loggingClient_core_data.Error(err.Error())
+		return
+	}
+
+	// Setup Logging
+	logTarget := configuration_cd.LoggingRemoteURL
+	if !configuration_cd.EnableRemoteLogging {
+		logTarget = configuration_cd.LoggingFile
+	}
+
+	loggingClient_core_data = logger.NewClient(internal.CoreDataServiceKey, configuration_cd.EnableRemoteLogging, logTarget)
+	loggingClient_core_data.Info(fmt.Sprintf("Starting %s %s ", internal.CoreDataServiceKey, edgex.Version))
+
+	err = data.Init(*configuration_cd, loggingClient_core_data, false)
+	if err != nil {
+		loggingClient_core_data.Error(fmt.Sprintf("call to init() failed: %v", err.Error()))
+		return
+	}
+
+	http.TimeoutHandler(nil, time.Millisecond*time.Duration(configuration_cd.ServiceTimeout), "Request timed out")
+	loggingClient_core_data.Info(configuration_cd.AppOpenMsg, "")
+
+	// Time it took to start service
+	loggingClient_core_data.Info("Service started in: "+time.Since(start).String(), "")
+	loggingClient_core_data.Info("Listening on port: " + strconv.Itoa(configuration_cd.ServicePort))
 
 	//-----------------------------------------
-	//Metadata
+	//Metadata //First init Data than Metadata (problem with dbClient  getCurrentBoltClient )
 	//-----------------------------------------
+	start = time.Now()
+
 	flag.StringVar(&useProfile, "profile-core-metadata", "core-metadata", "Specify a profile other than default.")
 	flag.StringVar(&useProfile, "pcm", "core-metadata", "Specify a profile other than default.")
 	flag.Usage = usage.HelpCallback
@@ -53,7 +95,7 @@ func main() {
 	var loggingClient_core_metadata logger.LoggingClient
 	//Read Configuration
 	configuration_cm := &metadata.ConfigurationStruct{}
-	err := config.LoadFromFile(useProfile, configuration_cm)
+	err = config.LoadFromFile(useProfile, configuration_cm)
 	if err != nil {
 		loggingClient_core_metadata = logger.NewClient(internal.CoreMetaDataServiceKey, false, "")
 		loggingClient_core_metadata.Error(err.Error())
@@ -61,7 +103,7 @@ func main() {
 	}
 
 	// Setup Logging
-	logTarget := configuration_cm.LoggingRemoteURL
+	logTarget = configuration_cm.LoggingRemoteURL
 	if !configuration_cm.EnableRemoteLogging {
 		logTarget = configuration_cm.LoggingFile
 	}
@@ -81,48 +123,6 @@ func main() {
 	// Time it took to start service
 	loggingClient_core_metadata.Info("Service started in: "+time.Since(start).String(), "")
 	loggingClient_core_metadata.Info("Listening on port: " + strconv.Itoa(configuration_cm.ServicePort))
-
-	//-----------------------------------------
-	//Data
-	//-----------------------------------------
-	start = time.Now()
-
-	flag.StringVar(&useProfile, "profile-core-data", "core-data", "Specify a profile other than default.")
-	flag.StringVar(&useProfile, "pcd", "core-data", "Specify a profile other than default.")
-	flag.Usage = usage.HelpCallback
-	flag.Parse()
-
-	var loggingClient_core_data logger.LoggingClient
-	//Read Configuration
-	configuration_cd := &data.ConfigurationStruct{}
-	err = config.LoadFromFile(useProfile, configuration_cd)
-	if err != nil {
-		loggingClient_core_data = logger.NewClient(internal.CoreDataServiceKey, false, "")
-		loggingClient_core_data.Error(err.Error())
-		return
-	}
-
-	// Setup Logging
-	logTarget = configuration_cd.LoggingRemoteURL
-	if !configuration_cm.EnableRemoteLogging {
-		logTarget = configuration_cd.LoggingFile
-	}
-
-	loggingClient_core_data = logger.NewClient(internal.CoreDataServiceKey, configuration_cd.EnableRemoteLogging, logTarget)
-	loggingClient_core_data.Info(fmt.Sprintf("Starting %s %s ", internal.CoreDataServiceKey, edgex.Version))
-
-	err = data.Init(*configuration_cd, loggingClient_core_data, false)
-	if err != nil {
-		loggingClient_core_data.Error(fmt.Sprintf("call to init() failed: %v", err.Error()))
-		return
-	}
-
-	http.TimeoutHandler(nil, time.Millisecond*time.Duration(configuration_cd.ServiceTimeout), "Request timed out")
-	loggingClient_core_data.Info(configuration_cd.AppOpenMsg, "")
-
-	// Time it took to start service
-	loggingClient_core_data.Info("Service started in: "+time.Since(start).String(), "")
-	loggingClient_core_data.Info("Listening on port: " + strconv.Itoa(configuration_cd.ServicePort))
 
 	//-----------------------------------------
 	//Command
@@ -229,13 +229,13 @@ func main() {
 	}()
 
 	go func() {
-		rm := metadata.LoadRestRoutes()
-		errs <- http.ListenAndServe(":"+strconv.Itoa(configuration_cm.ServicePort), rm)
+		rd := data.LoadRestRoutes()
+		errs <- http.ListenAndServe(":"+strconv.Itoa(configuration_cd.ServicePort), rd)
 	}()
 
 	go func() {
-		rd := data.LoadRestRoutes()
-		errs <- http.ListenAndServe(":"+strconv.Itoa(configuration_cd.ServicePort), rd)
+		rm := metadata.LoadRestRoutes()
+		errs <- http.ListenAndServe(":"+strconv.Itoa(configuration_cm.ServicePort), rm)
 	}()
 
 	go func() {
@@ -255,5 +255,6 @@ func main() {
 	data.Destruct()
 	client.Destroy()
 
+	//loggingClient_core_metadata.Warn(fmt.Sprintf("terminating: %v", c))
 	logger_export_distro.Warn(fmt.Sprintf("terminating: %v", errs))
 }
