@@ -20,12 +20,12 @@ func TestMetadataDB(t *testing.T, db interfaces.DBClient) {
 	testDBAddressables(t, db)
 	testDBCommand(t, db)
 	testDBDeviceService(t, db)
-	//testDBSchedule(t, db)
-	//testDBDeviceReport(t, db)
-	//testDBScheduleEvent(t, db)
+	testDBSchedule(t, db)
+	testDBDeviceReport(t, db)
+	testDBScheduleEvent(t, db)
 	testDBDeviceProfile(t, db)
 	testDBDevice(t, db)
-	//testDBProvisionWatcher(t, db)
+	testDBProvisionWatcher(t, db)
 
 	db.CloseSession()
 	// Calling CloseSession twice to test that there is no panic when closing an
@@ -922,6 +922,7 @@ func testDBScheduleEvent(t *testing.T, db interfaces.DBClient) {
 
 	clearScheduleEvents(t, db)
 	clearAddressables(t, db)
+
 	id, err := populateScheduleEvent(db, 100)
 	if err != nil {
 		t.Fatalf("Error populating db: %v\n", err)
@@ -1427,7 +1428,6 @@ func testDBProvisionWatcher(t *testing.T, db interfaces.DBClient) {
 	if len(provisionWatchers) != 0 {
 		t.Fatalf("There should be 0 provisionWatchers instead of %d", len(provisionWatchers))
 	}
-
 	err = db.GetProvisionWatchersByIdentifier(&provisionWatchers, "name", "name1")
 	if err != nil {
 		t.Fatalf("Error getting provisionWatchers %v", err)
@@ -1435,7 +1435,6 @@ func testDBProvisionWatcher(t *testing.T, db interfaces.DBClient) {
 	if len(provisionWatchers) != 1 {
 		t.Fatalf("There should be 1 provisionWatchers instead of %d", len(provisionWatchers))
 	}
-
 	err = db.GetProvisionWatchersByIdentifier(&provisionWatchers, "name", "invalid")
 	if err != nil {
 		t.Fatalf("Error getting provisionWatchers %v", err)
@@ -1443,7 +1442,6 @@ func testDBProvisionWatcher(t *testing.T, db interfaces.DBClient) {
 	if len(provisionWatchers) != 0 {
 		t.Fatalf("There should be 0 provisionWatchers instead of %d", len(provisionWatchers))
 	}
-
 	pw.Name = "name"
 	err = db.UpdateProvisionWatcher(pw)
 	if err != nil {

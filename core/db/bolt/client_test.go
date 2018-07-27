@@ -60,20 +60,19 @@ func TestBoltDB(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error removing previous data: %v", err)
 	}
-	/*
-		err = bolt.scrubAll(db.DeviceReport)
-		if err != nil {
-			t.Fatalf("Error removing previous data: %v", err)
-		}
-		err = bolt.scrubAll(db.ScheduleEvent)
-		if err != nil {
-			t.Fatalf("Error removing previous data: %v", err)
-		}
-		err = bolt.scrubAll(db.ProvisionWatcher)
-		if err != nil {
-			t.Fatalf("Error removing previous data: %v", err)
-		}
-	*/
+	err = bolt.scrubAll(db.DeviceReport)
+	if err != nil {
+		t.Fatalf("Error removing previous data: %v", err)
+	}
+	err = bolt.scrubAll(db.ScheduleEvent)
+	if err != nil {
+		t.Fatalf("Error removing previous data: %v", err)
+	}
+	err = bolt.scrubAll(db.ProvisionWatcher)
+	if err != nil {
+		t.Fatalf("Error removing previous data: %v", err)
+	}
+
 	test.TestMetadataDB(t, bolt)
 
 }

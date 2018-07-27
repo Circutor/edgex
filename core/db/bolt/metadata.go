@@ -14,6 +14,8 @@
 package bolt
 
 import (
+	"bytes"
+
 	"github.com/coreos/bbolt"
 	"github.com/edgexfoundry/edgex-go/core/db"
 	"github.com/edgexfoundry/edgex-go/core/domain/models"
@@ -23,137 +25,275 @@ import (
 
 /* -----------------------Schedule Event ------------------------*/
 func (bc *BoltClient) UpdateScheduleEvent(se models.ScheduleEvent) error {
-	return nil
+	se.Modified = db.MakeTimestamp()
+	bse := boltScheduleEvent{ScheduleEvent: se}
+	return bc.update(db.ScheduleEvent, bse, bse.Id)
 }
 
 func (bc *BoltClient) AddScheduleEvent(se *models.ScheduleEvent) error {
-	return nil
+
+	// Check if the name exist
+	var dummy models.ScheduleEvent
+	err := bc.GetScheduleEventByName(&dummy, se.Name)
+	if err == nil {
+		return db.ErrNotUnique
+	}
+	// Check if the name exist
+	var a models.Addressable
+	err = bc.GetAddressableByName(&a, se.Addressable.Name)
+	if err != nil {
+		return db.ErrNotFound
+	}
+
+	ts := db.MakeTimestamp()
+	se.Created = ts
+	se.Modified = ts
+	se.Id = bson.NewObjectId()
+
+	bse := boltScheduleEvent{ScheduleEvent: *se}
+	return bc.add(db.ScheduleEvent, bse, bse.Id)
 }
 
 func (bc *BoltClient) GetAllScheduleEvents(se *[]models.ScheduleEvent) error {
-	return nil
+	return bc.getScheduleEventsBy(se, func(encoded []byte) bool {
+		return true
+	})
 }
 
 func (bc *BoltClient) GetScheduleEventByName(se *models.ScheduleEvent, n string) error {
-	return nil
+	bse := boltScheduleEvent{ScheduleEvent: *se}
+	err := bc.getByName(&bse, db.ScheduleEvent, n)
+	*se = bse.ScheduleEvent
+	return err
 }
 
 func (bc *BoltClient) GetScheduleEventById(se *models.ScheduleEvent, id string) error {
 	if bson.IsObjectIdHex(id) {
-		return nil
+		bse := boltScheduleEvent{ScheduleEvent: *se}
+		err := bc.getById(&bse, db.ScheduleEvent, id)
+		*se = bse.ScheduleEvent
+		return err
 	} else {
 		return db.ErrInvalidObjectId
 	}
 }
 
+func (bc *BoltClient) getScheduleEventsBy(ses *[]models.ScheduleEvent, fn func(encoded []byte) bool) error {
+	bse := boltScheduleEvent{}
+	*ses = []models.ScheduleEvent{}
+	json := jsoniter.ConfigCompatibleWithStandardLibrary
+
+	err := bc.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(db.ScheduleEvent))
+		if b == nil {
+			return nil
+		}
+		err := b.ForEach(func(id, encoded []byte) error {
+			if fn(encoded) == true {
+				err := json.Unmarshal(encoded, &bse)
+				if err != nil {
+					return err
+				}
+				*ses = append(*ses, bse.ScheduleEvent)
+			}
+			return nil
+		})
+		return err
+	})
+	return err
+}
+
 func (bc *BoltClient) GetScheduleEventsByScheduleName(se *[]models.ScheduleEvent, n string) error {
-	return nil
+	return bc.getScheduleEventsBy(se, func(encoded []byte) bool {
+		value := jsoniter.Get(encoded, "schedule").ToString()
+		if value == n {
+			return true
+		}
+		return false
+	})
 }
 
 func (bc *BoltClient) GetScheduleEventsByAddressableId(se *[]models.ScheduleEvent, id string) error {
 	if bson.IsObjectIdHex(id) {
-		return nil
+		return bc.getScheduleEventsBy(se, func(encoded []byte) bool {
+			value := jsoniter.Get(encoded, "addressableId").ToString()
+			if value == id {
+				return true
+			}
+			return false
+		})
 	} else {
 		return db.ErrInvalidObjectId
 	}
 }
 
 func (bc *BoltClient) GetScheduleEventsByServiceName(se *[]models.ScheduleEvent, n string) error {
-	return nil
-}
-
-func (bc *BoltClient) GetScheduleEvent(se *models.ScheduleEvent, q bson.M) error {
-	return nil
-}
-
-func (bc *BoltClient) GetScheduleEvents(se *[]models.ScheduleEvent, q bson.M) error {
-	return nil
+	return bc.getScheduleEventsBy(se, func(encoded []byte) bool {
+		value := jsoniter.Get(encoded, "service").ToString()
+		if value == n {
+			return true
+		}
+		return false
+	})
 }
 
 func (bc *BoltClient) DeleteScheduleEventById(id string) error {
-	return nil
+	return bc.deleteById(id, db.ScheduleEvent)
 }
 
 //  --------------------------Schedule ---------------------------*/
-func (bc *BoltClient) GetAllSchedules(s *[]models.Schedule) error {
-	return nil
+func (bc *BoltClient) GetAllSchedules(sch *[]models.Schedule) error {
+	return bc.getSchedules(sch, func(encoded []byte) bool {
+		return true
+	})
 }
 
-func (bc *BoltClient) GetScheduleByName(s *models.Schedule, n string) error {
-	return nil
+func (bc *BoltClient) GetScheduleByName(sch *models.Schedule, n string) error {
+	return bc.getByName(sch, db.Schedule, n)
 }
 
-func (bc *BoltClient) GetScheduleById(s *models.Schedule, id string) error {
+func (bc *BoltClient) GetScheduleById(sch *models.Schedule, id string) error {
 	if bson.IsObjectIdHex(id) {
-		return nil
+		return bc.getById(sch, db.Schedule, id)
 	} else {
 		return db.ErrInvalidObjectId
 	}
 }
 
 func (bc *BoltClient) AddSchedule(sch *models.Schedule) error {
-	return nil
+	// Check if the name exist
+	var dummy models.Schedule
+	err := bc.GetScheduleByName(&dummy, sch.Name)
+	if err == nil {
+		return db.ErrNotUnique
+	}
+
+	sch.Created = db.MakeTimestamp()
+	sch.Id = bson.NewObjectId()
+
+	return bc.add(db.Schedule, sch, sch.Id)
 }
 
 func (bc *BoltClient) UpdateSchedule(sch models.Schedule) error {
-	return nil
+
+	sch.Modified = db.MakeTimestamp()
+	return bc.update(db.Schedule, sch, sch.Id)
 }
 
 func (bc *BoltClient) DeleteScheduleById(id string) error {
-	return nil
+	return bc.deleteById(id, db.Schedule)
 }
 
-func (bc *BoltClient) GetSchedule(sch *models.Schedule, q bson.M) error {
-	return nil
-}
+func (bc *BoltClient) getSchedules(schs *[]models.Schedule, fn func(encoded []byte) bool) error {
+	sch := models.Schedule{}
+	*schs = []models.Schedule{}
+	json := jsoniter.ConfigCompatibleWithStandardLibrary
 
-func (bc *BoltClient) GetSchedules(sch *[]models.Schedule, q bson.M) error {
-	return nil
+	err := bc.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(db.Schedule))
+		if b == nil {
+			return nil
+		}
+		err := b.ForEach(func(id, encoded []byte) error {
+			if fn(encoded) == true {
+				err := json.Unmarshal(encoded, &sch)
+				if err != nil {
+					return err
+				}
+				*schs = append(*schs, sch)
+			}
+			return nil
+		})
+		return err
+	})
+	return err
 }
 
 /* ----------------------Device Report --------------------------*/
-func (bc *BoltClient) GetAllDeviceReports(d *[]models.DeviceReport) error {
-	return nil
+func (bc *BoltClient) GetAllDeviceReports(dr *[]models.DeviceReport) error {
+	return bc.getDeviceReportsBy(dr, func(encoded []byte) bool {
+		return true
+	})
 }
 
-func (bc *BoltClient) GetDeviceReportByName(d *models.DeviceReport, n string) error {
-	return nil
+func (bc *BoltClient) GetDeviceReportByName(dr *models.DeviceReport, n string) error {
+	return bc.getByName(dr, db.DeviceReport, n)
 }
 
-func (bc *BoltClient) GetDeviceReportByDeviceName(d *[]models.DeviceReport, n string) error {
-	return nil
+func (bc *BoltClient) GetDeviceReportByDeviceName(dr *[]models.DeviceReport, n string) error {
+	return bc.getDeviceReportsBy(dr, func(encoded []byte) bool {
+		value := jsoniter.Get(encoded, "device").ToString()
+		if value == n {
+			return true
+		}
+		return false
+	})
 }
 
-func (bc *BoltClient) GetDeviceReportById(d *models.DeviceReport, id string) error {
+func (bc *BoltClient) GetDeviceReportById(dr *models.DeviceReport, id string) error {
 	if bson.IsObjectIdHex(id) {
-		return nil
+		return bc.getById(dr, db.DeviceReport, id)
 	} else {
 		return db.ErrInvalidObjectId
 	}
 }
 
-func (bc *BoltClient) GetDeviceReportsByScheduleEventName(d *[]models.DeviceReport, n string) error {
-	return nil
+func (bc *BoltClient) GetDeviceReportsByScheduleEventName(dr *[]models.DeviceReport, n string) error {
+	return bc.getDeviceReportsBy(dr, func(encoded []byte) bool {
+		value := jsoniter.Get(encoded, "event").ToString()
+		if value == n {
+			return true
+		}
+		return false
+	})
 }
 
-func (bc *BoltClient) GetDeviceReports(d *[]models.DeviceReport, q bson.M) error {
-	return nil
+func (bc *BoltClient) getDeviceReportsBy(drs *[]models.DeviceReport, fn func(encoded []byte) bool) error {
+	dr := models.DeviceReport{}
+	*drs = []models.DeviceReport{}
+	json := jsoniter.ConfigCompatibleWithStandardLibrary
+
+	err := bc.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(db.DeviceReport))
+		if b == nil {
+			return nil
+		}
+		err := b.ForEach(func(id, encoded []byte) error {
+			if fn(encoded) == true {
+				err := json.Unmarshal(encoded, &dr)
+				if err != nil {
+					return err
+				}
+				*drs = append(*drs, dr)
+			}
+			return nil
+		})
+		return err
+	})
+	return err
 }
 
-func (bc *BoltClient) GetDeviceReport(d *models.DeviceReport, q bson.M) error {
-	return nil
-}
+func (bc *BoltClient) AddDeviceReport(dr *models.DeviceReport) error {
+	// Check if the name exist
+	var dummy models.DeviceReport
+	err := bc.GetDeviceReportByName(&dummy, dr.Name)
+	if err == nil {
+		return db.ErrNotUnique
+	}
 
-func (bc *BoltClient) AddDeviceReport(d *models.DeviceReport) error {
-	return nil
+	dr.Created = db.MakeTimestamp()
+	dr.Id = bson.NewObjectId()
+
+	return bc.add(db.DeviceReport, dr, dr.Id)
 }
 
 func (bc *BoltClient) UpdateDeviceReport(dr *models.DeviceReport) error {
-	return nil
+	dr.Modified = db.MakeTimestamp()
+	return bc.update(db.DeviceReport, dr, dr.Id)
 }
 
 func (bc *BoltClient) DeleteDeviceReportById(id string) error {
-	return nil
+	return bc.deleteById(id, db.DeviceReport)
 }
 
 /* ----------------------------- Device ---------------------------------- */
@@ -256,9 +396,9 @@ func (bc *BoltClient) GetDevicesWithLabel(d *[]models.Device, label string) erro
 	})
 }
 
-func (bc *BoltClient) getDevicesBy(d *[]models.Device, fn func(encoded []byte) bool) error {
+func (bc *BoltClient) getDevicesBy(ds *[]models.Device, fn func(encoded []byte) bool) error {
 	bd := boltDevice{}
-	*d = []models.Device{}
+	*ds = []models.Device{}
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
 
 	err := bc.db.View(func(tx *bolt.Tx) error {
@@ -272,7 +412,7 @@ func (bc *BoltClient) getDevicesBy(d *[]models.Device, fn func(encoded []byte) b
 				if err != nil {
 					return err
 				}
-				*d = append(*d, bd.Device)
+				*ds = append(*ds, bd.Device)
 			}
 			return nil
 		})
@@ -338,9 +478,9 @@ func (bc *BoltClient) GetDeviceProfilesByManufacturer(dp *[]models.DeviceProfile
 	})
 }
 
-func (bc *BoltClient) getDeviceProfilesBy(dp *[]models.DeviceProfile, fn func(encoded []byte) bool) error {
+func (bc *BoltClient) getDeviceProfilesBy(dps *[]models.DeviceProfile, fn func(encoded []byte) bool) error {
 	bdp := boltDeviceProfile{}
-	*dp = []models.DeviceProfile{}
+	*dps = []models.DeviceProfile{}
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
 
 	err := bc.db.View(func(tx *bolt.Tx) error {
@@ -354,7 +494,7 @@ func (bc *BoltClient) getDeviceProfilesBy(dp *[]models.DeviceProfile, fn func(en
 				if err != nil {
 					return err
 				}
-				*dp = append(*dp, bdp.DeviceProfile)
+				*dps = append(*dps, bdp.DeviceProfile)
 			}
 			return nil
 		})
@@ -594,9 +734,9 @@ func (bc *BoltClient) GetDeviceServicesWithLabel(ds *[]models.DeviceService, lab
 	})
 }
 
-func (bc *BoltClient) getDeviceServicesBy(ds *[]models.DeviceService, fn func(encoded []byte) bool) error {
+func (bc *BoltClient) getDeviceServicesBy(dss *[]models.DeviceService, fn func(encoded []byte) bool) error {
 	bds := boltDeviceService{}
-	*ds = []models.DeviceService{}
+	*dss = []models.DeviceService{}
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
 
 	err := bc.db.View(func(tx *bolt.Tx) error {
@@ -610,7 +750,7 @@ func (bc *BoltClient) getDeviceServicesBy(ds *[]models.DeviceService, fn func(en
 				if err != nil {
 					return err
 				}
-				*ds = append(*ds, bds.DeviceService)
+				*dss = append(*dss, bds.DeviceService)
 			}
 			return nil
 		})
@@ -646,20 +786,38 @@ func (bc *BoltClient) DeleteDeviceServiceById(id string) error {
 
 //  ----------------------Provision Watcher -----------------------------*/
 func (bc *BoltClient) GetAllProvisionWatchers(pw *[]models.ProvisionWatcher) error {
-	return nil
+	return bc.getProvisionWatchersBy(pw, func(encoded []byte) bool {
+		return true
+	})
 }
 
 func (bc *BoltClient) GetProvisionWatcherByName(pw *models.ProvisionWatcher, n string) error {
-	return nil
+	bpw := boltProvisionWatcher{ProvisionWatcher: *pw}
+	err := bc.getByName(&bpw, db.ProvisionWatcher, n)
+	*pw = bpw.ProvisionWatcher
+	return err
 }
 
 func (bc *BoltClient) GetProvisionWatchersByIdentifier(pw *[]models.ProvisionWatcher, k string, v string) error {
-	return nil
+	return bc.getProvisionWatchersBy(pw, func(encoded []byte) bool {
+		identifier := jsoniter.Get(encoded, "identifiers").ToString()
+		keyvalue := "\"" + k + "\"" + ":" + "\"" + v + "\""
+		if bytes.Contains([]byte(identifier), []byte(keyvalue)) {
+			return true
+		}
+		return false
+	})
 }
 
 func (bc *BoltClient) GetProvisionWatchersByServiceId(pw *[]models.ProvisionWatcher, id string) error {
 	if bson.IsObjectIdHex(id) {
-		return nil
+		return bc.getProvisionWatchersBy(pw, func(encoded []byte) bool {
+			value := jsoniter.Get(encoded, "serviceId").ToString()
+			if value == id {
+				return true
+			}
+			return false
+		})
 	} else {
 		return db.ErrInvalidObjectId
 	}
@@ -667,7 +825,13 @@ func (bc *BoltClient) GetProvisionWatchersByServiceId(pw *[]models.ProvisionWatc
 
 func (bc *BoltClient) GetProvisionWatchersByProfileId(pw *[]models.ProvisionWatcher, id string) error {
 	if bson.IsObjectIdHex(id) {
-		return nil
+		return bc.getProvisionWatchersBy(pw, func(encoded []byte) bool {
+			value := jsoniter.Get(encoded, "profileId").ToString()
+			if value == id {
+				return true
+			}
+			return false
+		})
 	} else {
 		return db.ErrInvalidObjectId
 	}
@@ -675,30 +839,63 @@ func (bc *BoltClient) GetProvisionWatchersByProfileId(pw *[]models.ProvisionWatc
 
 func (bc *BoltClient) GetProvisionWatcherById(pw *models.ProvisionWatcher, id string) error {
 	if bson.IsObjectIdHex(id) {
-		return nil
+		bpw := boltProvisionWatcher{ProvisionWatcher: *pw}
+		err := bc.getById(&bpw, db.ProvisionWatcher, id)
+		*pw = bpw.ProvisionWatcher
+		return err
 	} else {
 		return db.ErrInvalidObjectId
 	}
 }
 
-func (bc *BoltClient) GetProvisionWatcher(pw *models.ProvisionWatcher, q bson.M) error {
-	return nil
-}
+func (bc *BoltClient) getProvisionWatchersBy(pws *[]models.ProvisionWatcher, fn func(encoded []byte) bool) error {
+	bpw := boltProvisionWatcher{}
+	*pws = []models.ProvisionWatcher{}
+	json := jsoniter.ConfigCompatibleWithStandardLibrary
 
-func (bc *BoltClient) GetProvisionWatchers(pw *[]models.ProvisionWatcher, q bson.M) error {
-	return nil
+	err := bc.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(db.ProvisionWatcher))
+		if b == nil {
+			return nil
+		}
+		err := b.ForEach(func(id, encoded []byte) error {
+			if fn(encoded) == true {
+				err := json.Unmarshal(encoded, &bpw)
+				if err != nil {
+					return err
+				}
+				*pws = append(*pws, bpw.ProvisionWatcher)
+			}
+			return nil
+		})
+		return err
+	})
+	return err
 }
 
 func (bc *BoltClient) AddProvisionWatcher(pw *models.ProvisionWatcher) error {
-	return nil
+	// Check if the name exist
+	var dummy models.ProvisionWatcher
+	err := bc.GetProvisionWatcherByName(&dummy, pw.Name)
+	if err == nil {
+		return db.ErrNotUnique
+	}
+
+	pw.Created = db.MakeTimestamp()
+	pw.Id = bson.NewObjectId()
+
+	bpw := boltProvisionWatcher{ProvisionWatcher: *pw}
+	return bc.add(db.ProvisionWatcher, bpw, pw.Id)
 }
 
 func (bc *BoltClient) UpdateProvisionWatcher(pw models.ProvisionWatcher) error {
-	return nil
+	pw.Modified = db.MakeTimestamp()
+	bpw := boltProvisionWatcher{ProvisionWatcher: pw}
+	return bc.update(db.ProvisionWatcher, bpw, pw.Id)
 }
 
 func (bc *BoltClient) DeleteProvisionWatcherById(id string) error {
-	return nil
+	return bc.deleteById(id, db.ProvisionWatcher)
 }
 
 //  ------------------------Command -------------------------------------*/
@@ -708,9 +905,9 @@ func (bc *BoltClient) GetAllCommands(c *[]models.Command) error {
 	})
 }
 
-func (bc *BoltClient) getCommandsBy(c *[]models.Command, fn func(encoded []byte) bool) error {
-	a := models.Command{}
-	*c = []models.Command{}
+func (bc *BoltClient) getCommandsBy(cs *[]models.Command, fn func(encoded []byte) bool) error {
+	c := models.Command{}
+	*cs = []models.Command{}
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
 
 	err := bc.db.View(func(tx *bolt.Tx) error {
@@ -720,11 +917,11 @@ func (bc *BoltClient) getCommandsBy(c *[]models.Command, fn func(encoded []byte)
 		}
 		err := b.ForEach(func(id, encoded []byte) error {
 			if fn(encoded) == true {
-				err := json.Unmarshal(encoded, &a)
+				err := json.Unmarshal(encoded, &c)
 				if err != nil {
 					return err
 				}
-				*c = append(*c, a)
+				*cs = append(*cs, c)
 			}
 			return nil
 		})
