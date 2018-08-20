@@ -30,7 +30,7 @@ func (bd boltDevice) MarshalJSON() ([]byte, error) {
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
 	return json.Marshal(&struct {
 		models.DescribedObject `json:",inline"`
-		Id                     bson.ObjectId         `json:"_id,omitempty"`
+		Id                     bson.ObjectId         `json:"id,omitempty"`
 		Name                   string                `json:"name"`           // Unique name for identifying a device
 		AdminState             models.AdminState     `json:"adminState"`     // Admin state (locked/unlocked)
 		OperatingState         models.OperatingState `json:"operatingState"` // Operating state (enabled/disabled)
@@ -60,7 +60,7 @@ func (bd boltDevice) MarshalJSON() ([]byte, error) {
 func (bd *boltDevice) UnmarshalJSON(data []byte) error {
 	decoded := new(struct {
 		models.DescribedObject `json:",inline"`
-		Id                     bson.ObjectId         `json:"_id,omitempty"`
+		Id                     bson.ObjectId         `json:"id,omitempty"`
 		Name                   string                `json:"name"`           // Unique name for identifying a device
 		AdminState             models.AdminState     `json:"adminState"`     // Admin state (locked/unlocked)
 		OperatingState         models.OperatingState `json:"operatingState"` // Operating state (enabled/disabled)

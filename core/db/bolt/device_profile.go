@@ -35,7 +35,7 @@ func (bdp boltDeviceProfile) MarshalJSON() ([]byte, error) {
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
 	return json.Marshal(&struct {
 		models.DescribedObject `json:",inline"`
-		Id                     bson.ObjectId            `json:"_id,omitempty"`
+		Id                     bson.ObjectId            `json:"id,omitempty"`
 		Name                   string                   `json:"name"`         // Non-database identifier (must be unique)
 		Manufacturer           string                   `json:"manufacturer"` // Manufacturer of the device
 		Model                  string                   `json:"model"`        // Model of the device
@@ -62,7 +62,7 @@ func (bdp boltDeviceProfile) MarshalJSON() ([]byte, error) {
 func (bdp *boltDeviceProfile) UnmarshalJSON(data []byte) error {
 	decoded := new(struct {
 		models.DescribedObject `json:",inline"`
-		Id                     bson.ObjectId            `json:"_id,omitempty"`
+		Id                     bson.ObjectId            `json:"id,omitempty"`
 		Name                   string                   `json:"name"`         // Non-database identifier (must be unique)
 		Manufacturer           string                   `json:"manufacturer"` // Manufacturer of the device
 		Model                  string                   `json:"model"`        // Model of the device

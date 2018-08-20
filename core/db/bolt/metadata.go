@@ -68,14 +68,10 @@ func (bc *BoltClient) GetScheduleEventByName(se *models.ScheduleEvent, n string)
 }
 
 func (bc *BoltClient) GetScheduleEventById(se *models.ScheduleEvent, id string) error {
-	if bson.IsObjectIdHex(id) {
-		bse := boltScheduleEvent{ScheduleEvent: *se}
-		err := bc.getById(&bse, db.ScheduleEvent, id)
-		*se = bse.ScheduleEvent
-		return err
-	} else {
-		return db.ErrInvalidObjectId
-	}
+	bse := boltScheduleEvent{ScheduleEvent: *se}
+	err := bc.getById(&bse, db.ScheduleEvent, id)
+	*se = bse.ScheduleEvent
+	return err
 }
 
 func (bc *BoltClient) getScheduleEventsBy(ses *[]models.ScheduleEvent, fn func(encoded []byte) bool) error {
@@ -143,7 +139,7 @@ func (bc *BoltClient) DeleteScheduleEventById(id string) error {
 
 //  --------------------------Schedule ---------------------------*/
 func (bc *BoltClient) GetAllSchedules(sch *[]models.Schedule) error {
-	return bc.getSchedules(sch, func(encoded []byte) bool {
+	return bc.getSchedulesBy(sch, func(encoded []byte) bool {
 		return true
 	})
 }
@@ -153,11 +149,7 @@ func (bc *BoltClient) GetScheduleByName(sch *models.Schedule, n string) error {
 }
 
 func (bc *BoltClient) GetScheduleById(sch *models.Schedule, id string) error {
-	if bson.IsObjectIdHex(id) {
-		return bc.getById(sch, db.Schedule, id)
-	} else {
-		return db.ErrInvalidObjectId
-	}
+	return bc.getById(sch, db.Schedule, id)
 }
 
 func (bc *BoltClient) AddSchedule(sch *models.Schedule) error {
@@ -175,7 +167,6 @@ func (bc *BoltClient) AddSchedule(sch *models.Schedule) error {
 }
 
 func (bc *BoltClient) UpdateSchedule(sch models.Schedule) error {
-
 	sch.Modified = db.MakeTimestamp()
 	return bc.update(db.Schedule, sch, sch.Id)
 }
@@ -184,7 +175,7 @@ func (bc *BoltClient) DeleteScheduleById(id string) error {
 	return bc.deleteById(id, db.Schedule)
 }
 
-func (bc *BoltClient) getSchedules(schs *[]models.Schedule, fn func(encoded []byte) bool) error {
+func (bc *BoltClient) getSchedulesBy(schs *[]models.Schedule, fn func(encoded []byte) bool) error {
 	sch := models.Schedule{}
 	*schs = []models.Schedule{}
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
@@ -231,11 +222,7 @@ func (bc *BoltClient) GetDeviceReportByDeviceName(dr *[]models.DeviceReport, n s
 }
 
 func (bc *BoltClient) GetDeviceReportById(dr *models.DeviceReport, id string) error {
-	if bson.IsObjectIdHex(id) {
-		return bc.getById(dr, db.DeviceReport, id)
-	} else {
-		return db.ErrInvalidObjectId
-	}
+	return bc.getById(dr, db.DeviceReport, id)
 }
 
 func (bc *BoltClient) GetDeviceReportsByScheduleEventName(dr *[]models.DeviceReport, n string) error {
@@ -838,14 +825,10 @@ func (bc *BoltClient) GetProvisionWatchersByProfileId(pw *[]models.ProvisionWatc
 }
 
 func (bc *BoltClient) GetProvisionWatcherById(pw *models.ProvisionWatcher, id string) error {
-	if bson.IsObjectIdHex(id) {
-		bpw := boltProvisionWatcher{ProvisionWatcher: *pw}
-		err := bc.getById(&bpw, db.ProvisionWatcher, id)
-		*pw = bpw.ProvisionWatcher
-		return err
-	} else {
-		return db.ErrInvalidObjectId
-	}
+	bpw := boltProvisionWatcher{ProvisionWatcher: *pw}
+	err := bc.getById(&bpw, db.ProvisionWatcher, id)
+	*pw = bpw.ProvisionWatcher
+	return err
 }
 
 func (bc *BoltClient) getProvisionWatchersBy(pws *[]models.ProvisionWatcher, fn func(encoded []byte) bool) error {

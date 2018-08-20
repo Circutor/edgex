@@ -30,7 +30,7 @@ func (bse boltScheduleEvent) MarshalJSON() ([]byte, error) {
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
 	return json.Marshal(&struct {
 		models.BaseObject `json:",inline"`
-		Id                bson.ObjectId `json:"_id,omitempty"`
+		Id                bson.ObjectId `json:"id,omitempty"`
 		Name              string        `json:"name"`          // non-database unique identifier for a schedule event
 		Schedule          string        `json:"schedule"`      // Name to associated owning schedule
 		AddressableID     string        `json:"addressableId"` // address {MQTT topic, HTTP address, serial bus, etc.} for the action (can be empty)
@@ -51,7 +51,7 @@ func (bse boltScheduleEvent) MarshalJSON() ([]byte, error) {
 func (bse *boltScheduleEvent) UnmarshalJSON(data []byte) error {
 	decoded := new(struct {
 		models.BaseObject `json:",inline"`
-		Id                bson.ObjectId `json:"_id,omitempty"`
+		Id                bson.ObjectId `json:"id,omitempty"`
 		Name              string        `json:"name"`          // non-database unique identifier for a schedule event
 		Schedule          string        `json:"schedule"`      // Name to associated owning schedule
 		AddressableID     string        `json:"addressableId"` // address {MQTT topic, HTTP address, serial bus, etc.} for the action (can be empty)
