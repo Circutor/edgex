@@ -14,7 +14,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"net/http"
 	"os"
@@ -30,231 +29,136 @@ import (
 	"github.com/edgexfoundry/edgex-go/core/metadata"
 	"github.com/edgexfoundry/edgex-go/export/client"
 	"github.com/edgexfoundry/edgex-go/export/distro"
-	"github.com/edgexfoundry/edgex-go/internal"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/config"
-	"github.com/edgexfoundry/edgex-go/internal/pkg/usage"
 	"github.com/edgexfoundry/edgex-go/support/logging-client"
 	"go.uber.org/zap"
 )
 
+var loggingClient logger.LoggingClient
+
 func main() {
 	start := time.Now()
-	start2 := start
 
-	var useProfile string
-	//-----------------------------------------
-	//Data //First init Data than Metadata (problem with dbClient  getCurrentBoltClient )
-	//-----------------------------------------
-	flag.StringVar(&useProfile, "profile-core-data", "core-data", "Specify a profile other than default.")
-	flag.StringVar(&useProfile, "pcd", "core-data", "Specify a profile other than default.")
-	flag.Usage = usage.HelpCallback
-	flag.Parse()
+	// Create logging client
+	loggingClient = logger.NewClient("edgex", false, "")
+	loggingClient.Info(fmt.Sprintf("Starting EdgeX %s ", edgex.Version))
 
-	var loggingClient_core_data logger.LoggingClient
-	//Read Configuration
-	configuration_cd := &data.ConfigurationStruct{}
-	err := config.LoadFromFile(useProfile, configuration_cd)
+	// Create ZAP logging client
+	var loggerClientZap *zap.Logger
+	loggerClientZap, _ = zap.NewProduction()
+	defer loggerClientZap.Sync()
+
+	// Read core-data configuration
+	cdConfiguration := &data.ConfigurationStruct{}
+	err := config.LoadFromFile("core-data", cdConfiguration)
 	if err != nil {
-		loggingClient_core_data = logger.NewClient(internal.CoreDataServiceKey, false, "")
-		loggingClient_core_data.Error(err.Error())
+		loggingClient.Error(err.Error())
 		return
 	}
 
-	// Setup Logging
-	logTarget := configuration_cd.LoggingRemoteURL
-	if !configuration_cd.EnableRemoteLogging {
-		logTarget = configuration_cd.LoggingFile
-	}
-
-	loggingClient_core_data = logger.NewClient(internal.CoreDataServiceKey, configuration_cd.EnableRemoteLogging, logTarget)
-	loggingClient_core_data.Info(fmt.Sprintf("Starting %s %s ", internal.CoreDataServiceKey, edgex.Version))
-
-	err = data.Init(*configuration_cd, loggingClient_core_data, false)
+	// Read core-metadata configuration
+	cmConfiguration := &metadata.ConfigurationStruct{}
+	err = config.LoadFromFile("core-metadata", cmConfiguration)
 	if err != nil {
-		loggingClient_core_data.Error(fmt.Sprintf("call to init() failed: %v", err.Error()))
+		loggingClient.Error(err.Error())
 		return
 	}
 
-	http.TimeoutHandler(nil, time.Millisecond*time.Duration(configuration_cd.ServiceTimeout), "Request timed out")
-	loggingClient_core_data.Info(configuration_cd.AppOpenMsg, "")
-
-	// Time it took to start service
-	loggingClient_core_data.Info("Service started in: "+time.Since(start).String(), "")
-	loggingClient_core_data.Info("Listening on port: " + strconv.Itoa(configuration_cd.ServicePort))
-
-	//-----------------------------------------
-	//Metadata //First init Data than Metadata (problem with dbClient  getCurrentBoltClient )
-	//-----------------------------------------
-	start = time.Now()
-
-	flag.StringVar(&useProfile, "profile-core-metadata", "core-metadata", "Specify a profile other than default.")
-	flag.StringVar(&useProfile, "pcm", "core-metadata", "Specify a profile other than default.")
-	flag.Usage = usage.HelpCallback
-	flag.Parse()
-
-	var loggingClient_core_metadata logger.LoggingClient
-	//Read Configuration
-	configuration_cm := &metadata.ConfigurationStruct{}
-	err = config.LoadFromFile(useProfile, configuration_cm)
+	// Read core-command configuration
+	ccConfiguration := &command.ConfigurationStruct{}
+	err = config.LoadFromFile("core-command", ccConfiguration)
 	if err != nil {
-		loggingClient_core_metadata = logger.NewClient(internal.CoreMetaDataServiceKey, false, "")
-		loggingClient_core_metadata.Error(err.Error())
+		loggingClient.Error(err.Error())
 		return
 	}
 
-	// Setup Logging
-	logTarget = configuration_cm.LoggingRemoteURL
-	if !configuration_cm.EnableRemoteLogging {
-		logTarget = configuration_cm.LoggingFile
-	}
-
-	loggingClient_core_metadata = logger.NewClient(internal.CoreMetaDataServiceKey, configuration_cm.EnableRemoteLogging, logTarget)
-	loggingClient_core_metadata.Info(fmt.Sprintf("Starting %s %s ", internal.CoreMetaDataServiceKey, edgex.Version))
-
-	err = metadata.Init(*configuration_cm, loggingClient_core_metadata)
+	// Read export-client configuration
+	ecConfiguration := &client.ConfigurationStruct{}
+	err = config.LoadFromFile("export-client", ecConfiguration)
 	if err != nil {
-		loggingClient_core_metadata.Error(fmt.Sprintf("call to init() failed: %v", err.Error()))
+		loggingClient.Error(err.Error())
 		return
 	}
 
-	http.TimeoutHandler(nil, time.Millisecond*time.Duration(configuration_cm.ServiceTimeout), "Request timed out")
-	loggingClient_core_metadata.Info(configuration_cm.AppOpenMsg, "")
-
-	// Time it took to start service
-	loggingClient_core_metadata.Info("Service started in: "+time.Since(start).String(), "")
-	loggingClient_core_metadata.Info("Listening on port: " + strconv.Itoa(configuration_cm.ServicePort))
-
-	//-----------------------------------------
-	//Command
-	//-----------------------------------------
-	start = time.Now()
-
-	flag.StringVar(&useProfile, "profile-core-command", "core-command", "Specify a profile other than default.")
-	flag.StringVar(&useProfile, "pcc", "core-command", "Specify a profile other than default.")
-	flag.Usage = usage.HelpCallback
-	flag.Parse()
-
-	var loggingClient_core_command logger.LoggingClient
-	//Read Configuration
-	configuration_cc := &command.ConfigurationStruct{}
-	err = config.LoadFromFile(useProfile, configuration_cc)
+	// Read export-distro configuration
+	edConfiguration := &distro.ConfigurationStruct{}
+	err = config.LoadFromFile("export-distro", edConfiguration)
 	if err != nil {
-		loggingClient_core_command = logger.NewClient(internal.CoreCommandServiceKey, false, "")
-		loggingClient_core_command.Error(err.Error())
-		return
-	}
-	// Setup Logging
-	logTarget = configuration_cc.LoggingRemoteURL
-	if !configuration_cc.EnableRemoteLogging {
-		logTarget = configuration_cc.LogFile
-	}
-	loggingClient_core_command = logger.NewClient(internal.CoreCommandServiceKey, configuration_cc.EnableRemoteLogging, logTarget)
-	loggingClient_core_command.Info(fmt.Sprintf("Starting %s %s ", internal.CoreCommandServiceKey, edgex.Version))
-
-	command.Init(*configuration_cc, loggingClient_core_command, false)
-
-	http.TimeoutHandler(nil, time.Millisecond*time.Duration(configuration_cc.ServiceTimeout), "Request timed out")
-	loggingClient_core_command.Info(configuration_cc.AppOpenMsg, "")
-
-	// Time it took to start service
-	loggingClient_core_command.Info("Service started in: "+time.Since(start).String(), "")
-	loggingClient_core_command.Info("Listening on port: "+strconv.Itoa(configuration_cc.ServicePort), "")
-
-	//-----------------------------------------
-	//Export Client
-	//-----------------------------------------
-	start = time.Now()
-
-	var logger_export_client *zap.Logger
-
-	logger_export_client, _ = zap.NewProduction()
-	defer logger_export_client.Sync()
-
-	logger_export_client.Info(fmt.Sprintf("Starting %s %s", internal.ExportClientServiceKey, edgex.Version))
-
-	flag.StringVar(&useProfile, "profile-export-client", "export-client", "Specify a profile other than default.")
-	flag.StringVar(&useProfile, "pec", "export-client", "Specify a profile other than default.")
-	flag.Usage = usage.HelpCallback
-	flag.Parse()
-
-	configuration_ec := &client.ConfigurationStruct{}
-	err = config.LoadFromFile(useProfile, configuration_ec)
-	if err != nil {
-		logger_export_client.Error(err.Error(), zap.String("version", edgex.Version))
+		loggingClient.Error(err.Error())
 		return
 	}
 
-	err = client.Init(*configuration_ec, logger_export_client)
+	// Initialize core-data
+	// We should initialize core-data before core-metadata to avoid BoltDB client issues
+	err = data.Init(*cdConfiguration, loggingClient, false)
 	if err != nil {
-		logger_export_client.Error("Could not initialize export client", zap.Error(err))
+		loggingClient.Error(fmt.Sprintf("Could not initialize core-data: %v", err.Error()))
 		return
 	}
 
-	//-----------------------------------------
-	//Export distro
-	//-----------------------------------------
-	start = time.Now()
-
-	var logger_export_distro *zap.Logger
-
-	logger_export_distro, _ = zap.NewProduction()
-	defer logger_export_distro.Sync()
-
-	logger_export_distro.Info("Starting "+internal.ExportDistroServiceKey, zap.String("version", edgex.Version))
-
-	flag.StringVar(&useProfile, "profile-export-distro", "export-distro", "Specify a profile other than default.")
-	flag.StringVar(&useProfile, "ped", "export-distro", "Specify a profile other than default.")
-	flag.Usage = usage.HelpCallback
-	flag.Parse()
-
-	configuration_ed := &distro.ConfigurationStruct{}
-	err = config.LoadFromFile(useProfile, configuration_ed)
+	// Initialize core-metadata
+	err = metadata.Init(*cmConfiguration, loggingClient)
 	if err != nil {
-		logger_export_distro.Error(err.Error(), zap.String("version", edgex.Version))
+		loggingClient.Error(fmt.Sprintf("Could not initialize core-metadata: %v", err.Error()))
 		return
 	}
 
-	err = distro.Init(*configuration_ed, logger_export_distro)
+	// Initialize core-command
+	command.Init(*ccConfiguration, loggingClient, false)
 
-	logger_export_distro.Info("Starting distro")
+	// Initialize export-client
+	err = client.Init(*ecConfiguration, loggerClientZap)
+	if err != nil {
+		loggingClient.Error(fmt.Sprintf("Could not initialize export-client: %v", err.Error()))
+		return
+	}
 
-	//Make chanels
+	// Initialize export-distro
+	distro.Init(*edConfiguration, loggerClientZap)
+
+	// Make chanels
 	errs := make(chan error, 3)
 	eventCh := make(chan *models.Event, 10)
+	listenForInterrupt(errs)
 
-	go func() {
-		c := make(chan os.Signal)
-		signal.Notify(c, syscall.SIGINT)
-		errs <- fmt.Errorf("%s", <-c)
-	}()
-
+	// Start core-data HTTP server
 	go func() {
 		rd := data.LoadRestRoutes()
-		errs <- http.ListenAndServe(":"+strconv.Itoa(configuration_cd.ServicePort), rd)
+		errs <- http.ListenAndServe(":"+strconv.Itoa(cdConfiguration.ServicePort), rd)
 	}()
 
+	// Start core-metadata HTTP server
 	go func() {
 		rm := metadata.LoadRestRoutes()
-		errs <- http.ListenAndServe(":"+strconv.Itoa(configuration_cm.ServicePort), rm)
+		errs <- http.ListenAndServe(":"+strconv.Itoa(cmConfiguration.ServicePort), rm)
 	}()
 
+	// Start core-command HTTP server
 	go func() {
 		rc := command.LoadRestRoutes()
-		errs <- http.ListenAndServe(":"+strconv.Itoa(configuration_cc.ServicePort), rc)
+		errs <- http.ListenAndServe(":"+strconv.Itoa(ccConfiguration.ServicePort), rc)
 	}()
 
-	client.StartHTTPServer(*configuration_ec, errs)
+	// Start export-client HTTP server
+	client.StartHTTPServer(*ecConfiguration, errs)
 
-	fmt.Println("Pack Services started in: " + time.Since(start2).String())
+	// All clients and HTTP servers have been started
+	loggingClient.Info("EdgeX started in: "+time.Since(start).String(), "")
 
 	// There can be another receivers that can be initialiced here
 	distro.MangosReceiver(eventCh)
 	distro.Loop(errs, eventCh)
 
+	// Destroy all clients
 	metadata.Destruct()
 	data.Destruct()
 	client.Destroy()
+}
 
-	//loggingClient_core_metadata.Warn(fmt.Sprintf("terminating: %v", c))
-	logger_export_distro.Warn(fmt.Sprintf("terminating: %v", errs))
+func listenForInterrupt(errChan chan error) {
+	go func() {
+		c := make(chan os.Signal)
+		signal.Notify(c, syscall.SIGINT)
+		errChan <- fmt.Errorf("%s", <-c)
+	}()
 }
