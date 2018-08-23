@@ -7,10 +7,11 @@
 package distro
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
-	"github.com/edgexfoundry/edgex-go/core/domain/models"
+	"github.com/edgexfoundry/edgex-go/pkg/models"
 	"github.com/influxdata/influxdb/client/v2"
 )
 
@@ -45,14 +46,14 @@ func NewInfluxDBSender(addr models.Addressable) Sender {
 	return sender
 }
 
-func (sender *influxdbSender) Send(data []byte, event *models.Event) {
+func (sender *influxdbSender) Send(data []byte, event *models.Event) bool {
 	if sender.client == nil {
 		logger.Info("Connecting to InfluxDB server")
 		c, err := client.NewHTTPClient(sender.httpInfo)
 
 		if err != nil {
-			logger.Error("Failed to connec to InfluxDB server")
-			return
+			logger.Error(fmt.Sprintf("Failed to connect to InfluxDB server: %s", err))
+			return false
 		}
 
 		sender.client = c
@@ -64,8 +65,8 @@ func (sender *influxdbSender) Send(data []byte, event *models.Event) {
 	})
 
 	if err != nil {
-		logger.Error("Failed to craete batch points")
-		return
+		logger.Error(fmt.Sprintf("Failed to craete batch points: %s", err))
+		return false
 	}
 
 	for _, reading := range event.Readings {
@@ -85,6 +86,7 @@ func (sender *influxdbSender) Send(data []byte, event *models.Event) {
 		tags := map[string]string{
 			"device":        reading.Device,
 			"resource_name": reading.Name,
+			"event_id":      event.ID.Hex(),
 		}
 
 		pt, err := client.NewPoint(
@@ -95,8 +97,8 @@ func (sender *influxdbSender) Send(data []byte, event *models.Event) {
 		)
 
 		if err != nil {
-			logger.Error("Failed to add data point")
-			return
+			logger.Error(fmt.Sprintf("Failed to add data point: %s", err))
+			return false
 		}
 
 		bp.AddPoint(pt)
@@ -105,7 +107,10 @@ func (sender *influxdbSender) Send(data []byte, event *models.Event) {
 	err = sender.client.Write(bp)
 
 	if err != nil {
-		logger.Error("Failed to write data points to InfluxDB server")
+		logger.Error(fmt.Sprintf("Failed to write data points to InfluxDB server: %s", err))
 		sender.client = nil // Reset the client
+		return false
 	}
+
+	return true
 }

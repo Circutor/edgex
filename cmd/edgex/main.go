@@ -23,24 +23,26 @@ import (
 	"time"
 
 	"github.com/edgexfoundry/edgex-go"
-	"github.com/edgexfoundry/edgex-go/core/command"
-	"github.com/edgexfoundry/edgex-go/core/data"
-	"github.com/edgexfoundry/edgex-go/core/domain/models"
-	"github.com/edgexfoundry/edgex-go/core/metadata"
 	"github.com/edgexfoundry/edgex-go/export/client"
 	"github.com/edgexfoundry/edgex-go/export/distro"
+	"github.com/edgexfoundry/edgex-go/internal"
+	"github.com/edgexfoundry/edgex-go/internal/core/command"
+	"github.com/edgexfoundry/edgex-go/internal/core/data"
+	"github.com/edgexfoundry/edgex-go/internal/core/metadata"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/config"
-	"github.com/edgexfoundry/edgex-go/support/logging-client"
+	"github.com/edgexfoundry/edgex-go/internal/pkg/startup"
+	"github.com/edgexfoundry/edgex-go/pkg/clients/logging"
+	"github.com/edgexfoundry/edgex-go/pkg/models"
 	"go.uber.org/zap"
 )
 
-var loggingClient logger.LoggingClient
+var bootTimeout int = 30000 //Once we start the V2 configuration rework, this will be config driven
 
 func main() {
 	start := time.Now()
 
 	// Create logging client
-	loggingClient = logger.NewClient("edgex", false, "")
+	loggingClient := logger.NewClient("edgex", false, "")
 	loggingClient.Info(fmt.Sprintf("Starting EdgeX %s ", edgex.Version))
 
 	// Create ZAP logging client
@@ -48,65 +50,38 @@ func main() {
 	loggerClientZap, _ = zap.NewProduction()
 	defer loggerClientZap.Sync()
 
-	// Read core-data configuration
-	cdConfiguration := &data.ConfigurationStruct{}
-	err := config.LoadFromFile("core-data", cdConfiguration)
-	if err != nil {
-		loggingClient.Error(err.Error())
-		return
-	}
-
-	// Read core-metadata configuration
-	cmConfiguration := &metadata.ConfigurationStruct{}
-	err = config.LoadFromFile("core-metadata", cmConfiguration)
-	if err != nil {
-		loggingClient.Error(err.Error())
-		return
-	}
-
-	// Read core-command configuration
-	ccConfiguration := &command.ConfigurationStruct{}
-	err = config.LoadFromFile("core-command", ccConfiguration)
-	if err != nil {
-		loggingClient.Error(err.Error())
-		return
-	}
-
-	// Read export-client configuration
-	ecConfiguration := &client.ConfigurationStruct{}
-	err = config.LoadFromFile("export-client", ecConfiguration)
-	if err != nil {
-		loggingClient.Error(err.Error())
-		return
-	}
-
-	// Read export-distro configuration
-	edConfiguration := &distro.ConfigurationStruct{}
-	err = config.LoadFromFile("export-distro", edConfiguration)
-	if err != nil {
-		loggingClient.Error(err.Error())
-		return
-	}
-
 	// Initialize core-data
 	// We should initialize core-data before core-metadata to avoid BoltDB client issues
-	err = data.Init(*cdConfiguration, loggingClient, false)
-	if err != nil {
-		loggingClient.Error(fmt.Sprintf("Could not initialize core-data: %v", err.Error()))
+	params := startup.BootParams{UseConsul: false, UseProfile: "core-data", BootTimeout: bootTimeout}
+	startup.Bootstrap(params, data.Retry, logBeforeInit)
+	if data.Init() == false {
+		loggingClient.Error(fmt.Sprintf("%s: Service bootstrap failed!", internal.CoreDataServiceKey))
 		return
 	}
 
 	// Initialize core-metadata
-	err = metadata.Init(*cmConfiguration, loggingClient)
-	if err != nil {
-		loggingClient.Error(fmt.Sprintf("Could not initialize core-metadata: %v", err.Error()))
+	params = startup.BootParams{UseConsul: false, UseProfile: "core-metadata", BootTimeout: bootTimeout}
+	startup.Bootstrap(params, metadata.Retry, logBeforeInit)
+	if metadata.Init() == false {
+		loggingClient.Error(fmt.Sprintf("%s: Service bootstrap failed!", internal.CoreMetaDataServiceKey))
 		return
 	}
 
 	// Initialize core-command
-	command.Init(*ccConfiguration, loggingClient, false)
+	params = startup.BootParams{UseConsul: false, UseProfile: "core-command", BootTimeout: bootTimeout}
+	startup.Bootstrap(params, command.Retry, logBeforeInit)
+	if command.Init() == false {
+		loggingClient.Error(fmt.Sprintf("%s: Service bootstrap failed!", internal.CoreCommandServiceKey))
+		return
+	}
 
 	// Initialize export-client
+	ecConfiguration := &client.ConfigurationStruct{}
+	err := config.LoadFromFile("export-client", ecConfiguration)
+	if err != nil {
+		loggingClient.Error(err.Error())
+		return
+	}
 	err = client.Init(*ecConfiguration, loggerClientZap)
 	if err != nil {
 		loggingClient.Error(fmt.Sprintf("Could not initialize export-client: %v", err.Error()))
@@ -114,7 +89,17 @@ func main() {
 	}
 
 	// Initialize export-distro
-	distro.Init(*edConfiguration, loggerClientZap)
+	edConfiguration := &distro.ConfigurationStruct{}
+	err = config.LoadFromFile("export-distro", edConfiguration)
+	if err != nil {
+		loggingClient.Error(err.Error())
+		return
+	}
+	err = distro.Init(*edConfiguration, loggerClientZap, false)
+	if err != nil {
+		loggingClient.Error(fmt.Sprintf("Could not initialize export-distro: %v", err.Error()))
+		return
+	}
 
 	// Make chanels
 	errs := make(chan error, 3)
@@ -124,19 +109,19 @@ func main() {
 	// Start core-data HTTP server
 	go func() {
 		rd := data.LoadRestRoutes()
-		errs <- http.ListenAndServe(":"+strconv.Itoa(cdConfiguration.ServicePort), rd)
+		errs <- http.ListenAndServe(":"+strconv.Itoa(data.Configuration.ServicePort), rd)
 	}()
 
 	// Start core-metadata HTTP server
 	go func() {
 		rm := metadata.LoadRestRoutes()
-		errs <- http.ListenAndServe(":"+strconv.Itoa(cmConfiguration.ServicePort), rm)
+		errs <- http.ListenAndServe(":"+strconv.Itoa(metadata.Configuration.ServicePort), rm)
 	}()
 
 	// Start core-command HTTP server
 	go func() {
 		rc := command.LoadRestRoutes()
-		errs <- http.ListenAndServe(":"+strconv.Itoa(ccConfiguration.ServicePort), rc)
+		errs <- http.ListenAndServe(":"+strconv.Itoa(command.Configuration.ServicePort), rc)
 	}()
 
 	// Start export-client HTTP server
@@ -153,6 +138,11 @@ func main() {
 	metadata.Destruct()
 	data.Destruct()
 	client.Destroy()
+}
+
+func logBeforeInit(err error) {
+	l := logger.NewClient("edgex", false, "")
+	l.Error(err.Error())
 }
 
 func listenForInterrupt(errChan chan error) {

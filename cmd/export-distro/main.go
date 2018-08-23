@@ -16,11 +16,11 @@ import (
 	"syscall"
 
 	"github.com/edgexfoundry/edgex-go"
-	"github.com/edgexfoundry/edgex-go/core/domain/models"
 	"github.com/edgexfoundry/edgex-go/export/distro"
 	"github.com/edgexfoundry/edgex-go/internal"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/config"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/usage"
+	"github.com/edgexfoundry/edgex-go/pkg/models"
 
 	"go.uber.org/zap"
 )
@@ -66,7 +66,7 @@ func main() {
 
 	logger.Info(consulMsg, zap.String("version", edgex.Version))
 
-	err = distro.Init(*configuration, logger)
+	err = distro.Init(*configuration, logger, useConsul)
 
 	logger.Info("Starting distro")
 	errs := make(chan error, 2)

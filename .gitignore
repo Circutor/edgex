@@ -4,6 +4,7 @@ vendor
 glide.lock
 *.DS_Store
 docker/docker-compose.yml
+.project
 *.db
 
 # binary files
@@ -13,15 +14,17 @@ cmd/core-metadata/core-metadata
 cmd/export-client/export-client
 cmd/export-distro/export-distro
 cmd/support-logging/support-logging
+cmd/support-notifications/support-notifications
 cmd/edgex/edgex
 
 # debug files
 cmd/core-command/debug
 cmd/core-data/debug
 cmd/core-metadata/debug
+cmd/support-logging/debug
 cmd/export-client/debug
 cmd/export-distro/debug
-cmd/support-logging/debug
+cmd/support-notifications/debug
 cmd/edgex/debug
 
 # log dirs
@@ -31,4 +34,5 @@ cmd/core-metadata/logs/
 cmd/support-logging/logs/
 cmd/export-client/logs/
 cmd/export-distro/logs/
+cmd/support-notifications/logs/
 cmd/edgex/logs/

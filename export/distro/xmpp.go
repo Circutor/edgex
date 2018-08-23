@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/edgexfoundry/edgex-go/core/domain/models"
+	"github.com/edgexfoundry/edgex-go/pkg/models"
 	"github.com/mattn/go-xmpp"
 )
 
@@ -58,7 +58,7 @@ func NewXMPPSender(addr models.Addressable) Sender {
 	return sender
 }
 
-func (sender *xmppSender) Send(data []byte, event *models.Event) {
+func (sender *xmppSender) Send(data []byte, event *models.Event) bool {
 	stringData := string(data)
 
 	sender.client.Send(xmpp.Chat{
@@ -69,6 +69,8 @@ func (sender *xmppSender) Send(data []byte, event *models.Event) {
 		Other:   sender.other,
 		Stamp:   sender.stamp,
 	})
+
+	return true
 }
 
 func serverName(host string) string {

@@ -13,7 +13,7 @@ import (
 	"strings"
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
-	"github.com/edgexfoundry/edgex-go/core/domain/models"
+	"github.com/edgexfoundry/edgex-go/pkg/models"
 	"go.uber.org/zap"
 )
 
@@ -66,14 +66,14 @@ func NewIoTCoreSender(addr models.Addressable) Sender {
 	}
 }
 
-func (sender *iotCoreSender) Send(data []byte) {
+func (sender *iotCoreSender) Send(data []byte) bool {
 	if !sender.client.IsConnected() {
 		logger.Info("Connecting to mqtt server")
 		token := sender.client.Connect()
 		token.Wait()
 		if token.Error() != nil {
 			logger.Warn("Could not connect to mqtt server, drop event", zap.Error(token.Error()))
-			return
+			return false
 		}
 	}
 
@@ -81,10 +81,11 @@ func (sender *iotCoreSender) Send(data []byte) {
 	token.Wait()
 	if token.Error() != nil {
 		logger.Warn("mqtt error: ", zap.Error(token.Error()))
-		return
+		return false
 	}
 
 	logger.Debug("Sent data: ", zap.ByteString("data", data))
+	return true
 }
 
 func extractDeviceID(addr string) string {

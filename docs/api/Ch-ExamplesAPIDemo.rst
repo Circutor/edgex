@@ -3,13 +3,13 @@ EdgeX Demonstration API Walk Through
 ####################################
 
 
-n order to better appreciate the EdgeX Foundry micro services (what they do and how they work), how they inter-operate with each other, and some of the more important API calls that each micro service has to offer, this demonstration API walk through shows how a device service and device are established in EdgeX, how data is sent flowing through the various services, and how data is then shipped out of EdgeX to the cloud or enterprise system.  In essence, through this demonstration, you will play the part of various EdgeX micro services by manually making REST calls (via your favorite REST client tool - we like Postman for Chrome) in a way that mimics EdgeX system behavior.  After exploring this demonstration, and hopefully exercising the APIs yourself, you should have a much better appreciation of the EdgeX Foundry micro service capabilities.
+In order to better appreciate the EdgeX Foundry micro services (what they do and how they work), how they inter-operate with each other, and some of the more important API calls that each micro service has to offer, this demonstration API walk through shows how a device service and device are established in EdgeX, how data is sent flowing through the various services, and how data is then shipped out of EdgeX to the cloud or enterprise system.  In essence, through this demonstration, you will play the part of various EdgeX micro services by manually making REST calls (via your favorite REST client tool - we like Postman for Chrome) in a way that mimics EdgeX system behavior.  After exploring this demonstration, and hopefully exercising the APIs yourself, you should have a much better appreciation of the EdgeX Foundry micro service capabilities.
 
 =====
 Setup
 =====
 
-If you wish to exercise the APIs in this walk through on your own system, first follow the Get EdgeX Foundry - Users guide to get all the tools and EdgeX containers (you could also run all the services in a development environment like Eclipse, but this usually requires more time to get and setup).  When it comes time to run EdgeX Foundry, run all but the virtual device service (device-virtual).  The reason is that many of the API calls you make as part of this walk through are actually accomplished by the virtual device service - or any device service for that matter.  In this walk through, your manual call of the EdgeX APIs often simulate the work that a device service would do to get a new device setup and to send data to/through EdgeX.  So, once you have Docker & Docker Compose installed and you have all the EdgeX Foundry containers, run the following commands to start the core, supporting and export micro services of EdgeX.
+If you wish to exercise the APIs in this walk through on your own system, first follow :doc:`../Ch-GettingStartedUsers` to get all the tools and EdgeX containers (you could also run all the services in a development environment, but this usually requires more time to get and setup - see :doc:`Ch-GettingStartedDevelopers` ).  When it comes time to run EdgeX Foundry, run all the services with the exception of any device services, including the device-virtual).  The reason is that many of the API calls you make as part of this walk through are actually accomplished by the virtual device service - or any device service for that matter.  In this walk through, your manual call of the EdgeX APIs often simulate the work that a device service would do to get a new device setup and to send data to/through EdgeX.  So, once you have Docker & Docker Compose installed and you have all the EdgeX Foundry containers, run the following commands to start the core, supporting and export micro services of EdgeX.
 
 Start Edgex by using the following commands
 
@@ -17,34 +17,41 @@ Start Edgex by using the following commands
 |   **Docker Command**               |   **Description**                                                                   |  **Suggested Waiti Time After Completing**     |
 +====================================+=====================================================================================+================================================+
 | **docker-compose pull**            |  Pull down, but don't start, all the EdgeX Foundry microservices                    | Docker Compose will indicate when all the      |
-|                                    |                                                                                     | containers have been pulled successfully       |     
+|                                    |                                                                                     | containers have been pulled successfully       |
 +------------------------------------+-------------------------------------------------------------------------------------+------------------------------------------------+
-| docker-compose up -d volume        |  Start the EdgeX Foundry file volume--must be done before the other services are    | A couple of seconds                            |
-|                                    |  started                                                                            |                                                |   
+| docker-compose up -d volume        |  Start the EdgeX Foundry file volume--must be done before the other services are    | A couple of seconds.  In the time it takes to  |
+|                                    |  started                                                                            | type the next command it shoud be ready.       |
 +------------------------------------+-------------------------------------------------------------------------------------+------------------------------------------------+
-| docker-compose up -d config-seed   |  Start and populate the configuration/registry microservice which all services must | 60 seconds                                     |
-|                                    |  register with and get their configuration from                                     |                                                | 
+| docker-compose up -d consul        |  Start the configuration and registry microservice which all services must          | A couple of seconds                            |
+|                                    |  register with and get their configuration from                                     |                                                |
 +------------------------------------+-------------------------------------------------------------------------------------+------------------------------------------------+
-| docker-compose up -d mongo         |  Start the NoSQL MongoDB container                                                  | 10 seconds                                     | 
+| docker-compose up -d config-seed   |  Populate the configuration/registry microservice                                   | A couple of seconds                            |
 +------------------------------------+-------------------------------------------------------------------------------------+------------------------------------------------+
-| docker-compose up -d logging       |  Start the logging microservice - used by all micro services that make log entries  | 1 minute                                       | 
+| docker-compose up -d mongo         |  Start the NoSQL MongoDB container                                                  | 10 seconds                                     |
 +------------------------------------+-------------------------------------------------------------------------------------+------------------------------------------------+
-| docker-compose up -d notifications |  Start the notifications and alerts microservice--used by many of the microservices | 30 seconds                                     | 
+| docker-compose up -d logging       |  Start the logging microservice - used by all micro services that make log entries  | A couple of seconds                            |
 +------------------------------------+-------------------------------------------------------------------------------------+------------------------------------------------+
-| docker-compose up -d metadata      |  Start the Core Metadata microservice                                               | 1 minute                                       | 
+| docker-compose up -d notifications |  Start the notifications and alerts microservice--used by many of the microservices | 30 seconds                                     |
+|                                    |  Note: this service is still implemented in Java and takes more time to start       |                                                |
 +------------------------------------+-------------------------------------------------------------------------------------+------------------------------------------------+
-| docker-compose up -d data          |  Start the Core Data microservice                                                   | 1 minute                                       | 
+| docker-compose up -d metadata      |  Start the Core Metadata microservice                                               | A couple of seconds                            |
 +------------------------------------+-------------------------------------------------------------------------------------+------------------------------------------------+
-| docker-compose up -d command       |  Start the Core Command microservice                                                | 1 minute                                       | 
+| docker-compose up -d data          |  Start the Core Data microservice                                                   | A couple of seconds                            |
++------------------------------------+-------------------------------------------------------------------------------------+------------------------------------------------+
+| docker-compose up -d command       |  Start the Core Command microservice                                                | A couple of seconds                            |
 +------------------------------------+-------------------------------------------------------------------------------------+------------------------------------------------+
 | docker-compose up -d scheduler     |  Start the scheduling microservice -used by many of the microservices               | 1 minute                                       |
+|                                    |  Note: this service is still implemented in Java and takes more time to start       |                                                |
 +------------------------------------+-------------------------------------------------------------------------------------+------------------------------------------------+
-| docker-compose up -d export-client |  Start the Export Client registration microservice                                  | 1 minute                                       |
+| docker-compose up -d export-client |  Start the Export Client registration microservice                                  | A couple of seconds                            |
 +------------------------------------+-------------------------------------------------------------------------------------+------------------------------------------------+
-| docker-compose up -d export-distro |  Start the Export Distribution microservice                                         | 1 minute                                       |
+| docker-compose up -d export-distro |  Start the Export Distribution microservice                                         | A couple of seconds                            |
 +------------------------------------+-------------------------------------------------------------------------------------+------------------------------------------------+
 | docker-compose up -d rulesengine   |  Start the Rules Engine microservice                                                | 1 minute                                       |
+|                                    |  Note: this service is still implemented in Java and takes more time to start       |                                                |
 +------------------------------------+-------------------------------------------------------------------------------------+------------------------------------------------+
+
+Run a **"docker-compose ps"** command to confirm that all the containers have been downloaded and started.  (Note: initialization or seed containers, like config-seed, will have exited as there job is just to initialize the associated service and then exit.)
 
 ===================
 Scenario / Use Case
@@ -82,7 +89,7 @@ After the initial start of a Device Service, these steps are not duplicated.  Fo
 
 There is a lot of background information that EdgeX needs to know about the Device and Device Service before it can start collecting data from the Device or send actuation commands to the Device.  Say, for example, the camera Device wanted to report its human and canine counts.  If it was just to start sending numbers into EdgeX, EdgeX would have no idea of what those numbers represented or even where they came from.  Further, if someone/something wanted to send a command to the camera, it would not know how to reach the camera without some additional information like where the camera is located on the network.  This background or reference information is what a Device Service must first setup in / with other EdgeX micro services when it comes up.  The API calls here give you a glimpse of this communication between the fledgling Device Service and the other EdgeX micro services.  By the way, the order in which these calls are shown may not be the exact order that a Device Service does them.  As you become more familiar with Device Services and the Device Service SDK, the small nuances and differences will become clear.
 
-.. _`APIs Core Services Metadata`: https://github.com/edgexfoundry/edgex-go/blob/master/core/metadata/raml/core-metadata.raml
+.. _`APIs Core Services Metadata`: https://github.com/edgexfoundry/edgex-go/blob/master/api/raml/core-metadata.raml
 ..
 
 **Addressables**
@@ -119,7 +126,7 @@ It is assumed that for the purposes of this walk through demonstration
 * all API micro services are running on "localhost".  If this is not the case, substitute your hostname for localhost.
 * any POST call has the associated CONTENT-TYPE=application/JSON header associated to it unless explicitly stated otherwise.
 
-.. _`APIs Core Services Core Data`: https://github.com/edgexfoundry/edgex-go/blob/master/core/data/raml/core-data.raml
+.. _`APIs Core Services Core Data`: https://github.com/edgexfoundry/edgex-go/blob/master/api/raml/core-data.raml
 ..
 
 **Value Descriptors** 
