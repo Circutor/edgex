@@ -38,6 +38,15 @@ func (bc *BoltClient) Events() ([]models.Event, error) {
 	}, -1)
 }
 
+// Return events up to the max number specified
+// UnexpectedError - failed to retrieve events from the database
+// Sort the events in descending order by ID
+func (bc *BoltClient) EventsWithLimit(limit int) ([]models.Event, error) {
+	return bc.getEvents(func(encoded []byte) bool {
+		return true
+	}, limit)
+}
+
 // Add a new event
 // UnexpectedError - failed to add to database
 // NoValueDescriptor - no existing value descriptor for a reading in the event

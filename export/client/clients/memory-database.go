@@ -101,6 +101,6 @@ func (mc *memDB) DeleteRegistrationByName(name string) error {
 }
 
 func (mc *memDB) ScrubAllRegistrations() error {
-	mc.regs = nil
+	mc.regs = make([]export.Registration, 0)
 	return nil
 }

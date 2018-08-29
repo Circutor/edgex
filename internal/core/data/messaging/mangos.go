@@ -30,11 +30,6 @@ import (
 	"github.com/go-mangos/mangos/transport/tcp"
 )
 
-// Configuration struct for Mangos
-type MangosConfiguration struct {
-	AddressPort string
-}
-
 // Mangos implementation of the event publisher
 type mangosEventPublisher struct {
 	publisher mangos.Socket
@@ -46,7 +41,7 @@ func die(format string, v ...interface{}) {
 	os.Exit(1)
 }
 
-func newMangosEventPublisher(config MangosConfiguration) mangosEventPublisher {
+func newMangosEventPublisher(config PubSubConfiguration) EventPublisher {
 	var newPublisher mangos.Socket
 	var err error
 
@@ -60,7 +55,7 @@ func newMangosEventPublisher(config MangosConfiguration) mangosEventPublisher {
 	if err = newPublisher.Listen(url); err != nil {
 		die("can't listen on pub socket: %s", err.Error())
 	}
-	return mangosEventPublisher{
+	return &mangosEventPublisher{
 		publisher: newPublisher,
 	}
 }
@@ -73,8 +68,9 @@ func (mep *mangosEventPublisher) SendEventMessage(e models.Event) error {
 	mep.mux.Lock()
 	defer mep.mux.Unlock()
 
-	if err = mep.publisher.Send([]byte(s)); err != nil {
-		die("Failed publishing: %s", err.Error())
+	err = mep.publisher.Send([]byte(s))
+	if err != nil {
+		return err
 	}
 
 	return nil

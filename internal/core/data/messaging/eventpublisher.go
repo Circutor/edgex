@@ -14,33 +14,18 @@
 package messaging
 
 import (
-	"github.com/edgexfoundry/edgex-go/internal/core/data/errors"
 	"github.com/edgexfoundry/edgex-go/pkg/models"
 )
 
-// Types of messaging protocols
-const (
-	MQTT int = iota
-	MANGOS
-)
-
-// Publisher to send events to northbound services
-type EventPublisher struct {
-	protocol int
-	mangos mangosEventPublisher
+// Configuration struct for PubSub
+type PubSubConfiguration struct {
+	AddressPort string
 }
 
-func NewMangosPublisher(configuration MangosConfiguration) *EventPublisher {
-	return &EventPublisher{protocol: MANGOS, mangos: newMangosEventPublisher(configuration)}
+type EventPublisher interface {
+	SendEventMessage(e models.Event) error
 }
 
-// Send the event
-func (ep *EventPublisher) SendEventMessage(e models.Event) error {
-	// Switch based on the protocol you're using
-	switch ep.protocol {
-	case MANGOS:
-		return ep.mangos.SendEventMessage(e)
-	default:
-		return errors.UnsupportedPublisher{}
-	}
+func NewEventPublisher(conf PubSubConfiguration) EventPublisher {
+	return newMangosEventPublisher(conf)
 }

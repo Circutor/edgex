@@ -521,11 +521,11 @@ func testDBAddressables(t *testing.T, db interfaces.DBClient) {
 	}
 	err = db.GetAddressableByName(&a, "name1")
 	if err == nil {
-		t.Fatalf("Addresable name1 should be renamed")
+		t.Fatalf("Addressable name1 should be renamed")
 	}
 	err = db.GetAddressableByName(&a, "name")
 	if err != nil {
-		t.Fatalf("Addresable name should be renamed")
+		t.Fatalf("Addressable name should be renamed")
 	}
 
 	// aa.Name = "name2"
@@ -922,7 +922,6 @@ func testDBScheduleEvent(t *testing.T, db interfaces.DBClient) {
 
 	clearScheduleEvents(t, db)
 	clearAddressables(t, db)
-
 	id, err := populateScheduleEvent(db, 100)
 	if err != nil {
 		t.Fatalf("Error populating db: %v\n", err)
@@ -1428,6 +1427,7 @@ func testDBProvisionWatcher(t *testing.T, db interfaces.DBClient) {
 	if len(provisionWatchers) != 0 {
 		t.Fatalf("There should be 0 provisionWatchers instead of %d", len(provisionWatchers))
 	}
+
 	err = db.GetProvisionWatchersByIdentifier(&provisionWatchers, "name", "name1")
 	if err != nil {
 		t.Fatalf("Error getting provisionWatchers %v", err)
@@ -1435,6 +1435,7 @@ func testDBProvisionWatcher(t *testing.T, db interfaces.DBClient) {
 	if len(provisionWatchers) != 1 {
 		t.Fatalf("There should be 1 provisionWatchers instead of %d", len(provisionWatchers))
 	}
+
 	err = db.GetProvisionWatchersByIdentifier(&provisionWatchers, "name", "invalid")
 	if err != nil {
 		t.Fatalf("Error getting provisionWatchers %v", err)
@@ -1442,6 +1443,7 @@ func testDBProvisionWatcher(t *testing.T, db interfaces.DBClient) {
 	if len(provisionWatchers) != 0 {
 		t.Fatalf("There should be 0 provisionWatchers instead of %d", len(provisionWatchers))
 	}
+
 	pw.Name = "name"
 	err = db.UpdateProvisionWatcher(pw)
 	if err != nil {
