@@ -21,20 +21,14 @@ import (
 
 func TestBoltDB(t *testing.T) {
 
-	config := db.Configuration{
-		Host:         "0.0.0.0",
-		Port:         27017,
-		DatabaseName: "coredata",
-		Timeout:      1000,
-	}
-
+	config := db.Configuration{DatabaseName: "coredata.db"}
 	bolt, err := NewClient(config)
 	if err != nil {
 		t.Fatalf("Could not connect with BoltDB: %v", err)
 	}
 	test.TestDataDB(t, bolt)
 
-	config.DatabaseName = "metadata"
+	config.DatabaseName = "metadata.db"
 	bolt, err = NewClient(config)
 	if err != nil {
 		t.Fatalf("Could not connect with BoltDB: %v", err)
@@ -75,6 +69,12 @@ func TestBoltDB(t *testing.T) {
 
 	test.TestMetadataDB(t, bolt)
 
+	config.DatabaseName = "export.db"
+	bolt, err = NewClient(config)
+	if err != nil {
+		t.Fatalf("Could not connect with BoltDB: %v", err)
+	}
+	test.ExportTestDB(t, bolt)
 }
 
 func BenchmarkBoltDB(b *testing.B) {

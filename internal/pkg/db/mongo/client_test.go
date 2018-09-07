@@ -75,6 +75,10 @@ func TestMongoDB(t *testing.T) {
 	}
 
 	test.TestMetadataDB(t, mongo)
+
+	config.DatabaseName = "export"
+	mongo = NewClient(config)
+	test.ExportTestDB(t, mongo)
 }
 
 func BenchmarkMongoDB(b *testing.B) {

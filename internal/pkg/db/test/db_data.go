@@ -655,7 +655,7 @@ func TestDataDB(t *testing.T, db interfaces.DBClient) {
 
 	err := db.Connect()
 	if err != nil {
-		t.Fatalf("Could not connect with mongodb: %v", err)
+		t.Fatalf("Could not connect: %v", err)
 	}
 
 	testDBReadings(t, db)
