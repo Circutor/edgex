@@ -652,7 +652,6 @@ func testDBValueDescriptors(t *testing.T, db interfaces.DBClient) {
 }
 
 func TestDataDB(t *testing.T, db interfaces.DBClient) {
-
 	err := db.Connect()
 	if err != nil {
 		t.Fatalf("Could not connect: %v", err)

@@ -959,3 +959,41 @@ func (bc *BoltClient) UpdateCommand(c *models.Command, r *models.Command) error 
 func (bc *BoltClient) DeleteCommandById(id string) error {
 	return bc.deleteById(id, db.Command)
 }
+
+// Scrub all metadata
+func (bc *BoltClient) ScrubMetadata() error {
+	err := bc.scrubAll(db.Addressable)
+	if err != nil {
+		return err
+	}
+	err = bc.scrubAll(db.DeviceService)
+	if err != nil {
+		return err
+	}
+	err = bc.scrubAll(db.DeviceProfile)
+	if err != nil {
+		return err
+	}
+	err = bc.scrubAll(db.Device)
+	if err != nil {
+		return err
+	}
+	err = bc.scrubAll(db.Command)
+	if err != nil {
+		return err
+	}
+	err = bc.scrubAll(db.DeviceReport)
+	if err != nil {
+		return err
+	}
+	err = bc.scrubAll(db.ScheduleEvent)
+	if err != nil {
+		return err
+	}
+	err = bc.scrubAll(db.ProvisionWatcher)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
