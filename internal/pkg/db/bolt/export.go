@@ -15,9 +15,6 @@
 package bolt
 
 import (
-	"errors"
-	"time"
-
 	bolt "github.com/coreos/bbolt"
 	"github.com/edgexfoundry/edgex-go/internal/export"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
@@ -34,15 +31,16 @@ const (
 // Return all the registrations
 // UnexpectedError - failed to retrieve registrations from the database
 func (bc *BoltClient) Registrations() ([]export.Registration, error) {
+	reg := export.Registration{}
 	regs := []export.Registration{}
+	json := jsoniter.ConfigCompatibleWithStandardLibrary
+
 	err := bc.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(ExportCollection))
 		if b == nil {
-			return db.ErrUnsupportedDatabase
+			return nil
 		}
-		json := jsoniter.ConfigCompatibleWithStandardLibrary
 		err := b.ForEach(func(id, encoded []byte) error {
-			var reg export.Registration
 			err := json.Unmarshal(encoded, &reg)
 			if err != nil {
 				return err
@@ -59,21 +57,9 @@ func (bc *BoltClient) Registrations() ([]export.Registration, error) {
 // UnexpectedError - failed to add to database
 func (bc *BoltClient) AddRegistration(reg *export.Registration) (bson.ObjectId, error) {
 	reg.ID = bson.NewObjectId()
-	reg.Created = time.Now().UnixNano() / int64(time.Millisecond)
+	reg.Created = db.MakeTimestamp()
 
-	err := bc.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(ExportCollection))
-		if b == nil {
-			return db.ErrUnsupportedDatabase
-		}
-		json := jsoniter.ConfigCompatibleWithStandardLibrary
-		encoded, err := json.Marshal(reg)
-		if err != nil {
-			return err
-		}
-		return b.Put([]byte(reg.ID), encoded)
-	})
-
+	err := bc.add(ExportCollection, reg, reg.ID)
 	return reg.ID, err
 }
 
@@ -81,49 +67,17 @@ func (bc *BoltClient) AddRegistration(reg *export.Registration) (bson.ObjectId, 
 // UnexpectedError - problem updating in database
 // NotFound - no registration with the ID was found
 func (bc *BoltClient) UpdateRegistration(reg export.Registration) error {
+	reg.Modified = db.MakeTimestamp()
 
-	reg.Modified = time.Now().UnixNano() / int64(time.Millisecond)
-
-	err := bc.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(ExportCollection))
-		if b == nil {
-			return db.ErrUnsupportedDatabase
-		}
-		if b.Get([]byte(reg.ID)) == nil {
-			return db.ErrNotFound
-		}
-		json := jsoniter.ConfigCompatibleWithStandardLibrary
-		encoded, err := json.Marshal(reg)
-		if err != nil {
-			return err
-		}
-		return b.Put([]byte(reg.ID), encoded)
-	})
-
-	return err
+	return bc.update(ExportCollection, reg, reg.ID)
 }
 
 // Get a registration by ID
 // UnexpectedError - problem getting in database
 // NotFound - no registration with the ID was found
 func (bc *BoltClient) RegistrationById(id string) (export.Registration, error) {
-	if !bson.IsObjectIdHex(id) {
-		return export.Registration{}, db.ErrInvalidObjectId
-	}
-
-	reg := export.Registration{}
-	err := bc.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(ExportCollection))
-		if b == nil {
-			return db.ErrUnsupportedDatabase
-		}
-		encoded := b.Get([]byte(bson.ObjectIdHex(id)))
-		if encoded == nil {
-			return db.ErrNotFound
-		}
-		json := jsoniter.ConfigCompatibleWithStandardLibrary
-		return json.Unmarshal(encoded, &reg)
-	})
+	var reg export.Registration
+	err := bc.getById(&reg, ExportCollection, id)
 	return reg, err
 }
 
@@ -131,31 +85,8 @@ func (bc *BoltClient) RegistrationById(id string) (export.Registration, error) {
 // UnexpectedError - problem getting in database
 // NotFound - no registration with the name was found
 func (bc *BoltClient) RegistrationByName(name string) (export.Registration, error) {
-	reg := export.Registration{}
-	err := bc.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(ExportCollection))
-		if b == nil {
-			return db.ErrUnsupportedDatabase
-		}
-		err := b.ForEach(func(id, encoded []byte) error {
-			value := jsoniter.Get(encoded, "name").ToString()
-			if value == name {
-				json := jsoniter.ConfigCompatibleWithStandardLibrary
-				err := json.Unmarshal(encoded, &reg)
-				if err != nil {
-					return err
-				}
-				return errors.New("Object name found")
-			}
-			return nil
-		})
-		if err == nil {
-			return db.ErrNotFound
-		} else if err.Error() == "Object name found" {
-			return nil
-		}
-		return err
-	})
+	var reg export.Registration
+	err := bc.getByName(&reg, ExportCollection, name)
 	return reg, err
 }
 
@@ -163,59 +94,17 @@ func (bc *BoltClient) RegistrationByName(name string) (export.Registration, erro
 // UnexpectedError - problem getting in database
 // NotFound - no registration with the ID was found
 func (bc *BoltClient) DeleteRegistrationById(id string) error {
-	if !bson.IsObjectIdHex(id) {
-		return db.ErrInvalidObjectId
-	}
-
-	err := bc.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(ExportCollection))
-		if b == nil {
-			return db.ErrUnsupportedDatabase
-		}
-		return b.Delete([]byte(bson.ObjectIdHex(id)))
-	})
-
-	return err
+	return bc.deleteById(id, ExportCollection)
 }
 
 // Delete a registration by name
 // UnexpectedError - problem getting in database
 // NotFound - no registration with the ID was found
 func (bc *BoltClient) DeleteRegistrationByName(name string) error {
-	err := bc.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(ExportCollection))
-		if b == nil {
-			return db.ErrUnsupportedDatabase
-		}
-		err := b.ForEach(func(id, encoded []byte) error {
-			value := jsoniter.Get(encoded, "name").ToString()
-			if value == name {
-				err := b.Delete([]byte(id))
-				if err != nil {
-					return db.ErrNotFound
-				}
-				err = errors.New("Object name found")
-				return err
-			}
-			return nil
-		})
-		if err == nil {
-			return db.ErrNotFound
-		} else if err.Error() == "Object name found" {
-			return nil
-		}
-		return err
-	})
-	return err
+	return bc.deleteByName(name, ExportCollection)
 }
 
 // Delete all registrations
 func (bc *BoltClient) ScrubAllRegistrations() error {
-	err := bc.db.Update(func(tx *bolt.Tx) error {
-		tx.DeleteBucket([]byte(ExportCollection))
-		tx.CreateBucketIfNotExists([]byte(ExportCollection))
-		return nil
-	})
-
-	return err
+	return bc.scrubAll(ExportCollection)
 }

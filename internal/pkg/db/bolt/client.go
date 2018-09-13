@@ -98,13 +98,13 @@ func (bc *BoltClient) update(bucket string, element interface{}, id bson.ObjectI
 }
 
 // Delete from the collection based on ID
-func (bc *BoltClient) deleteById(id string, col string) error {
+func (bc *BoltClient) deleteById(id string, bucket string) error {
 	// Check if id is a hexstring
 	if !bson.IsObjectIdHex(id) {
 		return db.ErrInvalidObjectId
 	}
 	err := bc.db.Update(func(tx *bolt.Tx) error {
-		b, _ := tx.CreateBucketIfNotExists([]byte(col))
+		b, _ := tx.CreateBucketIfNotExists([]byte(bucket))
 		if b == nil {
 			return db.ErrUnsupportedDatabase
 		}
@@ -113,14 +113,42 @@ func (bc *BoltClient) deleteById(id string, col string) error {
 	return err
 }
 
+// Delete from the collection based on name
+func (bc *BoltClient) deleteByName(name string, bucket string) error {
+	err := bc.db.Update(func(tx *bolt.Tx) error {
+		b, _ := tx.CreateBucketIfNotExists([]byte(bucket))
+		if b == nil {
+			return db.ErrUnsupportedDatabase
+		}
+		err := b.ForEach(func(id, encoded []byte) error {
+			value := jsoniter.Get(encoded, "name").ToString()
+			if value == name {
+				err := b.Delete([]byte(id))
+				if err != nil {
+					return err
+				}
+				return ErrObjFound
+			}
+			return nil
+		})
+		if err == nil {
+			return db.ErrNotFound
+		} else if err == ErrObjFound {
+			return nil
+		}
+		return err
+	})
+	return err
+}
+
 // Get an element by ID
-func (bc *BoltClient) getById(v interface{}, c string, gid string) error {
+func (bc *BoltClient) getById(v interface{}, bucket string, gid string) error {
 	// Check if id is a hexstring
 	if !bson.IsObjectIdHex(gid) {
 		return db.ErrInvalidObjectId
 	}
 	err := bc.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(c))
+		b := tx.Bucket([]byte(bucket))
 		if b == nil {
 			return db.ErrNotFound
 		}
@@ -136,15 +164,15 @@ func (bc *BoltClient) getById(v interface{}, c string, gid string) error {
 }
 
 // Get an element by name
-func (bc *BoltClient) getByName(v interface{}, c string, gn string) error {
+func (bc *BoltClient) getByName(v interface{}, bucket string, name string) error {
 	err := bc.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(c))
+		b := tx.Bucket([]byte(bucket))
 		if b == nil {
 			return db.ErrNotFound
 		}
 		err := b.ForEach(func(id, encoded []byte) error {
 			value := jsoniter.Get(encoded, "name").ToString()
-			if value == gn {
+			if value == name {
 				json := jsoniter.ConfigCompatibleWithStandardLibrary
 				err := json.Unmarshal(encoded, &v)
 				if err != nil {

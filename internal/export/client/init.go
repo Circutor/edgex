@@ -15,6 +15,7 @@ import (
 	"github.com/edgexfoundry/edgex-go/internal/export"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/consul"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
+	"github.com/edgexfoundry/edgex-go/internal/pkg/db/bolt"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/db/memory"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/db/mongo"
 
@@ -94,6 +95,8 @@ func newDBClient(dbType string, config db.Configuration) (export.DBClient, error
 	switch dbType {
 	case db.MongoDB:
 		return mongo.NewClient(config), nil
+	case db.BoltDB:
+		return bolt.NewClient(config)
 	case db.MemoryDB:
 		return &memory.MemDB{}, nil
 	default:

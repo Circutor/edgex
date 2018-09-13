@@ -51,27 +51,10 @@ func main() {
 	defer loggerClientZap.Sync()
 
 	// Initialize core-data
-	// We should initialize core-data before core-metadata to avoid BoltDB client issues
 	params := startup.BootParams{UseConsul: false, UseProfile: "core-data", BootTimeout: bootTimeout}
 	startup.Bootstrap(params, data.Retry, logBeforeInit)
 	if data.Init() == false {
 		loggingClient.Error(fmt.Sprintf("%s: Service bootstrap failed!", internal.CoreDataServiceKey))
-		return
-	}
-
-	// Initialize core-metadata
-	params = startup.BootParams{UseConsul: false, UseProfile: "core-metadata", BootTimeout: bootTimeout}
-	startup.Bootstrap(params, metadata.Retry, logBeforeInit)
-	if metadata.Init() == false {
-		loggingClient.Error(fmt.Sprintf("%s: Service bootstrap failed!", internal.CoreMetaDataServiceKey))
-		return
-	}
-
-	// Initialize core-command
-	params = startup.BootParams{UseConsul: false, UseProfile: "core-command", BootTimeout: bootTimeout}
-	startup.Bootstrap(params, command.Retry, logBeforeInit)
-	if command.Init() == false {
-		loggingClient.Error(fmt.Sprintf("%s: Service bootstrap failed!", internal.CoreCommandServiceKey))
 		return
 	}
 
@@ -85,6 +68,23 @@ func main() {
 	err = client.Init(*ecConfiguration, loggerClientZap)
 	if err != nil {
 		loggingClient.Error(fmt.Sprintf("Could not initialize export-client: %v", err.Error()))
+		return
+	}
+
+	// Initialize core-metadata
+	// We should initialize core-metadata after core-data and export-client to avoid BoltDB client issues
+	params = startup.BootParams{UseConsul: false, UseProfile: "core-metadata", BootTimeout: bootTimeout}
+	startup.Bootstrap(params, metadata.Retry, logBeforeInit)
+	if metadata.Init() == false {
+		loggingClient.Error(fmt.Sprintf("%s: Service bootstrap failed!", internal.CoreMetaDataServiceKey))
+		return
+	}
+
+	// Initialize core-command
+	params = startup.BootParams{UseConsul: false, UseProfile: "core-command", BootTimeout: bootTimeout}
+	startup.Bootstrap(params, command.Retry, logBeforeInit)
+	if command.Init() == false {
+		loggingClient.Error(fmt.Sprintf("%s: Service bootstrap failed!", internal.CoreCommandServiceKey))
 		return
 	}
 
