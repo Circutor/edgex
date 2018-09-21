@@ -15,7 +15,7 @@
 package bolt
 
 import (
-	"github.com/coreos/bbolt"
+	bolt "github.com/coreos/bbolt"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
 	"github.com/edgexfoundry/edgex-go/pkg/models"
 	jsoniter "github.com/json-iterator/go"

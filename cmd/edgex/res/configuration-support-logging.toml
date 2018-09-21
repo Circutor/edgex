@@ -1,7 +1,7 @@
 Hostname = 'localhost'
 Port = 48061
 Persistence = 'file'
-LoggingFile = './logs/support-logging.log'
+LoggingFile = './logs/edgex.log'
 MongoDB = 'logging'
 MongoCollection = 'logEntry'
 MongoURL = 'localhost'

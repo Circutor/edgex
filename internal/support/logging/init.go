@@ -44,7 +44,8 @@ func Retry(useConsul bool, useProfile string, timeout int, wait *sync.WaitGroup,
 				}
 			} else {
 				// Setup local service logging to file.
-				LoggingClient = logger.NewClient(internal.SupportLoggingServiceKey, false, Configuration.LoggingFile)
+				//LoggingClient = logger.NewClient(internal.SupportLoggingServiceKey, false, Configuration.LoggingFile)
+				LoggingClient = logger.NewClient(internal.SupportLoggingServiceKey, true, "http://localhost:48061/api/v1/logs")
 			}
 		}
 
