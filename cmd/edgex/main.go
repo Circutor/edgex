@@ -41,7 +41,7 @@ var bootTimeout int = 30000 //Once we start the V2 configuration rework, this wi
 var EnableRemoteLogging bool = true
 var LoggingFile string = "./logs/edgex.log"
 
-//var LoggingFile string = "/usr/share/edgex/logs/edgex.log" //para arm compile
+//var LoggingFile string = "/var/log/edgex.log" //para arm compile
 var LoggingRemoteURL string = "http://localhost:48061/api/v1/logs"
 
 func main() {
@@ -135,17 +135,6 @@ func main() {
 		return
 	}
 
-	/*	// Make chanels
-		errs := make(chan error, 3)
-		eventCh := make(chan *models.Event, 10)
-		listenForInterrupt(errs)
-
-		// Start support-logginfg HTTP server
-		go func() {
-			rsl := fmt.Sprintf(":%d", logging.Configuration.Port)
-			errs <- http.ListenAndServe(rsl, logging.HttpServer())
-		}()
-	*/
 	// Start core-data HTTP server
 	go func() {
 		rd := data.LoadRestRoutes()
