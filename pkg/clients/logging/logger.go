@@ -63,7 +63,7 @@ func NewClient(owningServiceName string, isRemote bool, logTarget string) Loggin
 
 	//If local logging, verify directory exists
 	if !lc.remoteEnabled {
-		VerifyLogDirectory(lc.logTarget)
+		verifyLogDirectory(lc.logTarget)
 	}
 
 	// Set up the loggers
@@ -101,7 +101,7 @@ func (lc EdgeXLogger) saveToLogFile(prefix string, message string) error {
 	return nil
 }
 
-func VerifyLogDirectory(path string) {
+func verifyLogDirectory(path string) {
 	prefix, _ := filepath.Split(path)
 	//If a path to the log file was specified and it does not exist, create it.
 	dir := strings.TrimRight(prefix, "/")

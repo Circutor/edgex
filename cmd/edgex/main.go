@@ -39,7 +39,7 @@ import (
 
 var bootTimeout int = 30000 //Once we start the V2 configuration rework, this will be config driven
 var EnableRemoteLogging bool = true
-var LoggingFile string = "./logs/edgex.log"
+var LoggingFile string = "./edgex.log"
 
 //var LoggingFile string = "/var/log/edgex.log" //para arm compile
 var LoggingRemoteURL string = "http://localhost:48061/api/v1/logs"
@@ -47,7 +47,6 @@ var LoggingRemoteURL string = "http://localhost:48061/api/v1/logs"
 func main() {
 	start := time.Now()
 	// Create logging client
-	logger.VerifyLogDirectory(LoggingFile)
 	loggingClient := logger.NewClient("edgex", EnableRemoteLogging, LoggingRemoteURL)
 
 	loggingClient.Info(fmt.Sprintf("Starting EdgeX %s ", edgex.Version), "start")
@@ -70,7 +69,7 @@ func main() {
 		loggingClient.Error(fmt.Sprintf("%s: Service bootstrap failed!", internal.SupportLoggingServiceKey), "error")
 		return
 	}
-	// Start support-logginfg HTTP server
+	// Start support-logging HTTP server
 	go func() {
 		rsl := fmt.Sprintf(":%d", logging.Configuration.Port)
 		errs <- http.ListenAndServe(rsl, logging.HttpServer())
