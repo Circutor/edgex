@@ -49,8 +49,6 @@ func main() {
 	// Create logging client
 	loggingClient := logger.NewClient("edgex", EnableRemoteLogging, LoggingRemoteURL)
 
-	loggingClient.Info(fmt.Sprintf("Starting EdgeX %s ", edgex.Version), "start")
-
 	// Create ZAP logging client
 	var loggerClientZap *zap.Logger
 	loggerClientZap, _ = zap.NewProduction()
@@ -74,6 +72,8 @@ func main() {
 		rsl := fmt.Sprintf(":%d", logging.Configuration.Port)
 		errs <- http.ListenAndServe(rsl, logging.HttpServer())
 	}()
+
+	loggingClient.Info(fmt.Sprintf("Starting EdgeX %s ", edgex.Version), "start")
 
 	// Initialize core-data
 	params = startup.BootParams{UseConsul: false, UseProfile: "core-data", BootTimeout: bootTimeout}
