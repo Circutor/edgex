@@ -148,7 +148,6 @@ func main() {
 	distro.Loop(errs, eventCh)
 
 	// All clients and HTTP servers have been started
-	time.Sleep(time.Microsecond * time.Duration(500))
 	loggingClient.Info("EdgeX started in: "+time.Since(start).String(), "time")
 
 	// Destroy all clients
