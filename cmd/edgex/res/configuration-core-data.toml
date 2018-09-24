@@ -24,7 +24,6 @@ ConsulCheckAddress = 'http://localhost:48080/api/v1/ping'
 ConsulPort = 8500
 CheckInterval = '10s'
 EnableRemoteLogging = true
-#LoggingFile = ''
 LoggingFile = './logs/edgex-core-data.log'
 LoggingRemoteURL = 'http://localhost:48061/api/v1/logs'
 MetaAddressableURL = 'http://localhost:48081/api/v1/addressable'

@@ -12,7 +12,6 @@ URLDevicePath = '/api/v1/device'
 ConsulHost = 'localhost'
 ConsulCheckAddress = 'http://localhost:48082/api/v1/ping'
 EnableRemoteLogging = true
-#LoggingFile = ''
 LoggingFile = './logs/edgex-core-command.log'
 LoggingRemoteURL = 'http://localhost:48061/api/v1/logs'
 MetaAddressableURL = 'http://localhost:48081/api/v1/addressable'
