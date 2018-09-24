@@ -142,12 +142,13 @@ func main() {
 		loggingClient.Error(fmt.Sprintf("Could not initialize export-distro: %v", err.Error()), "error")
 		return
 	}
-	// There can be another receivers that can be initialiced here
-	distro.MangosReceiver(eventCh)
-	distro.Loop(errs, eventCh)
 
 	// All clients and HTTP servers have been started
 	loggingClient.Info("EdgeX started in: "+time.Since(start).String(), "time")
+
+	// There can be another receivers that can be initialiced here
+	distro.MangosReceiver(eventCh)
+	distro.Loop(errs, eventCh)
 
 	// Destroy all clients
 	metadata.Destruct()
