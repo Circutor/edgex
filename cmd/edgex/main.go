@@ -29,117 +29,105 @@ import (
 	"github.com/edgexfoundry/edgex-go/internal/core/metadata"
 	"github.com/edgexfoundry/edgex-go/internal/export/client"
 	"github.com/edgexfoundry/edgex-go/internal/export/distro"
-	"github.com/edgexfoundry/edgex-go/internal/pkg/config"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/startup"
 	"github.com/edgexfoundry/edgex-go/internal/support/logging"
 	"github.com/edgexfoundry/edgex-go/pkg/clients/logging"
 	"github.com/edgexfoundry/edgex-go/pkg/models"
-	"go.uber.org/zap"
+	"github.com/gorilla/context"
 )
 
-var bootTimeout int = 30000 //Once we start the V2 configuration rework, this will be config driven
-var EnableRemoteLogging bool = true
-var LoggingFile string = "./edgex.log"
-
-//var LoggingFile string = "/var/log/edgex.log" //para arm compile
 var LoggingRemoteURL string = "http://localhost:48061/api/v1/logs"
 
 func main() {
 	start := time.Now()
-	// Create logging client
-	loggingClient := logger.NewClient("edgex", EnableRemoteLogging, LoggingRemoteURL)
-
-	// Create ZAP logging client
-	var loggerClientZap *zap.Logger
-	loggerClientZap, _ = zap.NewProduction()
-	defer loggerClientZap.Sync()
 
 	// Make chanels
-	errs := make(chan error, 3)
+	errCh := make(chan error, 3)
 	eventCh := make(chan *models.Event, 10)
-	listenForInterrupt(errs)
+	listenForInterrupt(errCh)
 
 	// Initialize support-logging
-	params := startup.BootParams{UseConsul: false, UseProfile: "support-logging", BootTimeout: bootTimeout}
+	params := startup.BootParams{UseConsul: false, UseProfile: "support-logging", BootTimeout: internal.BootTimeoutDefault}
 	startup.Bootstrap(params, logging.Retry, logBeforeInit)
 	if logging.Init() == false {
 		time.Sleep(time.Millisecond * time.Duration(15))
-		loggingClient.Error(fmt.Sprintf("%s: Service bootstrap failed!", internal.SupportLoggingServiceKey), "error")
+		fmt.Printf("%s: Service bootstrap failed\n", internal.SupportLoggingServiceKey)
 		return
 	}
 	// Start support-logging HTTP server
 	go func() {
 		rsl := fmt.Sprintf(":%d", logging.Configuration.Port)
-		errs <- http.ListenAndServe(rsl, logging.HttpServer())
+		errCh <- http.ListenAndServe(rsl, logging.HttpServer())
 	}()
 
+	// Create logging client
+	loggingClient := logger.NewClient("edgex", true, LoggingRemoteURL)
 	loggingClient.Info(fmt.Sprintf("Starting EdgeX %s ", edgex.Version), "start")
 
 	// Initialize core-data
-	params = startup.BootParams{UseConsul: false, UseProfile: "core-data", BootTimeout: bootTimeout}
+	params = startup.BootParams{UseConsul: false, UseProfile: "core-data", BootTimeout: internal.BootTimeoutDefault}
 	startup.Bootstrap(params, data.Retry, logBeforeInit)
-	if data.Init() == false {
-		loggingClient.Error(fmt.Sprintf("%s: Service bootstrap failed!", internal.CoreDataServiceKey), "error")
+	ok := data.Init(false)
+	if !ok {
+		loggingClient.Error(fmt.Sprintf("%s: Service bootstrap failed", internal.CoreDataServiceKey))
 		return
 	}
+	http.TimeoutHandler(nil, time.Millisecond*time.Duration(data.Configuration.Service.Timeout), "Request timed out")
+
 	// Start core-data HTTP server
 	go func() {
-		rd := data.LoadRestRoutes()
-		errs <- http.ListenAndServe(":"+strconv.Itoa(data.Configuration.ServicePort), rd)
+		r := data.LoadRestRoutes()
+		errCh <- http.ListenAndServe(":"+strconv.Itoa(data.Configuration.Service.Port), context.ClearHandler(r))
 	}()
 
 	// Initialize export-client
-	ecConfiguration := &client.ConfigurationStruct{}
-	err := config.LoadFromFile("export-client", ecConfiguration)
-	if err != nil {
-		loggingClient.Error(err.Error())
+	params = startup.BootParams{UseConsul: false, UseProfile: "export-client", BootTimeout: internal.BootTimeoutDefault}
+	startup.Bootstrap(params, client.Retry, logBeforeInit)
+	ok = client.Init(false)
+	if !ok {
+		loggingClient.Error(fmt.Sprintf("%s: Service bootstrap failed", internal.ExportClientServiceKey))
 		return
 	}
-	err = client.Init(*ecConfiguration, loggerClientZap)
-	if err != nil {
-		loggingClient.Error(fmt.Sprintf("Could not initialize export-client: %v", err.Error()), "error")
-		return
-	}
+
 	// Start export-client HTTP server
-	client.StartHTTPServer(*ecConfiguration, errs)
+	client.StartHTTPServer(errCh)
 
 	// Initialize core-metadata
 	// We should initialize core-metadata after core-data and export-client to avoid BoltDB client issues
-	params = startup.BootParams{UseConsul: false, UseProfile: "core-metadata", BootTimeout: bootTimeout}
+	params = startup.BootParams{UseConsul: false, UseProfile: "core-metadata", BootTimeout: internal.BootTimeoutDefault}
 	startup.Bootstrap(params, metadata.Retry, logBeforeInit)
-	if metadata.Init() == false {
-		loggingClient.Error(fmt.Sprintf("%s: Service bootstrap failed!", internal.CoreMetaDataServiceKey), "error")
+	ok = metadata.Init(false)
+	if !ok {
+		loggingClient.Error(fmt.Sprintf("%s: Service bootstrap failed", internal.CoreMetaDataServiceKey))
 		return
 	}
+
 	// Start core-metadata HTTP server
 	go func() {
-		rm := metadata.LoadRestRoutes()
-		errs <- http.ListenAndServe(":"+strconv.Itoa(metadata.Configuration.ServicePort), rm)
+		r := metadata.LoadRestRoutes()
+		errCh <- http.ListenAndServe(":"+strconv.Itoa(metadata.Configuration.Service.Port), context.ClearHandler(r))
 	}()
 
 	// Initialize core-command
-	params = startup.BootParams{UseConsul: false, UseProfile: "core-command", BootTimeout: bootTimeout}
+	params = startup.BootParams{UseConsul: false, UseProfile: "core-command", BootTimeout: internal.BootTimeoutDefault}
 	startup.Bootstrap(params, command.Retry, logBeforeInit)
-	if command.Init() == false {
-		loggingClient.Error(fmt.Sprintf("%s: Service bootstrap failed!", internal.CoreCommandServiceKey), "error")
+	ok = command.Init(false)
+	if !ok {
+		loggingClient.Error(fmt.Sprintf("%s: Service bootstrap failed", internal.CoreCommandServiceKey))
 		return
 	}
+
 	// Start core-command HTTP server
 	go func() {
-		rc := command.LoadRestRoutes()
-		errs <- http.ListenAndServe(":"+strconv.Itoa(command.Configuration.ServicePort), rc)
+		r := command.LoadRestRoutes()
+		errCh <- http.ListenAndServe(":"+strconv.Itoa(command.Configuration.Service.Port), context.ClearHandler(r))
 	}()
 
 	// Initialize export-distro
-	edConfiguration := &distro.ConfigurationStruct{}
-	err = config.LoadFromFile("export-distro", edConfiguration)
-	if err != nil {
-		loggingClient.Error(err.Error())
-		return
-	}
-	err = distro.Init(*edConfiguration, loggerClientZap, false)
-	if err != nil {
-		loggingClient.Error(fmt.Sprintf("Could not initialize export-distro: %v", err.Error()), "error")
+	params = startup.BootParams{UseConsul: false, UseProfile: "export-distro", BootTimeout: internal.BootTimeoutDefault}
+	startup.Bootstrap(params, distro.Retry, logBeforeInit)
+	if ok = distro.Init(); !ok {
+		loggingClient.Error(fmt.Sprintf("%s: Service bootstrap failed", internal.ExportDistroServiceKey))
 		return
 	}
 
@@ -148,12 +136,13 @@ func main() {
 
 	// There can be another receivers that can be initialiced here
 	distro.MangosReceiver(eventCh)
-	distro.Loop(errs, eventCh)
+	distro.Loop(errCh, eventCh)
 
 	// Destroy all clients
-	metadata.Destruct()
 	data.Destruct()
-	client.Destroy()
+	client.Destruct()
+	metadata.Destruct()
+	command.Destruct()
 }
 
 func logBeforeInit(err error) {

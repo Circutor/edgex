@@ -29,9 +29,8 @@ import (
 	"github.com/edgexfoundry/edgex-go/internal/pkg/startup"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/usage"
 	"github.com/edgexfoundry/edgex-go/pkg/clients/logging"
+	"github.com/gorilla/context"
 )
-
-var bootTimeout int = 30000 //Once we start the V2 configuration rework, this will be config driven
 
 func main() {
 	start := time.Now()
@@ -45,10 +44,10 @@ func main() {
 	flag.Usage = usage.HelpCallback
 	flag.Parse()
 
-	params := startup.BootParams{UseConsul: useConsul, UseProfile: useProfile, BootTimeout: bootTimeout}
+	params := startup.BootParams{UseConsul: useConsul, UseProfile: useProfile, BootTimeout: internal.BootTimeoutDefault}
 	startup.Bootstrap(params, command.Retry, logBeforeInit)
 
-	ok := command.Init()
+	ok := command.Init(useConsul)
 	if !ok {
 		logBeforeInit(fmt.Errorf("%s: Service bootstrap failed!", internal.CoreCommandServiceKey))
 		return
@@ -57,17 +56,18 @@ func main() {
 	command.LoggingClient.Info("Service dependencies resolved...")
 	command.LoggingClient.Info(fmt.Sprintf("Starting %s %s ", internal.CoreCommandServiceKey, edgex.Version))
 
-	http.TimeoutHandler(nil, time.Millisecond*time.Duration(command.Configuration.ServiceTimeout), "Request timed out")
-	command.LoggingClient.Info(command.Configuration.AppOpenMsg, "")
+	http.TimeoutHandler(nil, time.Millisecond*time.Duration(command.Configuration.Service.Timeout), "Request timed out")
+	command.LoggingClient.Info(command.Configuration.Service.StartupMsg, "")
 
 	errs := make(chan error, 2)
 	listenForInterrupt(errs)
-	startHttpServer(errs, command.Configuration.ServicePort)
+	startHttpServer(errs, command.Configuration.Service.Port)
 
 	// Time it took to start service
 	command.LoggingClient.Info("Service started in: "+time.Since(start).String(), "")
-	command.LoggingClient.Info("Listening on port: "+strconv.Itoa(command.Configuration.ServicePort), "")
+	command.LoggingClient.Info("Listening on port: "+strconv.Itoa(command.Configuration.Service.Port), "")
 	c := <-errs
+	command.Destruct()
 	command.LoggingClient.Warn(fmt.Sprintf("terminating: %v", c))
 }
 
@@ -87,6 +87,6 @@ func listenForInterrupt(errChan chan error) {
 func startHttpServer(errChan chan error, port int) {
 	go func() {
 		r := command.LoadRestRoutes()
-		errChan <- http.ListenAndServe(":"+strconv.Itoa(port), r)
+		errChan <- http.ListenAndServe(":"+strconv.Itoa(port), context.ClearHandler(r))
 	}()
 }

@@ -11,7 +11,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/edgexfoundry/edgex-go/internal/export/interfaces"
 	"github.com/edgexfoundry/edgex-go/pkg/models"
 
 	"github.com/influxdata/influxdb/client/v2"
@@ -27,7 +26,7 @@ type influxdbSender struct {
 	database string
 }
 
-func NewInfluxDBSender(addr models.Addressable) interfaces.Sender {
+func newInfluxDBSender(addr models.Addressable) sender {
 	connStr := "http://" + addr.Address + ":" + strconv.Itoa(addr.Port)
 
 	influxdbHTTPInfo := client.HTTPConfig{
@@ -50,11 +49,11 @@ func NewInfluxDBSender(addr models.Addressable) interfaces.Sender {
 
 func (sender *influxdbSender) Send(data []byte, event *models.Event) bool {
 	if sender.client == nil {
-		logger.Info("Connecting to InfluxDB server")
+		LoggingClient.Info("Connecting to InfluxDB server")
 		c, err := client.NewHTTPClient(sender.httpInfo)
 
 		if err != nil {
-			logger.Error(fmt.Sprintf("Failed to connect to InfluxDB server: %s", err))
+			LoggingClient.Error(fmt.Sprintf("Failed to connect to InfluxDB server: %s", err))
 			return false
 		}
 
@@ -67,7 +66,7 @@ func (sender *influxdbSender) Send(data []byte, event *models.Event) bool {
 	})
 
 	if err != nil {
-		logger.Error(fmt.Sprintf("Failed to craete batch points: %s", err))
+		LoggingClient.Error(fmt.Sprintf("Failed to craete batch points: %s", err))
 		return false
 	}
 
@@ -99,7 +98,7 @@ func (sender *influxdbSender) Send(data []byte, event *models.Event) bool {
 		)
 
 		if err != nil {
-			logger.Error(fmt.Sprintf("Failed to add data point: %s", err))
+			LoggingClient.Error(fmt.Sprintf("Failed to add data point: %s", err))
 			return false
 		}
 
@@ -109,7 +108,7 @@ func (sender *influxdbSender) Send(data []byte, event *models.Event) bool {
 	err = sender.client.Write(bp)
 
 	if err != nil {
-		logger.Error(fmt.Sprintf("Failed to write data points to InfluxDB server: %s", err))
+		LoggingClient.Error(fmt.Sprintf("Failed to write data points to InfluxDB server: %s", err))
 		sender.client = nil // Reset the client
 		return false
 	}

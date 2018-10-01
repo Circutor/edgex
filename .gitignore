@@ -40,3 +40,9 @@ cmd/export-client/logs/
 cmd/export-distro/logs/
 cmd/support-notifications/logs/
 cmd/edgex/logs/
+
+*.snap
+
+*.bz2
+
+*.pyc

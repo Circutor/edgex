@@ -16,7 +16,6 @@ import (
 	"github.com/go-mangos/mangos/protocol/sub"
 	"github.com/go-mangos/mangos/transport/ipc"
 	"github.com/go-mangos/mangos/transport/tcp"
-	"go.uber.org/zap"
 )
 
 const (
@@ -41,8 +40,8 @@ func initMangos(eventCh chan *models.Event) {
 	}
 	defer q.Close()
 
-	logger.Info("Connecting to Mangos...")
-	url := fmt.Sprintf("tcp://%s:%d", configuration.DataHost, mangosPort)
+	LoggingClient.Info("Connecting to Mangos...")
+	url := fmt.Sprintf("tcp://%s:%d", Configuration.DataHost, mangosPort)
 
 	q.AddTransport(ipc.NewTransport())
 	q.AddTransport(tcp.NewTransport())
@@ -54,24 +53,26 @@ func initMangos(eventCh chan *models.Event) {
 	if err != nil {
 		die("cannot subscribe: %s", err.Error())
 	}
-	logger.Info("Connected to Mangos")
+	LoggingClient.Info("Connected to Mangos")
+
 	for {
-		if msg, erro := q.Recv(); erro != nil {
-			die("Cannot recv: %s", erro.Error())
+		msg, err := q.Recv()
+		if err != nil {
+			LoggingClient.Error(fmt.Sprintf("Error getting message: %v", err))
 		} else {
-			event := parseEvent(string(msg))
-			logger.Info("Event received", zap.Any("event", event))
+			str := string(msg)
+			event := parseEvent(str)
+			LoggingClient.Info(fmt.Sprintf("Event received: %s", str))
 			eventCh <- event
 		}
 	}
-
 }
 
 func parseEvent(str string) *models.Event {
 	event := models.Event{}
 
 	if err := json.Unmarshal([]byte(str), &event); err != nil {
-		logger.Error("Failed to parse event", zap.Error(err))
+		LoggingClient.Error(fmt.Sprintf("Failed to parse event: %v", err))
 		return nil
 	}
 	return &event

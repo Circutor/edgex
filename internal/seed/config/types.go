@@ -11,15 +11,21 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  *******************************************************************************/
-package notifications
+package config
 
-type notificationConfig struct {
-	serviceHost string
-	servicePort int
-}
-
-var clientConfig notificationConfig
-
-func SetConfiguration(host string, port int) {
-	clientConfig = notificationConfig{serviceHost: host, servicePort: port}
+type ConfigurationStruct struct {
+	ConfigPath                   string
+	GlobalPrefix                 string
+	ConsulProtocol               string
+	ConsulHost                   string
+	ConsulPort                   int
+	IsReset                      bool
+	FailLimit                    int
+	FailWaitTime                 int
+	AcceptablePropertyExtensions []string
+	YamlExtensions               []string
+	TomlExtensions               []string
+	EnableRemoteLogging          bool
+	LoggingFile                  string
+	LoggingRemoteURL             string
 }

@@ -16,7 +16,6 @@ package metadata
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -32,6 +31,8 @@ Addressable client for interacting with the addressable section of metadata
 type AddressableClient interface {
 	Add(addr *models.Addressable) (string, error)
 	AddressableForName(name string) (models.Addressable, error)
+	Update(addr models.Addressable) error
+	Delete(id string) error
 }
 
 type AddressableRestClient struct {
@@ -92,7 +93,7 @@ func (a *AddressableRestClient) Add(addr *models.Addressable) (string, error) {
 	bodyString := string(bodyBytes)
 
 	if resp.StatusCode != http.StatusOK {
-		return "", errors.New(string(bodyString))
+		return "", types.NewErrServiceClient(resp.StatusCode, bodyBytes)
 	}
 
 	return bodyString, err
@@ -139,10 +140,72 @@ func (a *AddressableRestClient) AddressableForName(name string) (models.Addressa
 		if err != nil {
 			return models.Addressable{}, err
 		}
-		bodyString := string(bodyBytes)
 
-		return models.Addressable{}, errors.New(bodyString)
+		return models.Addressable{}, types.NewErrServiceClient(resp.StatusCode, bodyBytes)
 	}
 
 	return a.decodeAddressable(resp)
+}
+
+// Update a addressable
+func (a *AddressableRestClient) Update(addr models.Addressable) error {
+	jsonStr, err := json.Marshal(&addr)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, a.url, bytes.NewReader(jsonStr))
+	if err != nil {
+		return err
+	}
+
+	resp, err := makeRequest(req)
+	if err != nil {
+		return err
+	}
+	if resp == nil {
+		return ErrResponseNil
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		// Get the response body
+		bodyBytes, err := getBody(resp)
+		if err != nil {
+			return err
+		}
+
+		return types.NewErrServiceClient(resp.StatusCode, bodyBytes)
+	}
+
+	return nil
+}
+
+// Delete a addressable (specified by id)
+func (a *AddressableRestClient) Delete(id string) error {
+	req, err := http.NewRequest(http.MethodDelete, a.url+"/id/"+id, nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := makeRequest(req)
+	if err != nil {
+		return err
+	}
+	if resp == nil {
+		return ErrResponseNil
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		// Get the response body
+		bodyBytes, err := getBody(resp)
+		if err != nil {
+			return err
+		}
+
+		return types.NewErrServiceClient(resp.StatusCode, bodyBytes)
+	}
+
+	return nil
 }

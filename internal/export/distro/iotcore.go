@@ -13,9 +13,7 @@ import (
 	"strings"
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
-	"github.com/edgexfoundry/edgex-go/internal/export/interfaces"
 	"github.com/edgexfoundry/edgex-go/pkg/models"
-	"go.uber.org/zap"
 )
 
 const (
@@ -30,8 +28,8 @@ type iotCoreSender struct {
 	topic  string
 }
 
-// NewIoTCoreSender returns new Google IoT Core sender instance.
-func NewIoTCoreSender(addr models.Addressable) interfaces.Sender {
+// newIoTCoreSender returns new Google IoT Core sender instance.
+func newIoTCoreSender(addr models.Addressable) sender {
 	protocol := strings.ToLower(addr.Protocol)
 	broker := fmt.Sprintf("%s%s", addr.GetBaseURL(), addr.Path)
 	deviceID := extractDeviceID(addr.Publisher)
@@ -44,9 +42,9 @@ func NewIoTCoreSender(addr models.Addressable) interfaces.Sender {
 	opts.SetAutoReconnect(false)
 
 	if validateProtocol(protocol) {
-		cert, err := tls.LoadX509KeyPair(configuration.MQTTSCert, configuration.MQTTSKey)
+		cert, err := tls.LoadX509KeyPair(Configuration.MQTTSCert, Configuration.MQTTSKey)
 		if err != nil {
-			logger.Error("Failed loading x509 data")
+			LoggingClient.Error("Failed loading x509 data")
 			return nil
 		}
 
@@ -69,11 +67,11 @@ func NewIoTCoreSender(addr models.Addressable) interfaces.Sender {
 
 func (sender *iotCoreSender) Send(data []byte) bool {
 	if !sender.client.IsConnected() {
-		logger.Info("Connecting to mqtt server")
+		LoggingClient.Info("Connecting to mqtt server")
 		token := sender.client.Connect()
 		token.Wait()
 		if token.Error() != nil {
-			logger.Warn("Could not connect to mqtt server, drop event", zap.Error(token.Error()))
+			LoggingClient.Error(fmt.Sprintf("Could not connect to mqtt server, drop event. Error: %s", token.Error().Error()))
 			return false
 		}
 	}
@@ -81,11 +79,11 @@ func (sender *iotCoreSender) Send(data []byte) bool {
 	token := sender.client.Publish(sender.topic, 0, false, data)
 	token.Wait()
 	if token.Error() != nil {
-		logger.Warn("mqtt error: ", zap.Error(token.Error()))
+		LoggingClient.Error(token.Error().Error())
 		return false
 	}
 
-	logger.Debug("Sent data: ", zap.ByteString("data", data))
+	LoggingClient.Debug(fmt.Sprintf("Sent data: %X", data))
 	return true
 }
 

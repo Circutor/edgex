@@ -77,6 +77,10 @@ func LoadRestRoutes() *mux.Router {
 	// /api/v1/ping
 	b.HandleFunc("/ping", pingHandler)
 
+	//Config Resource
+	// /api/v1/config
+	b.HandleFunc("/config", configHandler)
+
 	return r
 }
 
@@ -179,7 +183,7 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	// Get all events
 	case http.MethodGet:
-		events, err := getEvents(Configuration.ReadMaxLimit)
+		events, err := getEvents(Configuration.Service.ReadMaxLimit)
 		if err != nil {
 			LoggingClient.Error(err.Error())
 			http.Error(w, err.Error(), http.StatusInternalServerError)

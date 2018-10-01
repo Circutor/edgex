@@ -11,15 +11,7 @@ import (
 
 	"github.com/edgexfoundry/edgex-go/internal/export"
 	"github.com/edgexfoundry/edgex-go/pkg/models"
-	"go.uber.org/zap"
 )
-
-func init() {
-	if logger == nil {
-		logger = zap.NewExample()
-		_ = logger
-	}
-}
 
 func validRegistration() export.Registration {
 	r := export.Registration{}
@@ -112,7 +104,7 @@ func TestRegistrationInfoEvent(t *testing.T) {
 	// Filter only accepting events from dummyDev
 	f := export.Filter{}
 	f.DeviceIDs = append(f.DeviceIDs, dummyDev)
-	filter := NewDevIdFilter(f)
+	filter := newDevIdFilter(f)
 
 	ri.filter = append(ri.filter, filter)
 
@@ -181,18 +173,18 @@ func TestRegistrationInfoLoop(t *testing.T) {
 func TestUpdateRunningRegistrations(t *testing.T) {
 	running := make(map[string]*registrationInfo)
 
-	if updateRunningRegistrations(running, export.NotifyUpdate{}) == nil {
+	if updateRunningRegistrations(running, models.NotifyUpdate{}) == nil {
 		t.Error("Err should not be nil")
 	}
-	if updateRunningRegistrations(running, export.NotifyUpdate{
+	if updateRunningRegistrations(running, models.NotifyUpdate{
 		Operation: export.NotifyUpdateDelete}) == nil {
 		t.Error("Err should not be nil")
 	}
-	if updateRunningRegistrations(running, export.NotifyUpdate{
+	if updateRunningRegistrations(running, models.NotifyUpdate{
 		Operation: export.NotifyUpdateUpdate}) == nil {
 		t.Error("Err should not be nil")
 	}
-	if updateRunningRegistrations(running, export.NotifyUpdate{
+	if updateRunningRegistrations(running, models.NotifyUpdate{
 		Operation: export.NotifyUpdateAdd}) == nil {
 		t.Error("Err should not be nil")
 	}
@@ -201,8 +193,6 @@ func TestUpdateRunningRegistrations(t *testing.T) {
 
 func BenchmarkProcessEvent(b *testing.B) {
 	var Dummy = &dummyStruct{}
-	logger = zap.NewNop()
-	defer logger.Sync()
 
 	event := models.Event{}
 	event.Device = "dummyDev"

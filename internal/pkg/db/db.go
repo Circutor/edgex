@@ -22,7 +22,6 @@ import (
 const (
 	// Databases
 	MongoDB  = "mongodb"
-	InfluxDB = "influxdb"
 	BoltDB   = "boltdb"
 	MemoryDB = "memorydb"
 
@@ -30,6 +29,7 @@ const (
 	EventsCollection          = "event"
 	ReadingsCollection        = "reading"
 	ValueDescriptorCollection = "valueDescriptor"
+	ExportCollection         = "exportConfiguration"
 
 	// Metadata
 	Device           = "device"

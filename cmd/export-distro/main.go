@@ -11,32 +11,29 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/edgexfoundry/edgex-go/pkg/models"
+	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
+	"time"
 
 	"github.com/edgexfoundry/edgex-go"
-	"github.com/edgexfoundry/edgex-go/internal/export/distro"
 	"github.com/edgexfoundry/edgex-go/internal"
-	"github.com/edgexfoundry/edgex-go/internal/pkg/config"
+	"github.com/edgexfoundry/edgex-go/internal/export/distro"
+	"github.com/edgexfoundry/edgex-go/internal/pkg/startup"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/usage"
-	"github.com/edgexfoundry/edgex-go/pkg/models"
-
-	"go.uber.org/zap"
+	"github.com/edgexfoundry/edgex-go/pkg/clients/logging"
 )
 
-var logger *zap.Logger
+var bootTimeout = 30000 //Once we start the V2 configuration rework, this will be config driven
 
 func main() {
-	logger, _ = zap.NewProduction()
-	defer logger.Sync()
+	var useConsul bool
+	var useProfile string
+	start := time.Now()
 
-	logger.Info("Starting "+internal.ExportDistroServiceKey, zap.String("version", edgex.Version))
-
-	var (
-		useConsul  bool
-		useProfile string
-	)
 	flag.BoolVar(&useConsul, "consul", false, "Indicates the service should use consul.")
 	flag.BoolVar(&useConsul, "c", false, "Indicates the service should use consul.")
 	flag.StringVar(&useProfile, "profile", "", "Specify a profile other than default.")
@@ -44,44 +41,46 @@ func main() {
 	flag.Usage = usage.HelpCallback
 	flag.Parse()
 
-	configuration := &distro.ConfigurationStruct{}
-	err := config.LoadFromFile(useProfile, configuration)
-	if err != nil {
-		logger.Error(err.Error(), zap.String("version", edgex.Version))
+	params := startup.BootParams{UseConsul: useConsul, UseProfile: useProfile, BootTimeout: bootTimeout}
+	startup.Bootstrap(params, distro.Retry, logBeforeInit)
+
+	if ok := distro.Init(); !ok {
+		logBeforeInit(fmt.Errorf("%s: Service bootstrap failed", internal.ExportDistroServiceKey))
 		return
 	}
 
-	//Determine if configuration should be overridden from Consul
-	var consulMsg string
-	if useConsul {
-		consulMsg = "Loading configuration from Consul..."
-		err := distro.ConnectToConsul(*configuration)
-		if err != nil {
-			logger.Error(err.Error(), zap.String("version", edgex.Version))
-			return //end program since user explicitly told us to use Consul.
-		}
-	} else {
-		consulMsg = "Bypassing Consul configuration..."
-	}
+	distro.LoggingClient.Info("Service dependencies resolved...")
+	distro.LoggingClient.Info(fmt.Sprintf("Starting %s %s ", internal.ExportDistroServiceKey, edgex.Version))
 
-	logger.Info(consulMsg, zap.String("version", edgex.Version))
+	http.TimeoutHandler(nil, time.Millisecond*time.Duration(distro.Configuration.Timeout), "Request timed out")
+	distro.LoggingClient.Info(distro.Configuration.AppOpenMsg, "")
 
-	err = distro.Init(*configuration, logger, useConsul)
-
-	logger.Info("Starting distro")
 	errs := make(chan error, 2)
 	eventCh := make(chan *models.Event, 10)
 
-	go func() {
-		c := make(chan os.Signal)
-		signal.Notify(c, syscall.SIGINT)
-		errs <- fmt.Errorf("%s", <-c)
-	}()
+	listenForInterrupt(errs)
 
 	// There can be another receivers that can be initialiced here
 	distro.MangosReceiver(eventCh)
-
 	distro.Loop(errs, eventCh)
 
-	logger.Info("terminated")
+	// Time it took to start service
+	distro.LoggingClient.Info("Service started in: "+time.Since(start).String(), "")
+	distro.LoggingClient.Info("Listening on port: " + strconv.Itoa(distro.Configuration.Port))
+	c := <-errs
+	distro.LoggingClient.Warn(fmt.Sprintf("terminating: %v", c))
+}
+
+func logBeforeInit(err error) {
+	l := logger.NewClient(internal.ExportDistroServiceKey, false, "")
+	l.Error(err.Error())
+}
+
+
+func listenForInterrupt(errChan chan error) {
+	go func() {
+		c := make(chan os.Signal)
+		signal.Notify(c, syscall.SIGINT)
+		errChan <- fmt.Errorf("%s", <-c)
+	}()
 }

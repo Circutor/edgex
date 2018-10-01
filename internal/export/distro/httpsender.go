@@ -11,13 +11,11 @@ package distro
 
 import (
 	"bytes"
+	"fmt"
 	"net/http"
 	"strconv"
 
-	"github.com/edgexfoundry/edgex-go/internal/export/interfaces"
 	"github.com/edgexfoundry/edgex-go/pkg/models"
-
-	"go.uber.org/zap"
 )
 
 type httpSender struct {
@@ -27,8 +25,8 @@ type httpSender struct {
 
 const mimeTypeJSON = "application/json"
 
-// NewHTTPSender - create http sender
-func NewHTTPSender(addr models.Addressable) interfaces.Sender {
+// newHTTPSender - create http sender
+func newHTTPSender(addr models.Addressable) sender {
 
 	sender := httpSender{
 		url:    addr.Protocol + "://" + addr.Address + ":" + strconv.Itoa(addr.Port) + addr.Path,
@@ -43,16 +41,16 @@ func (sender httpSender) Send(data []byte, event *models.Event) bool {
 	case http.MethodPost:
 		response, err := http.Post(sender.url, mimeTypeJSON, bytes.NewReader(data))
 		if err != nil {
-			logger.Error("Error: ", zap.Error(err))
+			LoggingClient.Error(err.Error())
 			return false
 		}
 		defer response.Body.Close()
-		logger.Info("Response: ", zap.String("status", response.Status))
+		LoggingClient.Info(fmt.Sprintf("Response: %s", response.Status))
 	default:
-		logger.Info("Unsupported method: ", zap.String("method", sender.method))
+		LoggingClient.Info(fmt.Sprintf("Unsupported method: %s", sender.method))
 		return false
 	}
 
-	logger.Info("Sent data: ", zap.ByteString("data", data))
+	LoggingClient.Info(fmt.Sprintf("Sent data: %X", data))
 	return true
 }
