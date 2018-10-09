@@ -49,15 +49,15 @@ func main() {
 	// Initialize support-logging
 	params := startup.BootParams{UseConsul: false, UseProfile: "support-logging", BootTimeout: internal.BootTimeoutDefault}
 	startup.Bootstrap(params, logging.Retry, logBeforeInit)
-	if logging.Init() == false {
+	if logging.Init(false) == false {
 		time.Sleep(time.Millisecond * time.Duration(15))
 		fmt.Printf("%s: Service bootstrap failed\n", internal.SupportLoggingServiceKey)
 		return
 	}
 	// Start support-logging HTTP server
 	go func() {
-		rsl := fmt.Sprintf(":%d", logging.Configuration.Port)
-		errCh <- http.ListenAndServe(rsl, logging.HttpServer())
+		r := fmt.Sprintf(":%d", logging.Configuration.Service.Port)
+		errCh <- http.ListenAndServe(r, logging.HttpServer())
 	}()
 
 	// Create logging client
@@ -126,7 +126,7 @@ func main() {
 	// Initialize export-distro
 	params = startup.BootParams{UseConsul: false, UseProfile: "export-distro", BootTimeout: internal.BootTimeoutDefault}
 	startup.Bootstrap(params, distro.Retry, logBeforeInit)
-	if ok = distro.Init(); !ok {
+	if ok = distro.Init(false); !ok {
 		loggingClient.Error(fmt.Sprintf("%s: Service bootstrap failed", internal.ExportDistroServiceKey))
 		return
 	}

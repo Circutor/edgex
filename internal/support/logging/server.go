@@ -15,8 +15,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/edgexfoundry/edgex-go/internal"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
 	"github.com/edgexfoundry/edgex-go/internal/support/logging/models"
+	"github.com/edgexfoundry/edgex-go/pkg/clients/logging"
 	"github.com/go-zoo/bone"
 )
 
@@ -25,6 +27,20 @@ func replyPing(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	str := `{"value" : "pong"}`
 	io.WriteString(w, str)
+}
+
+func replyConfig(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	w.Header().Add("Content-Type", "application/json")
+
+	enc := json.NewEncoder(w)
+	err := enc.Encode(Configuration)
+	// Problems encoding
+	if err != nil {
+		LoggingClient.Error("Error encoding the data: " + err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func addLog(w http.ResponseWriter, r *http.Request) {
@@ -43,7 +59,7 @@ func addLog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !models.IsValidLogLevel(l.Level) {
+	if !logger.IsValidLogLevel(l.Level) {
 		s := fmt.Sprintf("Invalid level in LogEntry: %s", l.Level)
 		w.WriteHeader(http.StatusBadRequest)
 		io.WriteString(w, s)
@@ -55,6 +71,13 @@ func addLog(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusAccepted)
 
 	dbClient.add(l)
+}
+
+func checkMaxLimit(limit int) int {
+	if limit > Configuration.Service.ReadMaxLimit || limit == 0 {
+		return Configuration.Service.ReadMaxLimit
+	}
+	return limit
 }
 
 func getCriteria(w http.ResponseWriter, r *http.Request) *matchCriteria {
@@ -75,6 +98,8 @@ func getCriteria(w http.ResponseWriter, r *http.Request) *matchCriteria {
 			return nil
 		}
 	}
+	//In all cases, cap the # of entries returned at ReadMaxLimit
+	criteria.Limit = checkMaxLimit(criteria.Limit)
 
 	start := bone.GetValue(r, "start")
 	if len(start) > 0 {
@@ -132,7 +157,7 @@ func getCriteria(w http.ResponseWriter, r *http.Request) *matchCriteria {
 		criteria.LogLevels = append(criteria.LogLevels,
 			strings.Split(logLevels, ",")...)
 		for _, l := range criteria.LogLevels {
-			if !models.IsValidLogLevel(l) {
+			if !logger.IsValidLogLevel(l) {
 				s := fmt.Sprintf("Invalid log level '%s'", l)
 				w.WriteHeader(http.StatusBadRequest)
 				io.WriteString(w, s)
@@ -152,14 +177,6 @@ func getLogs(w http.ResponseWriter, r *http.Request) {
 	logs, err := dbClient.find(*criteria)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	if criteria.Limit > 0 && len(logs) > criteria.Limit {
-		w.WriteHeader(http.StatusRequestEntityTooLarge)
-		s := fmt.Sprintf("More logs than requested, %d with limit %d",
-			len(logs), criteria.Limit)
-		io.WriteString(w, s)
 		return
 	}
 
@@ -192,6 +209,8 @@ func delLogs(w http.ResponseWriter, r *http.Request) {
 // HTTPServer function
 func HttpServer() http.Handler {
 	mux := bone.New()
+	mux.Get(internal.ApiConfigRoute, http.HandlerFunc(replyConfig))
+
 	mv1 := mux.Prefix("/api/v1")
 
 	mv1.Get("/ping", http.HandlerFunc(replyPing))

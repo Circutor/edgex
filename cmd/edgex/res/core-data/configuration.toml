@@ -50,5 +50,3 @@ Protocol = 'tcp'
 Host = '*'
 Port = 5563
 Type = 'zero'
-
-

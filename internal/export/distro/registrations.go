@@ -3,6 +3,7 @@
 // Cavium
 // Mainflux
 // IOTech
+// Copyright (c) 2018 Dell Technologies, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -67,7 +68,7 @@ func (reg *registrationInfo) update(newReg export.Registration) bool {
 	case export.FormatXML:
 		reg.format = xmlFormatter{}
 	case export.FormatSerialized:
-		// TODO reg.format = distro.NewSerializedFormat()
+		reg.format = jsonFormatter{}
 	case export.FormatIoTCoreJSON:
 		reg.format = jsonFormatter{}
 	case export.FormatAzureJSON:
@@ -103,15 +104,15 @@ func (reg *registrationInfo) update(newReg export.Registration) bool {
 	reg.sender = nil
 	switch newReg.Destination {
 	case export.DestMQTT, export.DestAzureMQTT:
-		reg.sender = newMqttSender(newReg.Addressable, Configuration.MQTTSCert, Configuration.MQTTSKey)
+		c := Configuration.Certificates["MQTTS"]
+		reg.sender = newMqttSender(newReg.Addressable, c.Cert, c.Key)
 	case export.DestAWSMQTT:
 		newReg.Addressable.Protocol = "tls"
 		newReg.Addressable.Path = ""
 		newReg.Addressable.Topic = fmt.Sprintf(awsThingUpdateTopic, newReg.Addressable.Topic)
 		newReg.Addressable.Port = awsMQTTPort
-		reg.sender = newMqttSender(newReg.Addressable, Configuration.AWSCert, Configuration.AWSKey)
-	case export.DestZMQ:
-		LoggingClient.Info("Destination ZMQ is not supported")
+		c := Configuration.Certificates["AWS"]
+		reg.sender = newMqttSender(newReg.Addressable, c.Cert, c.Key)
 	case export.DestIotCoreMQTT:
 		reg.sender = newIoTCoreSender(newReg.Addressable)
 	case export.DestRest:
@@ -266,7 +267,7 @@ func updateRunningRegistrations(running map[string]*registrationInfo,
 // Loop - registration loop
 func Loop(errChan chan error, eventCh chan *models.Event) {
 	go func() {
-		p := fmt.Sprintf(":%d", Configuration.Port)
+		p := fmt.Sprintf(":%d", Configuration.Service.Port)
 		LoggingClient.Info(fmt.Sprintf("Starting Export Distro %s", p))
 		errChan <- http.ListenAndServe(p, httpServer())
 	}()

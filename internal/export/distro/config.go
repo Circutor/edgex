@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright 2017 Dell Inc.
+ * Copyright 2018 Dell Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -11,13 +11,22 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  *******************************************************************************/
-package models
+package distro
 
-type LogEntry struct {
-	//Id            string   `json:"id"`
-	Level         string   `bson:"logLevel" json:"logLevel"`
-	Labels        []string `bson:"labels" json:"labels"`
-	OriginService string   `bson:"originService" json:"originService"`
-	Message       string   `bson:"message" json:"message"`
-	Created       int64    `bson:"created" json:"created"`
+import "github.com/edgexfoundry/edgex-go/internal/pkg/config"
+
+type ConfigurationStruct struct {
+	Certificates   map[string]CertificateInfo
+	Clients        map[string]config.ClientInfo
+	Logging        config.LoggingInfo
+	MessageQueue   config.MessageQueueInfo
+	AnalyticsQueue config.MessageQueueInfo
+	Registry       config.RegistryInfo
+	Service        config.ServiceInfo
+	MarkPushed     bool
+}
+
+type CertificateInfo struct {
+	Cert string
+	Key  string
 }

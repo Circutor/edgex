@@ -18,10 +18,6 @@ import (
 	"github.com/go-mangos/mangos/transport/tcp"
 )
 
-const (
-	mangosPort = 5563
-)
-
 func MangosReceiver(eventCh chan *models.Event) {
 	go initMangos(eventCh)
 }
@@ -40,12 +36,10 @@ func initMangos(eventCh chan *models.Event) {
 	}
 	defer q.Close()
 
-	LoggingClient.Info("Connecting to Mangos...")
-	url := fmt.Sprintf("tcp://%s:%d", Configuration.DataHost, mangosPort)
-
+	LoggingClient.Info("Connecting to incoming mangos at: " + Configuration.MessageQueue.Uri())
 	q.AddTransport(ipc.NewTransport())
 	q.AddTransport(tcp.NewTransport())
-	if err = q.Dial(url); err != nil {
+	if err = q.Dial(Configuration.MessageQueue.Uri()); err != nil {
 		die("can't dial on sub socket: %s", err.Error())
 	}
 	// Empty byte array effectively subscribes to everything

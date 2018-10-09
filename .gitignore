@@ -41,8 +41,11 @@ cmd/export-distro/logs/
 cmd/support-notifications/logs/
 cmd/edgex/logs/
 
+# snap files
 *.snap
-
 *.bz2
-
 *.pyc
+parts/*
+prime/*
+stage/*
+snap/.snapcraft/*
