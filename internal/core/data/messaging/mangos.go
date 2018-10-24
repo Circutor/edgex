@@ -24,10 +24,10 @@ import (
 	"sync"
 
 	"github.com/edgexfoundry/edgex-go/pkg/models"
-	mangos "github.com/go-mangos/mangos"
-	"github.com/go-mangos/mangos/protocol/pub"
-	"github.com/go-mangos/mangos/transport/ipc"
-	"github.com/go-mangos/mangos/transport/tcp"
+	"nanomsg.org/go-mangos"
+	"nanomsg.org/go-mangos/protocol/pub"
+	"nanomsg.org/go-mangos/transport/ipc"
+	"nanomsg.org/go-mangos/transport/tcp"
 )
 
 // Mangos implementation of the event publisher

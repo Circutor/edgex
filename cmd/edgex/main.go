@@ -31,6 +31,7 @@ import (
 	"github.com/edgexfoundry/edgex-go/internal/export/distro"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/startup"
 	"github.com/edgexfoundry/edgex-go/internal/support/logging"
+	"github.com/edgexfoundry/edgex-go/internal/support/scheduler"
 	"github.com/edgexfoundry/edgex-go/pkg/clients/logging"
 	"github.com/edgexfoundry/edgex-go/pkg/models"
 	"github.com/gorilla/context"
@@ -122,6 +123,32 @@ func main() {
 		r := command.LoadRestRoutes()
 		errCh <- http.ListenAndServe(":"+strconv.Itoa(command.Configuration.Service.Port), context.ClearHandler(r))
 	}()
+
+	// Initialize support-scheduler
+	params = startup.BootParams{UseConsul: false, UseProfile: "support-scheduler", BootTimeout: internal.BootTimeoutDefault}
+	startup.Bootstrap(params, scheduler.Retry, logBeforeInit)
+	ok = scheduler.Init(false)
+	if !ok {
+		logBeforeInit(fmt.Errorf("%s: Service bootstrap failed!", internal.SupportSchedulerServiceKey))
+		return
+	}
+
+	time.Sleep(time.Millisecond * time.Duration(1000))
+
+	// Bootstrap schedulers
+	err := scheduler.AddSchedulers()
+	if err != nil {
+		scheduler.LoggingClient.Error(fmt.Sprintf("Failed to load schedules and events %s", err.Error()))
+	}
+
+	// Start support-scheduler HTTP server
+	go func() {
+		r := scheduler.LoadRestRoutes()
+		errCh <- http.ListenAndServe(":"+strconv.Itoa(scheduler.Configuration.Service.Port), context.ClearHandler(r))
+	}()
+
+	// Start the ticker
+	scheduler.StartTicker()
 
 	// Initialize export-distro
 	params = startup.BootParams{UseConsul: false, UseProfile: "export-distro", BootTimeout: internal.BootTimeoutDefault}

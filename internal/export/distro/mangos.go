@@ -12,10 +12,10 @@ import (
 	"os"
 
 	"github.com/edgexfoundry/edgex-go/pkg/models"
-	"github.com/go-mangos/mangos"
-	"github.com/go-mangos/mangos/protocol/sub"
-	"github.com/go-mangos/mangos/transport/ipc"
-	"github.com/go-mangos/mangos/transport/tcp"
+	"nanomsg.org/go-mangos"
+	"nanomsg.org/go-mangos/protocol/sub"
+	"nanomsg.org/go-mangos/transport/ipc"
+	"nanomsg.org/go-mangos/transport/tcp"
 )
 
 func MangosReceiver(eventCh chan *models.Event) {

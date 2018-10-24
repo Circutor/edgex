@@ -9,3 +9,44 @@ ServiceAddress = 'localhost'
 CheckInterval = '10s'
 EnableRemoteLogging = false
 LoggingFile = './logs/edgex-sys-mgmt-agent.log'
+
+[Clients]
+  [Clients.Notifications]
+  Protocol = 'http'
+  Host = 'localhost'
+  Port = 48060
+
+  [Clients.Command]
+  Protocol = 'http'
+  Host = 'localhost'
+  Port = 48082
+
+  [Clients.Metadata]
+  Protocol = 'http'
+  Host = 'localhost'
+  Port = 48081
+
+  [Clients.Logging]
+  Protocol = 'http'
+  Host = 'localhost'
+  Port = 48061
+
+  [Clients.CoreData]
+  Protocol = 'http'
+  Host = 'localhost'
+  Port = 48080
+
+  [Clients.Scheduler]
+  Protocol = 'http'
+  Host = 'localhost'
+  Port = 48085
+
+  [Clients.Export]
+  Protocol = 'http'
+  Host = 'localhost'
+  Port = 48071
+
+  [Clients.Distro]
+  Protocol = 'http'
+  Host = 'localhost'
+  Port = 48070

@@ -34,3 +34,17 @@ import:
   version: =1.2.0
 - package: github.com/stretchr/testify
   version: =1.2.1
+- package: github.com/docker/distribution
+  version: 16128bbac47f75050e82f7e91b04df33775e0c23
+- package: github.com/docker/docker
+  version: b1116479b23434de7d70710b6454af7cb2484a58
+- package: github.com/docker/go-connections
+  version: 97c2040d34dfae1d1b1275fa3a78dbdd2f41cf7e
+- package: github.com/docker/go-units
+  version: 47565b4f722fb6ceae66b95f853feed578a4a51c
+- package: nanomsg.org/go-mangos
+  version: =1.4.0
+- package: github.com/json-iterator/go
+  version: =1.1.5
+- package: github.com/coreos/bbolt
+  version: 7ee3ded59d4835e10f3e7d0f7603c42aa5e83820
