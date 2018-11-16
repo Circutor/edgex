@@ -17,6 +17,7 @@ Type = 'consul'
 [Logging]
 EnableRemote = true
 File = './logs/edgex-export-client.log'
+Level = 'INFO'
 
 [Clients]
   [Clients.Distro]

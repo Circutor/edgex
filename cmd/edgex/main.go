@@ -62,7 +62,7 @@ func main() {
 	}()
 
 	// Create logging client
-	loggingClient := logger.NewClient("edgex", true, LoggingRemoteURL)
+	loggingClient := logger.NewClient("edgex", true, LoggingRemoteURL, logger.InfoLog)
 	loggingClient.Info(fmt.Sprintf("Starting EdgeX %s ", edgex.Version), "start")
 
 	// Initialize core-data
@@ -173,7 +173,7 @@ func main() {
 }
 
 func logBeforeInit(err error) {
-	l := logger.NewClient("edgex", false, "")
+	l := logger.NewClient("edgex", false, "", logger.InfoLog)
 	l.Error(err.Error())
 }
 

@@ -23,6 +23,7 @@ Type = 'consul'
 [Logging]
 EnableRemote = true
 File = './logs/edgex-core-data.log'
+Level = 'INFO'
 
 [Clients]
   [Clients.Metadata]
