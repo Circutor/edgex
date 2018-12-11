@@ -78,6 +78,27 @@ func TestThingsBoardJson(t *testing.T) {
 	if strings.HasPrefix(s, "{\""+devID1+"\":[{\"ts\":") == false {
 		t.Fatalf("Invalid ThingsBoard JSON format: %v", s)
 	}
+
+}
+
+func TestDexmaJson(t *testing.T) {
+	eventIn := models.Event{
+		Device: devID1,
+	}
+
+	djf := dexmaJSONFormatter{}
+	out := djf.Format(&eventIn)
+	if out == nil {
+		t.Fatal("out should not be nil")
+	}
+
+	s := string(out[:])
+	if strings.HasPrefix(s, "[{\"did:\""+devID1+"") == false {
+		t.Fatalf("Invalid Dexma JSON format: %v", s)
+	}
+	if strings.HasPrefix(s, "\"values\":[{\"p\":") == false {
+		t.Fatalf("Invalid Dexma JSON format: %v", s)
+	}
 }
 
 func TestNoop(t *testing.T) {

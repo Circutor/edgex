@@ -86,6 +86,47 @@ func (thingsboardjsonTr thingsboardJSONFormatter) Format(event *models.Event) []
 	return b
 }
 
+type dexmaJSONFormatter struct {
+}
+
+// Dexma JSON formatter
+//http://support.dexmatech.com/customer/en/portal/articles/1745389-http-json-api-data-insertion-
+//func (thingsboardjsonTr thingsboardJSONFormatter) Format(event *models.Event) []byte {
+func (dexmajsonTr dexmaJSONFormatter) Format(event *models.Event) []byte {
+
+	type Value struct {
+		P int `json:"p"`
+		V int `json:"v"`
+	}
+
+	type Device struct {
+		Did    string  `json:"did"`
+		Sqn    int     `json:"sqn"`
+		Ts     string  `json:"ts"`
+		Values []Value `json:"values"`
+	}
+
+	var value Value
+	var values []Value
+
+	for _, reading := range event.Readings {
+		value.P = transformDexmaParam(reading.Name)
+		value.V, _ = strconv.Atoi(reading.Value)
+		values = append(values, value)
+	}
+
+	var devices []Device
+	time := time.Unix(event.Origin/1000, 0).Format(time.RFC3339)
+	devices = append(devices, Device{Did: event.Device, Sqn: 1, Ts: time, Values: values})
+
+	b, err := json.Marshal(devices)
+	if err != nil {
+		LoggingClient.Error(fmt.Sprintf("Error parsing Dexma JSON. Error: %s", err.Error()))
+		return nil
+	}
+	return b
+}
+
 // Azure IoT Hub message
 // https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-devguide-messages-construct
 type connAuthMethod struct {

@@ -79,6 +79,8 @@ func (reg *registrationInfo) update(newReg export.Registration) bool {
 		// TODO reg.format = distro.NewCsvFormat()
 	case export.FormatThingsBoardJSON:
 		reg.format = thingsboardJSONFormatter{}
+	case export.FormatDexmaJSON:
+		reg.format = dexmaJSONFormatter{}
 	case export.FormatNOOP:
 		reg.format = noopFormatter{}
 	default:
@@ -117,6 +119,8 @@ func (reg *registrationInfo) update(newReg export.Registration) bool {
 		reg.sender = newIoTCoreSender(newReg.Addressable)
 	case export.DestRest:
 		reg.sender = newHTTPSender(newReg.Addressable)
+	case export.DestDexmaRest:
+		reg.sender = newHTTPDexmaSender(newReg.Addressable)
 	case export.DestXMPP:
 		reg.sender = newXMPPSender(newReg.Addressable)
 	case export.DestInfluxDB:
