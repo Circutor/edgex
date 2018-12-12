@@ -91,7 +91,6 @@ type dexmaJSONFormatter struct {
 
 // Dexma JSON formatter
 //http://support.dexmatech.com/customer/en/portal/articles/1745389-http-json-api-data-insertion-
-//func (thingsboardjsonTr thingsboardJSONFormatter) Format(event *models.Event) []byte {
 func (dexmajsonTr dexmaJSONFormatter) Format(event *models.Event) []byte {
 
 	type Value struct {
@@ -112,7 +111,11 @@ func (dexmajsonTr dexmaJSONFormatter) Format(event *models.Event) []byte {
 	for _, reading := range event.Readings {
 		value.P = transformDexmaParam(reading.Name)
 		value.V, _ = strconv.Atoi(reading.Value)
-		values = append(values, value)
+		if value.P == 0 {
+			LoggingClient.Error(fmt.Sprintf("Error on Dexma parameter name: %s", reading.Name))
+		} else {
+			values = append(values, value)
+		}
 	}
 
 	var devices []Device
