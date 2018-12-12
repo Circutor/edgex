@@ -51,6 +51,6 @@ func (sender httpSender) Send(data []byte, event *models.Event) bool {
 		return false
 	}
 
-	LoggingClient.Info(fmt.Sprintf("Sent data: %X", data))
+	LoggingClient.Debug(fmt.Sprintf("Sent data: %X", data))
 	return true
 }
