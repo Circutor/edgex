@@ -37,17 +37,26 @@ func newMqttSender(addr models.Addressable, cert string, key string) sender {
 	opts.SetAutoReconnect(false)
 
 	if protocol == "tcps" || protocol == "ssl" || protocol == "tls" {
-		cert, err := tls.LoadX509KeyPair(cert, key)
+		tlsConfig := &tls.Config{}
+		if cert == "" || key == "" {
+			tlsConfig = &tls.Config{
+				ClientCAs:          nil,
+				InsecureSkipVerify: true,
+			}
+		} else {
 
-		if err != nil {
-			LoggingClient.Error("Failed loading x509 data")
-			return nil
-		}
+			cert, err := tls.LoadX509KeyPair(cert, key)
 
-		tlsConfig := &tls.Config{
-			ClientCAs:          nil,
-			InsecureSkipVerify: true,
-			Certificates:       []tls.Certificate{cert},
+			if err != nil {
+				LoggingClient.Error("Failed loading x509 data")
+				return nil
+			}
+
+			tlsConfig = &tls.Config{
+				ClientCAs:          nil,
+				InsecureSkipVerify: true,
+				Certificates:       []tls.Certificate{cert},
+			}
 		}
 
 		opts.SetTLSConfig(tlsConfig)
