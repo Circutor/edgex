@@ -56,7 +56,7 @@ func initMangos(eventCh chan *models.Event) {
 		} else {
 			str := string(msg)
 			event := parseEvent(str)
-			LoggingClient.Info(fmt.Sprintf("Event received: %s", str))
+			LoggingClient.Debug(fmt.Sprintf("Event received: %s", str))
 			eventCh <- event
 		}
 	}

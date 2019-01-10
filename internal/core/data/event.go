@@ -200,7 +200,7 @@ func updateEventPushDate(id string) error {
 
 // Put event on the message queue to be processed by the rules engine
 func putEventOnQueue(e models.Event) {
-	LoggingClient.Info("Putting event on message queue", "")
+	LoggingClient.Debug("Putting event on message queue", "")
 	//	Have multiple implementations (start with ZeroMQ)
 	err := ep.SendEventMessage(e)
 	if err != nil {

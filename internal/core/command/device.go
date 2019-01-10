@@ -64,7 +64,7 @@ func commandByDeviceID(did string, cid string, b string, p bool) (string, int) {
 	}
 	if p {
 		url := d.Service.Addressable.GetBaseURL() + strings.Replace(c.Put.Action.Path, DEVICEIDURLPARAM, d.Id.Hex(), -1)
-		LoggingClient.Info("Issuing PUT command to: " + url)
+		LoggingClient.Debug("Issuing PUT command to: " + url)
 		req, err := http.NewRequest(http.MethodPut, url, strings.NewReader(b))
 		if err != nil {
 			return "", http.StatusInternalServerError
@@ -78,7 +78,7 @@ func commandByDeviceID(did string, cid string, b string, p bool) (string, int) {
 		return buf.String(), resp.StatusCode
 	} else {
 		url := d.Service.Addressable.GetBaseURL() + strings.Replace(c.Get.Action.Path, DEVICEIDURLPARAM, d.Id.Hex(), -1)
-		LoggingClient.Info("Issuing GET command to: " + url)
+		LoggingClient.Debug("Issuing GET command to: " + url)
 		req, err := http.NewRequest(http.MethodGet, url, nil)
 		if err != nil {
 			return "", http.StatusInternalServerError

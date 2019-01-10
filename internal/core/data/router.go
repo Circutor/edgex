@@ -206,7 +206,7 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		LoggingClient.Info("Posting Event: " + e.String())
+		LoggingClient.Debug("Posting Event: " + e.String())
 
 		newId, err := addNewEvent(e)
 		if err != nil {
