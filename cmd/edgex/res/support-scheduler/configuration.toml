@@ -38,6 +38,11 @@ Level = 'INFO'
     Start = '20180101T000000'
     Frequency = 'P1D'
 
+    [Schedules.EveryHour_EDS]
+    Name = 'schedule-everyhour-eds'
+    Start = '20190101T000000'
+    Frequency = 'PT1H'
+
 [ScheduleEvents]
     [ScheduleEvents.ScrubPushed]
     Name = 'scrub-pushed-events'
@@ -59,4 +64,15 @@ Level = 'INFO'
     Service = 'core-data'
     Path = '/api/v1/event/removeold/age/604800000'
     Schedule = 'midnight'
+    Scheduler = 'support-scheduler'
+
+    [ScheduleEvents.ScrubAged1DayLogsEDS]
+    Name = 'scrub-aged1day-logs-eds'
+    Host = 'localhost'
+    Port = 48061
+    Protocol = 'http'
+    Method = 'DELETE'
+    Service = 'support-logging'
+    Path = '/api/v1/logs/removeold/age/86400000'
+    Schedule = 'schedule-everyhour-eds'
     Scheduler = 'support-scheduler'

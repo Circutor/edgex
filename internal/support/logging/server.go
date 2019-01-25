@@ -15,6 +15,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/edgexfoundry/edgex-go/internal"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
@@ -127,6 +128,25 @@ func getCriteria(w http.ResponseWriter, r *http.Request) *matchCriteria {
 			io.WriteString(w, s)
 			return nil
 		}
+	}
+
+	age := bone.GetValue(r, "age")
+	if len(age) > 0 {
+		criteria.Start = 0
+		var err error
+		criteria.End, err = strconv.ParseInt(age, 10, 64)
+		var s string
+		if err != nil {
+			s = fmt.Sprintf("Could not parse end %s", age)
+		} else if criteria.End < 0 {
+			s = fmt.Sprintf("End is not positive %d", criteria.End)
+		}
+		if len(s) > 0 {
+			w.WriteHeader(http.StatusBadRequest)
+			io.WriteString(w, s)
+			return nil
+		}
+		criteria.End = (time.Now().UnixNano() / int64(time.Millisecond)) - criteria.End
 	}
 
 	labels := bone.GetValue(r, "labels")
@@ -270,6 +290,7 @@ func HttpServer() http.Handler {
 	mv1.Get("/logs/logLevels/:levels/originServices/:services/labels/:labels/:start/:end/:limit", http.HandlerFunc(getLogs))
 	mv1.Get("/logs/logLevels/:levels/originServices/:services/labels/:labels/keywords/:keywords/:start/:end/:limit", http.HandlerFunc(getLogs))
 
+	mv1.Delete("/logs/removeold/age/:age", http.HandlerFunc(delLogs))
 	mv1.Delete("/logs/:start/:end", http.HandlerFunc(delLogs))
 	mv1.Delete("/logs/keywords/:keywords/:start/:end", http.HandlerFunc(delLogs))
 	mv1.Delete("/logs/labels/:labels/:start/:end", http.HandlerFunc(delLogs))

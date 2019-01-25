@@ -94,15 +94,21 @@ func (fl *fileLog) remove(criteria matchCriteria) (int, error) {
 	}
 
 	tmpFile.Close()
-	err = os.Rename(tmpFilename, fl.filename)
-	if err != nil {
-		//fmt.Printf("Error renaming %s to %s: %v", tmpFilename, fl.filename, err)
-		return 0, err
+	if count != 0 {
+		err = os.Rename(tmpFilename, fl.filename)
+		if err != nil {
+			//fmt.Printf("Error renaming %s to %s: %v", tmpFilename, fl.filename, err)
+			return 0, err
+		}
+
+		// Close old file to open the new one when writing next log
+		if fl.out != nil {
+			fl.out.Close()
+			fl.out = nil
+		}
+
 	}
 
-	// Close old file to open the new one when writing next log
-	fl.out.Close()
-	fl.out = nil
 	return count, nil
 }
 
