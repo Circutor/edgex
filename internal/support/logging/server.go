@@ -15,7 +15,6 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/edgexfoundry/edgex-go/internal"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
@@ -137,16 +136,16 @@ func getCriteria(w http.ResponseWriter, r *http.Request) *matchCriteria {
 		criteria.End, err = strconv.ParseInt(age, 10, 64)
 		var s string
 		if err != nil {
-			s = fmt.Sprintf("Could not parse end %s", age)
+			s = fmt.Sprintf("Could not parse age %s", age)
 		} else if criteria.End < 0 {
-			s = fmt.Sprintf("End is not positive %d", criteria.End)
+			s = fmt.Sprintf("Age is not positive %d", criteria.End)
 		}
 		if len(s) > 0 {
 			w.WriteHeader(http.StatusBadRequest)
 			io.WriteString(w, s)
 			return nil
 		}
-		criteria.End = (time.Now().UnixNano() / int64(time.Millisecond)) - criteria.End
+		criteria.End = db.MakeTimestamp() - criteria.End
 	}
 
 	labels := bone.GetValue(r, "labels")

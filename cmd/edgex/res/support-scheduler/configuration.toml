@@ -33,41 +33,41 @@ Level = 'INFO'
   Port = 48061
 
 [Schedules]
-    [Schedules.Midnight]
-    Name = 'midnight'
+    [Schedules.EdsSchMidnight]
+    Name = 'eds-sch-midnight'
     Start = '20180101T000000'
     Frequency = 'P1D'
 
-    [Schedules.EveryHour_EDS]
-    Name = 'schedule-everyhour-eds'
+    [Schedules.EdsSchEveryHour]
+    Name = 'eds-sch-everyhour'
     Start = '20190101T000000'
     Frequency = 'PT1H'
 
 [ScheduleEvents]
-    [ScheduleEvents.ScrubPushed]
-    Name = 'scrub-pushed-events'
+    [ScheduleEvents.EdsSchEvScrubPushedEvents]
+    Name = 'eds-schev-scrub-pushed-events'
     Host = 'localhost'
     Port = 48080
     Protocol = 'http'
     Method = 'DELETE'
     Service = 'core-data'
     Path = '/api/v1/event/scrub'
-    Schedule = 'midnight'
+    Schedule = 'eds-sch-midnight'
     Scheduler = 'support-scheduler'
 
-    [ScheduleEvents.ScrubAged]
-    Name = 'scrub-aged-events'
+    [ScheduleEvents.EdsSchEvScrubAgedEvents]
+    Name = 'eds-schev-scrub-aged-events'
     Host = 'localhost'
     Port = 48080
     Protocol = 'http'
     Method = 'DELETE'
     Service = 'core-data'
     Path = '/api/v1/event/removeold/age/604800000'
-    Schedule = 'midnight'
+    Schedule = 'eds-sch-midnight'
     Scheduler = 'support-scheduler'
 
-    [ScheduleEvents.ScrubAged1DayLogsEDS]
-    Name = 'scrub-aged1day-logs-eds'
+    [ScheduleEvents.EdsSchEvScrubAgedLogs]
+    Name = 'eds-schev-scrub-aged-logs'
     Host = 'localhost'
     Port = 48061
     Protocol = 'http'
