@@ -20,15 +20,14 @@ import (
 	"net/url"
 
 	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
-	"github.com/edgexfoundry/edgex-go/pkg/models"
+	"github.com/edgexfoundry/go-mod-core-contracts/models"
 	"github.com/gorilla/mux"
 )
 
 func restGetAllDeviceReports(w http.ResponseWriter, _ *http.Request) {
-	res := make([]models.DeviceReport, 0)
-	err := dbClient.GetAllDeviceReports(&res)
+	res, err := dbClient.GetAllDeviceReports()
 	if err != nil {
-		LoggingClient.Error(err.Error(), "")
+		LoggingClient.Error(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -37,7 +36,7 @@ func restGetAllDeviceReports(w http.ResponseWriter, _ *http.Request) {
 	if len(res) > Configuration.Service.ReadMaxLimit {
 		err = errors.New("Max limit exceeded")
 		http.Error(w, err.Error(), http.StatusRequestEntityTooLarge)
-		LoggingClient.Error(err.Error(), "")
+		LoggingClient.Error(err.Error())
 		return
 	}
 
@@ -52,20 +51,19 @@ func restAddDeviceReport(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	var dr models.DeviceReport
 	if err := json.NewDecoder(r.Body).Decode(&dr); err != nil {
-		LoggingClient.Error(err.Error(), "")
+		LoggingClient.Error(err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	// Check if the device exists
-	var d models.Device
-	if err := dbClient.GetDeviceByName(&d, dr.Device); err != nil {
+	if _, err := dbClient.GetDeviceByName(dr.Device); err != nil {
 		if err == db.ErrNotFound {
 			http.Error(w, "Device referenced by Device Report doesn't exist", http.StatusNotFound)
 		} else {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
-		LoggingClient.Error(err.Error(), "")
+		LoggingClient.Error(err.Error())
 		return
 	}
 
@@ -77,69 +75,72 @@ func restAddDeviceReport(w http.ResponseWriter, r *http.Request) {
 		} else {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
-		LoggingClient.Error(err.Error(), "")
+		LoggingClient.Error(err.Error())
 		return
 	}
 
 	// Add the device report
-	if err := dbClient.AddDeviceReport(&dr); err != nil {
+	var err error
+	dr.Id, err = dbClient.AddDeviceReport(dr)
+	if err != nil {
 		if err == db.ErrNotUnique {
 			http.Error(w, "Duplicate Name for the device report", http.StatusConflict)
 		} else {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
-		LoggingClient.Error(err.Error(), "")
+		LoggingClient.Error(err.Error())
 		return
 	}
 
 	// Notify associates
 	if err := notifyDeviceReportAssociates(dr, http.MethodPost); err != nil {
-		LoggingClient.Error(err.Error(), "")
+		LoggingClient.Error(err.Error())
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(dr.Id.Hex()))
+	w.Write([]byte(dr.Id))
 }
 
 func restUpdateDeviceReport(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	var from models.DeviceReport
 	if err := json.NewDecoder(r.Body).Decode(&from); err != nil {
-		LoggingClient.Error(err.Error(), "")
+		LoggingClient.Error(err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	// Check if the device report exists
-	var to models.DeviceReport
 	// First try ID
-	if err := dbClient.GetDeviceReportById(&to, from.Id.Hex()); err != nil {
+	to, err := dbClient.GetDeviceReportById(from.Id)
+	if err != nil {
 		// Try by name
-		if err = dbClient.GetDeviceReportByName(&to, from.Name); err != nil {
+		to, err = dbClient.GetDeviceReportByName(from.Name)
+		if err != nil {
 			if err == db.ErrNotFound {
 				http.Error(w, err.Error(), http.StatusNotFound)
 			} else {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 			}
-			LoggingClient.Error(err.Error(), "")
+			LoggingClient.Error(err.Error())
 			return
 		}
 	}
 
 	if err := updateDeviceReportFields(from, &to, w); err != nil {
-		LoggingClient.Error(err.Error(), "")
+		LoggingClient.Error(err.Error())
 		return
 	}
 
-	if err := dbClient.UpdateDeviceReport(&to); err != nil {
-		LoggingClient.Error(err.Error(), "")
+	if err := dbClient.UpdateDeviceReport(to); err != nil {
+		LoggingClient.Error(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	// Notify Associates
 	if err := notifyDeviceReportAssociates(to, http.MethodPut); err != nil {
-		LoggingClient.Error(err.Error(), "")
+		LoggingClient.Error(err.Error())
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -176,8 +177,7 @@ func updateDeviceReportFields(from models.DeviceReport, to *models.DeviceReport,
 
 // Validate that the device exists
 func validateDevice(d string, w http.ResponseWriter) error {
-	var device models.Device
-	if err := dbClient.GetDeviceByName(&device, d); err != nil {
+	if _, err := dbClient.GetDeviceByName(d); err != nil {
 		if err == db.ErrNotFound {
 			http.Error(w, "Device was not found", http.StatusNotFound)
 		} else {
@@ -207,15 +207,14 @@ func validateEvent(e string, w http.ResponseWriter) error {
 func restGetReportById(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	var did string = vars[ID]
-	var res models.DeviceReport
-	err := dbClient.GetDeviceReportById(&res, did)
+	res, err := dbClient.GetDeviceReportById(did)
 	if err != nil {
 		if err == db.ErrNotFound {
 			http.Error(w, err.Error(), http.StatusNotFound)
 		} else {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
-		LoggingClient.Error(err.Error(), "")
+		LoggingClient.Error(err.Error())
 		return
 	}
 
@@ -228,19 +227,18 @@ func restGetReportByName(w http.ResponseWriter, r *http.Request) {
 	n, err := url.QueryUnescape(vars[NAME])
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		LoggingClient.Error(err.Error(), "")
+		LoggingClient.Error(err.Error())
 		return
 	}
 
-	var res models.DeviceReport
-	err = dbClient.GetDeviceReportByName(&res, n)
+	res, err := dbClient.GetDeviceReportByName(n)
 	if err != nil {
 		if err == db.ErrNotFound {
 			http.Error(w, err.Error(), http.StatusNotFound)
 		} else {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
-		LoggingClient.Error(err.Error(), "")
+		LoggingClient.Error(err.Error())
 		return
 	}
 
@@ -255,14 +253,14 @@ func restGetValueDescriptorsForDeviceName(w http.ResponseWriter, r *http.Request
 	n, err := url.QueryUnescape(vars[DEVICENAME])
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		LoggingClient.Error(err.Error(), "")
+		LoggingClient.Error(err.Error())
 		return
 	}
 
 	// Get all the associated device reports
-	var reports []models.DeviceReport
-	if err = dbClient.GetDeviceReportByDeviceName(&reports, n); err != nil {
-		LoggingClient.Error(err.Error(), "")
+	reports, err := dbClient.GetDeviceReportByDeviceName(n)
+	if err != nil {
+		LoggingClient.Error(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -281,16 +279,15 @@ func restGetDeviceReportByDeviceName(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	n, err := url.QueryUnescape(vars[DEVICENAME])
 	if err != nil {
-		LoggingClient.Error(err.Error(), "")
+		LoggingClient.Error(err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	res := make([]models.DeviceReport, 0)
-	err = dbClient.GetDeviceReportByDeviceName(&res, n)
+	res, err := dbClient.GetDeviceReportByDeviceName(n)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		LoggingClient.Error(err.Error(), "")
+		LoggingClient.Error(err.Error())
 		return
 	}
 
@@ -303,19 +300,19 @@ func restDeleteReportById(w http.ResponseWriter, r *http.Request) {
 	var id string = vars[ID]
 
 	// Check if the device report exists
-	var dr models.DeviceReport
-	if err := dbClient.GetDeviceReportById(&dr, id); err != nil {
+	dr, err := dbClient.GetDeviceReportById(id)
+	if err != nil {
 		if err == db.ErrNotFound {
 			http.Error(w, err.Error(), http.StatusNotFound)
 		} else {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
-		LoggingClient.Error(err.Error(), "")
+		LoggingClient.Error(err.Error())
 		return
 	}
 
 	if err := deleteDeviceReport(dr, w); err != nil {
-		LoggingClient.Error(err.Error(), "")
+		LoggingClient.Error(err.Error())
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -327,25 +324,25 @@ func restDeleteReportByName(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	n, err := url.QueryUnescape(vars[NAME])
 	if err != nil {
-		LoggingClient.Error(err.Error(), "")
+		LoggingClient.Error(err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	// Check if the device report exists
-	var dr models.DeviceReport
-	if err = dbClient.GetDeviceReportByName(&dr, n); err != nil {
+	dr, err := dbClient.GetDeviceReportByName(n)
+	if err != nil {
 		if err == db.ErrNotFound {
 			http.Error(w, err.Error(), http.StatusNotFound)
 		} else {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
-		LoggingClient.Error(err.Error(), "")
+		LoggingClient.Error(err.Error())
 		return
 	}
 
 	if err = deleteDeviceReport(dr, w); err != nil {
-		LoggingClient.Error(err.Error(), "")
+		LoggingClient.Error(err.Error())
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -354,7 +351,7 @@ func restDeleteReportByName(w http.ResponseWriter, r *http.Request) {
 }
 
 func deleteDeviceReport(dr models.DeviceReport, w http.ResponseWriter) error {
-	if err := dbClient.DeleteDeviceReportById(dr.Id.Hex()); err != nil {
+	if err := dbClient.DeleteDeviceReportById(dr.Id); err != nil {
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
 		return err
 	}
@@ -370,22 +367,19 @@ func deleteDeviceReport(dr models.DeviceReport, w http.ResponseWriter) error {
 // Notify the associated device services to the device report
 func notifyDeviceReportAssociates(dr models.DeviceReport, action string) error {
 	// Get the device of the report
-	var d models.Device
-	if err := dbClient.GetDeviceByName(&d, dr.Device); err != nil {
+	d, err := dbClient.GetDeviceByName(dr.Device)
+	if err != nil {
 		return err
 	}
 
 	// Get the device service for the device
-	var ds models.DeviceService
-	if err := dbClient.GetDeviceServiceById(&ds, d.Service.Service.Id.Hex()); err != nil {
+	ds, err := dbClient.GetDeviceServiceById(d.Service.Service.Id)
+	if err != nil {
 		return err
 	}
 
-	var services []models.DeviceService
-	services = append(services, ds)
-
 	// Notify the associating device services
-	if err := notifyAssociates(services, dr.Id.Hex(), action, models.REPORT); err != nil {
+	if err = notifyAssociates([]models.DeviceService{ds}, dr.Id, action, models.REPORT); err != nil {
 		return err
 	}
 

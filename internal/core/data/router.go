@@ -18,16 +18,16 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"runtime"
 	"strconv"
 
-	"github.com/edgexfoundry/edgex-go/internal"
-	"github.com/edgexfoundry/edgex-go/internal/core/data/errors"
-	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
-	"github.com/edgexfoundry/edgex-go/pkg/clients"
-	"github.com/edgexfoundry/edgex-go/pkg/clients/types"
-	"github.com/edgexfoundry/edgex-go/pkg/models"
+	"github.com/edgexfoundry/go-mod-core-contracts/clients"
+	"github.com/edgexfoundry/go-mod-core-contracts/clients/types"
+	"github.com/edgexfoundry/go-mod-core-contracts/models"
 	"github.com/gorilla/mux"
+
+	"github.com/edgexfoundry/edgex-go/internal/core/data/errors"
+	"github.com/edgexfoundry/edgex-go/internal/pkg/correlation"
+	"github.com/edgexfoundry/edgex-go/internal/pkg/telemetry"
 )
 
 func LoadRestRoutes() *mux.Router {
@@ -82,6 +82,10 @@ func LoadRestRoutes() *mux.Router {
 	vd.HandleFunc("/devicename/{device}", valueDescriptorByDeviceHandler).Methods(http.MethodGet)
 	vd.HandleFunc("/deviceid/{id}", valueDescriptorByDeviceIdHandler).Methods(http.MethodGet)
 
+	r.Use(correlation.ManageHeader)
+	r.Use(correlation.OnResponseComplete)
+	r.Use(correlation.OnRequestBegin)
+
 	return r
 }
 
@@ -95,7 +99,7 @@ func eventCountHandler(w http.ResponseWriter, r *http.Request) {
 	count, err := countEvents()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		LoggingClient.Error(err.Error(), "")
+		LoggingClient.Error(err.Error())
 		return
 	}
 
@@ -103,7 +107,7 @@ func eventCountHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	_, err = w.Write([]byte(strconv.Itoa(count)))
 	if err != nil {
-		LoggingClient.Error(err.Error(), "")
+		LoggingClient.Error(err.Error())
 	}
 }
 
@@ -117,6 +121,8 @@ func eventCountByDeviceIdHandler(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	id, err := url.QueryUnescape(vars["deviceId"])
+	ctx := r.Context()
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		LoggingClient.Error("Problem unescaping URL: " + err.Error())
@@ -124,15 +130,15 @@ func eventCountByDeviceIdHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check device
-	count, err := countEventsByDevice(id)
+	count, err := countEventsByDevice(id, ctx)
 	if err != nil {
 		LoggingClient.Error(fmt.Sprintf("error checking device %s %v", id, err))
 		switch err := err.(type) {
-		case types.ErrNotFound:
-			http.Error(w, err.Error(), http.StatusNotFound)
+		case *types.ErrServiceClient:
+			http.Error(w, err.Error(), err.StatusCode)
 			return
 		default: //return an error on everything else.
-			http.Error(w, err.Error(), http.StatusServiceUnavailable)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	}
@@ -181,6 +187,8 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 	}
 
+	ctx := r.Context()
+
 	switch r.Method {
 	// Get all events
 	case http.MethodGet:
@@ -208,7 +216,7 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 
 		LoggingClient.Debug("Posting Event: " + e.String())
 
-		newId, err := addNewEvent(e)
+		newId, err := addNewEvent(e, ctx)
 		if err != nil {
 			switch t := err.(type) {
 			case *errors.ErrValueDescriptorNotFound:
@@ -239,8 +247,8 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		LoggingClient.Info("Updating event: " + from.ID.Hex())
-		err = updateEvent(from)
+		LoggingClient.Info("Updating event: " + from.ID)
+		err = updateEvent(from, ctx)
 		if err != nil {
 			switch t := err.(type) {
 			case *errors.ErrEventNotFound:
@@ -315,6 +323,7 @@ func getEventByDeviceHandler(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	limit := vars["limit"]
+	ctx := r.Context()
 	deviceId, err := url.QueryUnescape(vars["deviceId"])
 
 	// Problems unescaping URL
@@ -333,11 +342,11 @@ func getEventByDeviceHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check device
-	if checkDevice(deviceId) != nil {
+	if err := checkDevice(deviceId, ctx); err != nil {
 		LoggingClient.Error(fmt.Sprintf("error checking device %s %v", deviceId, err))
 		switch err := err.(type) {
-		case types.ErrNotFound:
-			http.Error(w, err.Error(), http.StatusNotFound)
+		case *types.ErrServiceClient:
+			http.Error(w, err.Error(), err.StatusCode)
 			return
 		default: //return an error on everything else.
 			http.Error(w, err.Error(), http.StatusServiceUnavailable)
@@ -375,13 +384,14 @@ func eventIdHandler(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	id := vars["id"]
+	ctx := r.Context()
 
 	switch r.Method {
 	// Set the 'pushed' timestamp for the event to the current time - event is going to another (not EdgeX) service
 	case http.MethodPut:
 		LoggingClient.Info("Updating event: " + id)
 
-		err := updateEventPushDate(id)
+		err := updateEventPushDate(id, ctx)
 		if err != nil {
 			switch x := err.(type) {
 			case *errors.ErrEventNotFound:
@@ -428,6 +438,8 @@ func deleteByDeviceIdHandler(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	deviceId, err := url.QueryUnescape(vars["deviceId"])
+	ctx := r.Context()
+
 	// Problems unescaping URL
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -436,14 +448,14 @@ func deleteByDeviceIdHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check device
-	if checkDevice(deviceId) != nil {
+	if err := checkDevice(deviceId, ctx); err != nil {
 		LoggingClient.Error(fmt.Sprintf("error checking device %s %v", deviceId, err))
 		switch err := err.(type) {
-		case types.ErrNotFound:
-			http.Error(w, err.Error(), http.StatusNotFound)
+		case *types.ErrServiceClient:
+			http.Error(w, err.Error(), err.StatusCode)
 			return
 		default: //return an error on everything else.
-			http.Error(w, err.Error(), http.StatusServiceUnavailable)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	}
@@ -524,6 +536,7 @@ func readingByDeviceFilteredValueDescriptor(w http.ResponseWriter, r *http.Reque
 
 	vars := mux.Vars(r)
 	limit := vars["limit"]
+	ctx := r.Context()
 
 	valueDescriptor, err := url.QueryUnescape(vars["valueDescriptor"])
 	// Problems unescaping URL
@@ -551,14 +564,14 @@ func readingByDeviceFilteredValueDescriptor(w http.ResponseWriter, r *http.Reque
 	switch r.Method {
 	case http.MethodGet:
 		// Check device
-		if checkDevice(deviceId) != nil {
+		if err := checkDevice(deviceId, ctx); err != nil {
 			LoggingClient.Error(fmt.Sprintf("error checking device %s %v", deviceId, err))
 			switch err := err.(type) {
-			case types.ErrNotFound:
-				http.Error(w, err.Error(), http.StatusNotFound)
+			case *types.ErrServiceClient:
+				http.Error(w, err.Error(), err.StatusCode)
 				return
 			default: //return an error on everything else.
-				http.Error(w, err.Error(), http.StatusServiceUnavailable)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 		}
@@ -601,21 +614,12 @@ func scrubHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // Test if the service is working
-func pingHandler(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-
-	_, err := w.Write([]byte("pong"))
-	if err != nil {
-		LoggingClient.Error("Error writing pong: " + err.Error())
-	}
+func pingHandler(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Content-Type", "text/plain")
+	w.Write([]byte("pong"))
 }
 
 func configHandler(w http.ResponseWriter, r *http.Request) {
-
-	if r.Body != nil {
-		defer r.Body.Close()
-	}
-
 	encode(Configuration, w)
 }
 
@@ -623,6 +627,8 @@ func configHandler(w http.ResponseWriter, r *http.Request) {
 // GET, PUT, and POST readings
 func readingHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
+
+	ctx := r.Context()
 
 	switch r.Method {
 	case http.MethodGet:
@@ -663,20 +669,20 @@ func readingHandler(w http.ResponseWriter, r *http.Request) {
 
 		// Check device
 		if reading.Device != "" {
-			if checkDevice(reading.Device) != nil {
+			if err := checkDevice(reading.Device, ctx); err != nil {
 				LoggingClient.Error(fmt.Sprintf("error checking device %s %v", reading.Device, err))
 				switch err := err.(type) {
-				case types.ErrNotFound:
-					http.Error(w, err.Error(), http.StatusNotFound)
+				case *types.ErrServiceClient:
+					http.Error(w, err.Error(), err.StatusCode)
 					return
 				default: //return an error on everything else.
-					http.Error(w, err.Error(), http.StatusServiceUnavailable)
+					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
 				}
 			}
 		}
 
-		if Configuration.PersistData {
+		if Configuration.Writable.PersistData {
 			id, err := addReading(reading)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -684,7 +690,7 @@ func readingHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(id.Hex()))
+			w.Write([]byte(id))
 		} else {
 			// Didn't save the reading in the database
 			encode("unsaved", w)
@@ -713,7 +719,7 @@ func readingHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			switch err.(type) {
 			case *errors.ErrDbNotFound:
-				http.Error(w, "Value descriptor not found for reading", http.StatusConflict)
+				http.Error(w, "Value descriptor not found for reading", http.StatusNotFound)
 				return
 			case *errors.ErrValueDescriptorInvalid:
 				http.Error(w, err.Error(), http.StatusConflict)
@@ -748,7 +754,7 @@ func getReadingByIdHandler(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, err.Error(), http.StatusNotFound)
 				return
 			default: //return an error on everything else.
-				http.Error(w, err.Error(), http.StatusServiceUnavailable)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 		}
@@ -773,7 +779,7 @@ func readingCountHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, err = w.Write([]byte(strconv.Itoa(count)))
 		if err != nil {
-			LoggingClient.Error(err.Error(), "")
+			LoggingClient.Error(err.Error())
 		}
 	}
 }
@@ -795,7 +801,7 @@ func deleteReadingByIdHandler(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, err.Error(), http.StatusNotFound)
 				return
 			default: //return an error on everything else.
-				http.Error(w, err.Error(), http.StatusServiceUnavailable)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 		}
@@ -829,6 +835,8 @@ func readingByDeviceHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	ctx := r.Context()
+
 	switch r.Method {
 	case http.MethodGet:
 		err := checkMaxLimit(limit)
@@ -837,14 +845,14 @@ func readingByDeviceHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		readings, err := getReadingsByDevice(deviceId, limit)
+		readings, err := getReadingsByDevice(deviceId, limit, ctx)
 		if err != nil {
 			switch err := err.(type) {
-			case types.ErrNotFound:
-				http.Error(w, err.Error(), http.StatusNotFound)
+			case *types.ErrServiceClient:
+				http.Error(w, err.Error(), err.StatusCode)
 				return
 			default:
-				http.Error(w, err.Error(), http.StatusServiceUnavailable)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 		}
@@ -1085,6 +1093,7 @@ func readingByValueDescriptorAndDeviceHandler(w http.ResponseWriter, r *http.Req
 	defer r.Body.Close()
 
 	vars := mux.Vars(r)
+	ctx := r.Context()
 
 	// Get the variables from the URL
 	name, err := url.QueryUnescape(vars["name"])
@@ -1115,20 +1124,20 @@ func readingByValueDescriptorAndDeviceHandler(w http.ResponseWriter, r *http.Req
 	}
 
 	// Check device
-	if checkDevice(device) != nil {
+	if err := checkDevice(device, ctx); err != nil {
 		LoggingClient.Error(fmt.Sprintf("error checking device %s %v", device, err))
 		switch err := err.(type) {
-		case types.ErrNotFound:
-			http.Error(w, err.Error(), http.StatusNotFound)
+		case *types.ErrServiceClient:
+			http.Error(w, err.Error(), err.StatusCode)
 			return
 		default: //return an error on everything else.
-			http.Error(w, err.Error(), http.StatusServiceUnavailable)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	}
 
 	// Check for value descriptor
-	if Configuration.ValidateCheck {
+	if Configuration.Writable.ValidateCheck {
 		_, err = getValueDescriptorByName(name)
 		if err != nil {
 			switch err.(type) {
@@ -1182,7 +1191,7 @@ func valueDescriptorHandler(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			case *errors.ErrValueDescriptorInvalid:
-				http.Error(w, err.Error(), http.StatusBadRequest)
+				http.Error(w, err.Error(), http.StatusConflict)
 				return
 			default:
 				http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -1203,7 +1212,7 @@ func valueDescriptorHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(id.Hex()))
+		w.Write([]byte(id))
 	case http.MethodPut:
 		vd, err := decodeValueDescriptor(r.Body)
 		if err != nil {
@@ -1212,7 +1221,7 @@ func valueDescriptorHandler(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			case *errors.ErrValueDescriptorInvalid:
-				http.Error(w, err.Error(), http.StatusBadRequest)
+				http.Error(w, err.Error(), http.StatusConflict)
 				return
 			default:
 				http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -1266,6 +1275,9 @@ func deleteValueDescriptorByIdHandler(w http.ResponseWriter, r *http.Request) {
 		case *errors.ErrValueDescriptorInUse:
 			http.Error(w, "Data integrity issue. Value Descriptor still in use by readings", http.StatusConflict)
 			return
+		case *errors.ErrInvalidId:
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
 		default:
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -1296,15 +1308,15 @@ func valueDescriptorByNameHandler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		v, err := dbClient.ValueDescriptorByName(name)
 		if err != nil {
-			if err == db.ErrNotFound {
-				http.Error(w, "Value Descriptor not found", http.StatusNotFound)
-			} else {
+			switch err := err.(type) {
+			case *types.ErrServiceClient:
+				http.Error(w, err.Error(), err.StatusCode)
+			default:
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 			}
 			LoggingClient.Error(err.Error())
 			return
 		}
-
 		encode(v, w)
 	case http.MethodDelete:
 		if err = deleteValueDescriptorByName(name); err != nil {
@@ -1438,13 +1450,16 @@ func valueDescriptorByDeviceHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	ctx := r.Context()
 	// Get the value descriptors
-	vdList, err := getValueDescriptorsByDeviceName(device)
+	vdList, err := getValueDescriptorsByDeviceName(device, ctx)
 	if err != nil {
-		switch err.(type) {
+		switch err := err.(type) {
 		case *errors.ErrDbNotFound:
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
+		case *types.ErrServiceClient:
+			http.Error(w, err.Error(), err.StatusCode)
 		default:
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -1469,10 +1484,13 @@ func valueDescriptorByDeviceIdHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	ctx := r.Context()
 	// Get the value descriptors
-	vdList, err := getValueDescriptorsByDeviceId(deviceId)
+	vdList, err := getValueDescriptorsByDeviceId(deviceId, ctx)
 	if err != nil {
-		switch err.(type) {
+		switch err := err.(type) {
+		case *types.ErrServiceClient:
+			http.Error(w, err.Error(), err.StatusCode)
 		case *errors.ErrDbNotFound:
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
@@ -1485,31 +1503,10 @@ func valueDescriptorByDeviceIdHandler(w http.ResponseWriter, r *http.Request) {
 	encode(vdList, w)
 }
 
-func metricsHandler(w http.ResponseWriter, r *http.Request) {
-	var t internal.Telemetry
+func metricsHandler(w http.ResponseWriter, _ *http.Request) {
+	s := telemetry.NewSystemUsage()
 
-	if r.Body != nil {
-		defer r.Body.Close()
-	}
-
-	// The micro-service is to be considered the System Of Record (SOR) in terms of accurate information.
-	// Fetch metrics for the data service.
-	var rtm runtime.MemStats
-
-	// Read full memory stats
-	runtime.ReadMemStats(&rtm)
-
-	// Miscellaneous memory stats
-	t.Alloc = rtm.Alloc
-	t.TotalAlloc = rtm.TotalAlloc
-	t.Sys = rtm.Sys
-	t.Mallocs = rtm.Mallocs
-	t.Frees = rtm.Frees
-
-	// Live objects = Mallocs - Frees
-	t.LiveObjects = t.Mallocs - t.Frees
-
-	encode(t, w)
+	encode(s, w)
 
 	return
 }

@@ -14,7 +14,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/edgexfoundry/edgex-go/pkg/models"
+	contract "github.com/edgexfoundry/go-mod-core-contracts/models"
 )
 
 const (
@@ -24,7 +24,7 @@ const (
 )
 
 func TestJson(t *testing.T) {
-	eventIn := models.Event{
+	eventIn := contract.Event{
 		Device: devID1,
 	}
 
@@ -34,7 +34,7 @@ func TestJson(t *testing.T) {
 		t.Fatal("out should not be nil")
 	}
 
-	var eventOut models.Event
+	var eventOut contract.Event
 	if err := json.Unmarshal(out, &eventOut); err != nil {
 		t.Fatalf("Error unmarshalling event: %v", err)
 	}
@@ -44,7 +44,7 @@ func TestJson(t *testing.T) {
 }
 
 func TestXml(t *testing.T) {
-	eventIn := models.Event{
+	eventIn := contract.Event{
 		Device: devID1,
 	}
 
@@ -54,7 +54,7 @@ func TestXml(t *testing.T) {
 		t.Fatal("out should not be nil")
 	}
 
-	var eventOut models.Event
+	var eventOut contract.Event
 	if err := xml.Unmarshal(out, &eventOut); err != nil {
 		t.Fatalf("Error unmarshalling event: %v", err)
 	}
@@ -64,7 +64,7 @@ func TestXml(t *testing.T) {
 }
 
 func TestThingsBoardJson(t *testing.T) {
-	eventIn := models.Event{
+	eventIn := contract.Event{
 		Device: devID1,
 	}
 
@@ -82,7 +82,7 @@ func TestThingsBoardJson(t *testing.T) {
 }
 
 func TestDexmaJson(t *testing.T) {
-	eventIn := models.Event{
+	eventIn := contract.Event{
 		Device: devID1,
 	}
 
@@ -93,16 +93,13 @@ func TestDexmaJson(t *testing.T) {
 	}
 
 	s := string(out[:])
-	if strings.HasPrefix(s, "[{\"did:\""+devID1+"") == false {
-		t.Fatalf("Invalid Dexma JSON format: %v", s)
-	}
-	if strings.HasPrefix(s, "\"values\":[{\"p\":") == false {
-		t.Fatalf("Invalid Dexma JSON format: %v", s)
+	if strings.HasPrefix(s, "[{\"did\":\""+devID1) == false {
+		t.Fatalf("Invalid Dexma JSON format: %v - %v", "[{\"did\":"+devID1, s)
 	}
 }
 
 func TestNoop(t *testing.T) {
-	eventIn := models.Event{
+	eventIn := contract.Event{
 		Device: devID1,
 	}
 
@@ -119,9 +116,9 @@ func TestNoop(t *testing.T) {
 }
 
 func TestAWSIoTJson(t *testing.T) {
-	eventIn := models.Event{}
+	eventIn := contract.Event{}
 
-	eventIn.Readings = append(eventIn.Readings, models.Reading{Device: devID1, Name: readingName1, Value: readingValue1})
+	eventIn.Readings = append(eventIn.Readings, contract.Reading{Device: devID1, Name: readingName1, Value: readingValue1})
 
 	af := awsFormatter{}
 	out := af.Format(&eventIn)
@@ -151,9 +148,9 @@ func TestAWSIoTJson(t *testing.T) {
 }
 
 func TestBIoT(t *testing.T) {
-	eventIn := models.Event{}
+	eventIn := contract.Event{}
 
-	eventIn.Readings = append(eventIn.Readings, models.Reading{Device: devID1, Name: readingName1, Value: readingValue1})
+	eventIn.Readings = append(eventIn.Readings, contract.Reading{Device: devID1, Name: readingName1, Value: readingValue1})
 
 	xf := biotFormatter{}
 	out := xf.Format(&eventIn)

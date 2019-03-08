@@ -1,4 +1,6 @@
-ScheduleInterval = 500
+[Writable]
+ScheduleIntervalTime = 500
+LogLevel = 'INFO'
 
 [Service]
 BootTimeout = 30000
@@ -19,60 +21,61 @@ Type = 'consul'
 [Logging]
 EnableRemote = true
 File = './logs/edgex-support-scheduler.log'
-Level = 'INFO'
 
 [Clients]
-  [Clients.Metadata]
-  Protocol = 'http'
-  Host = 'localhost'
-  Port = 48081
-
   [Clients.Logging]
   Protocol = 'http'
   Host = 'localhost'
   Port = 48061
 
-[Schedules]
-    [Schedules.EdsSchMidnight]
-    Name = 'eds-sch-midnight'
+[Databases]
+  [Databases.Primary]
+  Host = 'localhost'
+  Name = 'scheduler.db'
+  Password = ''
+  Port = 27017
+  Username = ''
+  Timeout = 5000
+  Type = 'boltdb'
+
+[Intervals]
+    [Intervals.Midnight]
+    Name = 'midnight'
     Start = '20180101T000000'
     Frequency = 'P1D'
 
-    [Schedules.EdsSchEveryHour]
-    Name = 'eds-sch-everyhour'
+    [Intervals.Hourly]
+    Name = 'hourly'
     Start = '20190101T000000'
     Frequency = 'PT1H'
 
-[ScheduleEvents]
-    [ScheduleEvents.EdsSchEvScrubPushedEvents]
-    Name = 'eds-schev-scrub-pushed-events'
+[IntervalActions]
+    [IntervalActions.ScrubPushedEvents]
+    Name = 'scrub-pushed-events'
     Host = 'localhost'
     Port = 48080
     Protocol = 'http'
     Method = 'DELETE'
-    Service = 'core-data'
+    Target = 'core-data'
     Path = '/api/v1/event/scrub'
-    Schedule = 'eds-sch-midnight'
-    Scheduler = 'support-scheduler'
+    Interval = 'midnight'
 
-    [ScheduleEvents.EdsSchEvScrubAgedEvents]
-    Name = 'eds-schev-scrub-aged-events'
+    [IntervalActions.ScrubAgedEvents]
+    Name = 'scrub-aged-events'
     Host = 'localhost'
     Port = 48080
     Protocol = 'http'
     Method = 'DELETE'
-    Service = 'core-data'
+    Target = 'core-data'
     Path = '/api/v1/event/removeold/age/604800000'
-    Schedule = 'eds-sch-midnight'
-    Scheduler = 'support-scheduler'
+    Interval = 'midnight'
 
-    [ScheduleEvents.EdsSchEvScrubAgedLogs]
-    Name = 'eds-schev-scrub-aged-logs'
+    [IntervalActions.ScrubAgedLogs]
+    Name = 'scrub-aged-logs'
     Host = 'localhost'
     Port = 48061
     Protocol = 'http'
     Method = 'DELETE'
-    Service = 'support-logging'
+    Target = 'support-logging'
     Path = '/api/v1/logs/removeold/age/86400000'
-    Schedule = 'schedule-everyhour-eds'
-    Scheduler = 'support-scheduler'
+    Interval = 'hourly'

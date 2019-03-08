@@ -8,6 +8,7 @@ package client
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -18,27 +19,23 @@ import (
 	"testing"
 
 	"github.com/edgexfoundry/edgex-go/internal"
-	"github.com/edgexfoundry/edgex-go/internal/export"
-	"github.com/edgexfoundry/edgex-go/internal/pkg/db/memory"
-	"github.com/edgexfoundry/edgex-go/pkg/clients"
-	"github.com/edgexfoundry/edgex-go/pkg/clients/logging"
-	"github.com/edgexfoundry/edgex-go/pkg/models"
+	"github.com/edgexfoundry/go-mod-core-contracts/clients"
+	"github.com/edgexfoundry/go-mod-core-contracts/clients/logging"
+	"github.com/edgexfoundry/go-mod-core-contracts/models"
 )
 
 const regJson = `{"origin":1471806386919,"name":"OSIClient","addressable":{"origin":1471806386919,"name":"OSIMQTTBroker","protocol":"TCP","address":"m10.cloudmqtt.com","port":15421,"publisher":"EdgeXExportPublisher","user":"hukfgtoh","password":"uP6hJLYW6Ji4","topic":"EdgeXDataTopic"},"format":"JSON","filter":{"deviceIdentifiers":["livingroomthermosat", "hallwaythermostat"],"valueDescriptorIdentifiers":["temperature", "humidity"]},"encryption":{"encryptionAlgorithm":"AES","encryptionKey":"123","initializingVector":"123"},"compression":"GZIP","enable":true, "destination": "REST_ENDPOINT"}`
 
 type distroMockClient struct{}
 
-func (d *distroMockClient) NotifyRegistrations(models.NotifyUpdate) error {
+func (d *distroMockClient) NotifyRegistrations(models.NotifyUpdate, context.Context) error {
 	return nil
 }
 
 func prepareTest(t *testing.T) *httptest.Server {
-	if LoggingClient == nil {
-		LoggingClient = logger.NewClient(internal.ExportClientServiceKey, false, "", logger.InfoLog)
-	}
+	LoggingClient = logger.NewClient(internal.ExportClientServiceKey, false, "./logs/edgex-export-client-test.log", logger.InfoLog)
 
-	dbClient = &memory.MemDB{}
+	dbClient = &MemDB{}
 	dc = &distroMockClient{}
 	return httptest.NewServer(httpServer())
 }
@@ -299,7 +296,7 @@ func TestRegistrationGetList(t *testing.T) {
 		typeStr string
 		status  int
 	}{
-		{"", http.StatusBadRequest},
+		{"", http.StatusNotFound},
 		{"invalid", http.StatusBadRequest},
 		{typeAlgorithms, http.StatusOK},
 		{typeCompressions, http.StatusOK},
@@ -324,7 +321,7 @@ func TestRegistrationGetList(t *testing.T) {
 	}
 }
 
-func getRegistrations(t *testing.T, serverUrl string) []export.Registration {
+func getRegistrations(t *testing.T, serverUrl string) []models.Registration {
 	response, err := http.Get(serverUrl + clients.ApiRegistrationRoute)
 	if err != nil {
 		t.Errorf("Error getting registrations: %v", err)
@@ -336,7 +333,7 @@ func getRegistrations(t *testing.T, serverUrl string) []export.Registration {
 
 	var data []byte
 	data, _ = ioutil.ReadAll(response.Body)
-	var regs []export.Registration
+	var regs []models.Registration
 	if err := json.Unmarshal(data, &regs); err != nil {
 		t.Errorf("Registrations could not be parsed: %v", err)
 	}

@@ -14,6 +14,7 @@
 package data
 
 import (
+	"context"
 	"github.com/edgexfoundry/edgex-go/internal/core/data/errors"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
 )
@@ -21,12 +22,12 @@ import (
 // Update when the device was last reported connected
 func updateDeviceLastReportedConnected(device string) {
 	// Config set to skip update last reported
-	if !Configuration.DeviceUpdateLastConnected {
+	if !Configuration.Writable.DeviceUpdateLastConnected {
 		LoggingClient.Debug("Skipping update of device connected/reported times for:  " + device)
 		return
 	}
 
-	d, err := mdc.CheckForDevice(device)
+	d, err := mdc.CheckForDevice(device, context.Background())
 	if err != nil {
 		LoggingClient.Error("Error getting device " + device + ": " + err.Error())
 		return
@@ -40,12 +41,13 @@ func updateDeviceLastReportedConnected(device string) {
 
 	t := db.MakeTimestamp()
 	// Found device, now update lastReported
-	err = mdc.UpdateLastConnectedByName(d.Name, t)
+	//Use of context.Background because this function is invoked asynchronously from a channel
+	err = mdc.UpdateLastConnectedByName(d.Name, t, context.Background())
 	if err != nil {
 		LoggingClient.Error("Problems updating last connected value for device: " + d.Name)
 		return
 	}
-	err = mdc.UpdateLastReportedByName(d.Name, t)
+	err = mdc.UpdateLastReportedByName(d.Name, t, context.Background())
 	if err != nil {
 		LoggingClient.Error("Problems updating last reported value for device: " + d.Name)
 	}
@@ -54,7 +56,7 @@ func updateDeviceLastReportedConnected(device string) {
 
 // Update when the device service was last reported connected
 func updateDeviceServiceLastReportedConnected(device string) {
-	if !Configuration.ServiceUpdateLastConnected {
+	if !Configuration.Writable.ServiceUpdateLastConnected {
 		LoggingClient.Debug("Skipping update of device service connected/reported times for:  " + device)
 		return
 	}
@@ -62,7 +64,7 @@ func updateDeviceServiceLastReportedConnected(device string) {
 	t := db.MakeTimestamp()
 
 	// Get the device
-	d, err := mdc.CheckForDevice(device)
+	d, err := mdc.CheckForDevice(device, context.Background())
 	if err != nil {
 		LoggingClient.Error("Error getting device " + device + ": " + err.Error())
 		return
@@ -81,10 +83,10 @@ func updateDeviceServiceLastReportedConnected(device string) {
 		return
 	}
 
-	msc.UpdateLastConnected(s.Service.Id.Hex(), t)
-	msc.UpdateLastReported(s.Service.Id.Hex(), t)
+	//Use of context.Background because this function is invoked asynchronously from a channel
+	msc.UpdateLastConnected(s.Service.Id, t, context.Background())
+	msc.UpdateLastReported(s.Service.Id, t, context.Background())
 }
-
 
 func checkMaxLimit(limit int) error {
 	if limit > Configuration.Service.ReadMaxLimit {
@@ -95,9 +97,9 @@ func checkMaxLimit(limit int) error {
 	return nil
 }
 
-func checkDevice(device string) error {
-	if Configuration.MetaDataCheck {
-		_, err := mdc.CheckForDevice(device)
+func checkDevice(device string, ctx context.Context) error {
+	if Configuration.Writable.MetaDataCheck {
+		_, err := mdc.CheckForDevice(device, ctx)
 		if err != nil {
 			return err
 		}

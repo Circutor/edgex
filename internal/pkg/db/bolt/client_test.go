@@ -41,6 +41,13 @@ func TestBoltDB(t *testing.T) {
 		t.Fatalf("Could not connect with BoltDB: %v", err)
 	}
 	test.TestExportDB(t, bolt)
+
+	config.DatabaseName = "scheduler.db"
+	bolt, err = NewClient(config)
+	if err != nil {
+		t.Fatalf("Could not connect with BoltDB: %v", err)
+	}
+	test.TestSchedulerDB(t, bolt)
 }
 
 func BenchmarkBoltDB(b *testing.B) {

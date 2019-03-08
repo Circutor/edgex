@@ -20,28 +20,22 @@ import (
 	"github.com/edgexfoundry/edgex-go/internal"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/config"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/startup"
-	"github.com/edgexfoundry/edgex-go/internal/system/agent/executor"
 	"github.com/edgexfoundry/edgex-go/internal/system/agent/interfaces"
-	"github.com/edgexfoundry/edgex-go/pkg/clients/general"
-	"github.com/edgexfoundry/edgex-go/pkg/clients/logging"
-	"github.com/edgexfoundry/edgex-go/pkg/clients/types"
+	"github.com/edgexfoundry/edgex-go/internal/system/agent/logger"
+	"github.com/edgexfoundry/go-mod-core-contracts/clients/general"
+	"github.com/edgexfoundry/go-mod-core-contracts/clients/types"
 )
 
 // Global variables
-var Configuration *ConfigurationStruct
-var LoggingClient logger.LoggingClient
-var Conf = &ConfigurationStruct{}
-var ec interfaces.ExecutorClient
-var gccc general.GeneralClient
-var gccd general.GeneralClient
-var gccm general.GeneralClient
-var gcec general.GeneralClient
-var gced general.GeneralClient
-var gcsl general.GeneralClient
-var gcsn general.GeneralClient
-var gcss general.GeneralClient
+var Configuration *interfaces.ConfigurationStruct
+var Conf = &interfaces.ConfigurationStruct{}
+var clients map[string]general.GeneralClient
 
-func Retry(useConsul bool, useProfile string, timeout int, wait *sync.WaitGroup, ch chan error) {
+// Note that executorClient is the empty interface so that we may type-cast it
+// to whatever operation we need it to do at runtime.
+var executorClient interface{}
+
+func Retry(useRegistry bool, useProfile string, timeout int, wait *sync.WaitGroup, ch chan error) {
 	until := time.Now().Add(time.Millisecond * time.Duration(timeout))
 	for time.Now().Before(until) {
 		var err error
@@ -53,7 +47,7 @@ func Retry(useConsul bool, useProfile string, timeout int, wait *sync.WaitGroup,
 			Configuration, err = initializeConfiguration(useProfile)
 			if err != nil {
 				ch <- err
-				if !useConsul {
+				if !useRegistry {
 					//Error occurred when attempting to read from local filesystem. Fail fast.
 					close(ch)
 					wait.Done()
@@ -61,16 +55,15 @@ func Retry(useConsul bool, useProfile string, timeout int, wait *sync.WaitGroup,
 				}
 			} else {
 				// Initialize notificationsClient based on configuration
-				initializeClients(useConsul)
+				initializeClients(useRegistry)
 				// Setup Logging
 				logTarget := setLoggingTarget()
-				LoggingClient = logger.NewClient(internal.SystemManagementAgentServiceKey, Configuration.EnableRemoteLogging, logTarget, Configuration.LoggingLevel)
+				logs.BuildLoggingClient(Configuration, logTarget)
 			}
 		}
 
 		// Exit the loop if the dependencies have been satisfied.
 		if Configuration != nil {
-			ec, _ = newExecutorClient(Configuration.OperationsType)
 			break
 		}
 		time.Sleep(time.Second * time.Duration(1))
@@ -81,19 +74,6 @@ func Retry(useConsul bool, useProfile string, timeout int, wait *sync.WaitGroup,
 	return
 }
 
-func newExecutorClient(operationsType string) (interfaces.ExecutorClient, error) {
-
-	// TODO: The abstraction which should be accessed via a global var.
-	switch operationsType {
-	case "os":
-		return &executor.ExecuteOs{}, nil
-	case "docker":
-		return &executor.ExecuteDocker{}, nil
-	default:
-		return nil, nil
-	}
-}
-
 func Init() bool {
 	if Configuration == nil {
 		return false
@@ -101,8 +81,8 @@ func Init() bool {
 	return true
 }
 
-func initializeConfiguration(useProfile string) (*ConfigurationStruct, error) {
-	//We currently have to load configuration from filesystem first in order to obtain ConsulHost/Port
+func initializeConfiguration(useProfile string) (*interfaces.ConfigurationStruct, error) {
+	//We currently have to load configuration from filesystem first in order to obtain RegistryHost/Port
 	err := config.LoadFromFile(useProfile, Conf)
 	if err != nil {
 		return nil, err
@@ -119,84 +99,29 @@ func setLoggingTarget() string {
 	return logTarget
 }
 
-func initializeClients(useConsul bool) {
-	// Create support-notifications client.
-	paramsNotifications := types.EndpointParams{
-		ServiceKey:  internal.SupportNotificationsServiceKey,
-		Path:        "/",
-		UseRegistry: useConsul,
-		Url:         Configuration.Clients["Notifications"].Url(),
-		Interval:    internal.ClientMonitorDefault,
-	}
-	gcsn = general.NewGeneralClient(paramsNotifications, startup.Endpoint{})
+var services = map[string]string{
+	internal.SupportNotificationsServiceKey: "Notifications",
+	internal.CoreCommandServiceKey:          "Command",
+	internal.CoreDataServiceKey:             "CoreData",
+	internal.CoreMetaDataServiceKey:         "Metadata",
+	internal.ExportClientServiceKey:         "Export",
+	internal.ExportDistroServiceKey:         "Distro",
+	internal.SupportLoggingServiceKey:       "Logging",
+	internal.SupportSchedulerServiceKey:     "Scheduler",
+}
 
-	// Create core-command client.
-	paramsCoreCommand := types.EndpointParams{
-		ServiceKey:  internal.CoreCommandServiceKey,
-		Path:        "/",
-		UseRegistry: useConsul,
-		Url:         Configuration.Clients["Command"].Url(),
-		Interval:    internal.ClientMonitorDefault,
-	}
-	gccc = general.NewGeneralClient(paramsCoreCommand, startup.Endpoint{})
+func initializeClients(useRegistry bool) {
 
-	// Create core-data client.
-	paramsCoreData := types.EndpointParams{
-		ServiceKey:  internal.CoreDataServiceKey,
-		Path:        "/",
-		UseRegistry: useConsul,
-		Url:         Configuration.Clients["CoreData"].Url(),
-		Interval:    internal.ClientMonitorDefault,
-	}
-	gccd = general.NewGeneralClient(paramsCoreData, startup.Endpoint{})
+	clients = make(map[string]general.GeneralClient)
 
-	// Create core-metadata client.
-	paramsCoreMetadata := types.EndpointParams{
-		ServiceKey:  internal.CoreMetaDataServiceKey,
-		Path:        "/",
-		UseRegistry: useConsul,
-		Url:         Configuration.Clients["Metadata"].Url(),
-		Interval:    internal.ClientMonitorDefault,
+	for serviceKey, serviceName := range services {
+		params := types.EndpointParams{
+			ServiceKey:  serviceKey,
+			Path:        "/",
+			UseRegistry: useRegistry,
+			Url:         Configuration.Clients[serviceName].Url(),
+			Interval:    internal.ClientMonitorDefault,
+		}
+		clients[serviceKey] = general.NewGeneralClient(params, startup.Endpoint{})
 	}
-	gccm = general.NewGeneralClient(paramsCoreMetadata, startup.Endpoint{})
-
-	// Create export-client client.
-	paramsExportClient := types.EndpointParams{
-		ServiceKey:  internal.ExportClientServiceKey,
-		Path:        "/",
-		UseRegistry: useConsul,
-		Url:         Configuration.Clients["Export"].Url(),
-		Interval:    internal.ClientMonitorDefault,
-	}
-	gcec = general.NewGeneralClient(paramsExportClient, startup.Endpoint{})
-
-	// Create export-distro client.
-	paramsExportDistro := types.EndpointParams{
-		ServiceKey:  internal.ExportDistroServiceKey,
-		Path:        "/",
-		UseRegistry: useConsul,
-		Url:         Configuration.Clients["Distro"].Url(),
-		Interval:    internal.ClientMonitorDefault,
-	}
-	gced = general.NewGeneralClient(paramsExportDistro, startup.Endpoint{})
-
-	// Create support-logging client.
-	paramsSupportLogging := types.EndpointParams{
-		ServiceKey:  internal.SupportLoggingServiceKey,
-		Path:        "/",
-		UseRegistry: useConsul,
-		Url:         Configuration.Clients["Logging"].Url(),
-		Interval:    internal.ClientMonitorDefault,
-	}
-	gcsl = general.NewGeneralClient(paramsSupportLogging, startup.Endpoint{})
-
-	// Create support-scheduler client.
-	paramsSupportScheduler := types.EndpointParams{
-		ServiceKey:  internal.SupportSchedulerServiceKey,
-		Path:        "/",
-		UseRegistry: useConsul,
-		Url:         Configuration.Clients["Scheduler"].Url(),
-		Interval:    internal.ClientMonitorDefault,
-	}
-	gcss = general.NewGeneralClient(paramsSupportScheduler, startup.Endpoint{})
 }

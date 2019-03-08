@@ -14,9 +14,8 @@
 package bolt
 
 import (
-	"github.com/edgexfoundry/edgex-go/pkg/models"
+	"github.com/edgexfoundry/go-mod-core-contracts/models"
 	jsoniter "github.com/json-iterator/go"
-	"gopkg.in/mgo.v2/bson"
 )
 
 // Internal version of the device service struct
@@ -30,19 +29,18 @@ func (bdp boltDeviceProfile) MarshalJSON() ([]byte, error) {
 	// Get the commands from the device profile and turn them into DBRef objects
 	var commands []string
 	for _, command := range bdp.DeviceProfile.Commands {
-		commands = append(commands, command.Id.Hex())
+		commands = append(commands, command.Id)
 	}
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
 	return json.Marshal(&struct {
 		models.DescribedObject `json:",inline"`
-		Id                     bson.ObjectId            `json:"id,omitempty"`
-		Name                   string                   `json:"name"`         // Non-database identifier (must be unique)
-		Manufacturer           string                   `json:"manufacturer"` // Manufacturer of the device
-		Model                  string                   `json:"model"`        // Model of the device
-		Labels                 []string                 `json:"labels"`       // Labels used to search for groups of profiles
-		Objects                interface{}              `json:"objects"`      // JSON data that the device service uses to communicate with devices with this profile
-		DeviceResources        []models.DeviceObject    `json:"deviceResources"`
-		Resources              []models.ProfileResource `json:"resources"`
+		Id                     string                   `json:"id"`
+		Name                   string                   `json:"name"`             // Non-database identifier (must be unique)
+		Manufacturer           string                   `json:"manufacturer"`     // Manufacturer of the device
+		Model                  string                   `json:"model"`            // Model of the device
+		Labels                 []string                 `json:"labels,omitempty"` // Labels used to search for groups of profiles
+		DeviceResources        []models.DeviceResource  `json:"deviceResources,omitempty"`
+		Resources              []models.ProfileResource `json:"resources,omitempty"`
 		Commands               []string                 `json:"commands"` // List of commands to Get/Put information for devices associated with this profile
 	}{
 		DescribedObject: bdp.DescribedObject,
@@ -51,7 +49,6 @@ func (bdp boltDeviceProfile) MarshalJSON() ([]byte, error) {
 		Manufacturer:    bdp.Manufacturer,
 		Model:           bdp.Model,
 		Labels:          bdp.Labels,
-		Objects:         bdp.Objects,
 		DeviceResources: bdp.DeviceResources,
 		Resources:       bdp.Resources,
 		Commands:        commands,
@@ -62,15 +59,14 @@ func (bdp boltDeviceProfile) MarshalJSON() ([]byte, error) {
 func (bdp *boltDeviceProfile) UnmarshalJSON(data []byte) error {
 	decoded := new(struct {
 		models.DescribedObject `json:",inline"`
-		Id                     bson.ObjectId            `json:"id,omitempty"`
-		Name                   string                   `json:"name"`         // Non-database identifier (must be unique)
-		Manufacturer           string                   `json:"manufacturer"` // Manufacturer of the device
-		Model                  string                   `json:"model"`        // Model of the device
-		Labels                 []string                 `json:"labels"`       // Labels used to search for groups of profiles
-		Objects                interface{}              `json:"objects"`      // JSON data that the device service uses to communicate with devices with this profile
-		DeviceResources        []models.DeviceObject    `json:"deviceResources"`
-		Resources              []models.ProfileResource `json:"resources"`
-		Commands               []string                 `json:"commands"` // List of commands to Get/Put information for devices associated with this profile
+		Id                     string                   `json:"id"`
+		Name                   string                   `json:"name"`             // Non-database identifier (must be unique)
+		Manufacturer           string                   `json:"manufacturer"`     // Manufacturer of the device
+		Model                  string                   `json:"model"`            // Model of the device
+		Labels                 []string                 `json:"labels,omitempty"` // Labels used to search for groups of profiles
+		DeviceResources        []models.DeviceResource  `json:"deviceResources,omitempty"`
+		Resources              []models.ProfileResource `json:"resources,omitempty"`
+		Commands               []string                 `json:"commands,omitempty"` // List of commands to Get/Put information for devices associated with this profile
 	})
 
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
@@ -85,7 +81,6 @@ func (bdp *boltDeviceProfile) UnmarshalJSON(data []byte) error {
 	bdp.Manufacturer = decoded.Manufacturer
 	bdp.Model = decoded.Model
 	bdp.Labels = decoded.Labels
-	bdp.Objects = decoded.Objects
 	bdp.DeviceResources = decoded.DeviceResources
 	bdp.Resources = decoded.Resources
 
@@ -97,8 +92,7 @@ func (bdp *boltDeviceProfile) UnmarshalJSON(data []byte) error {
 	// Get all of the commands from the references
 	var commands []models.Command
 	for _, cRef := range decoded.Commands {
-		var c models.Command
-		err := m.GetCommandById(&c, cRef)
+		c, err := m.GetCommandById(cRef)
 		if err != nil {
 			return err
 		}

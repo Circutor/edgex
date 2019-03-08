@@ -12,25 +12,22 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"runtime"
 
-	"github.com/go-zoo/bone"
-	"github.com/edgexfoundry/edgex-go/internal/export"
-	"github.com/edgexfoundry/edgex-go/pkg/clients"
-	"github.com/edgexfoundry/edgex-go/pkg/models"
-	"github.com/edgexfoundry/edgex-go/internal"
+	"github.com/edgexfoundry/go-mod-core-contracts/clients"
+	"github.com/edgexfoundry/go-mod-core-contracts/models"
+	"github.com/gorilla/mux"
+
+	"github.com/edgexfoundry/edgex-go/internal/pkg/correlation"
+	"github.com/edgexfoundry/edgex-go/internal/pkg/telemetry"
 )
 
-func replyPing(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	str := `pong`
-	io.WriteString(w, str)
+// Test if the service is working
+func pingHandler(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Content-Type", "text/plain")
+	w.Write([]byte("pong"))
 }
 
-func replyConfig(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-
+func configHandler(w http.ResponseWriter, _ *http.Request) {
 	encode(Configuration, w)
 }
 
@@ -55,9 +52,9 @@ func replyNotifyRegistrations(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	if update.Operation != export.NotifyUpdateAdd &&
-		update.Operation != export.NotifyUpdateUpdate &&
-		update.Operation != export.NotifyUpdateDelete {
+	if update.Operation != models.NotifyUpdateAdd &&
+		update.Operation != models.NotifyUpdateUpdate &&
+		update.Operation != models.NotifyUpdateDelete {
 		LoggingClient.Error(fmt.Sprintf("Invalid value for operation %s", update.Operation))
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -67,32 +64,10 @@ func replyNotifyRegistrations(w http.ResponseWriter, r *http.Request) {
 	RefreshRegistrations(update)
 }
 
-func replyMetrics(w http.ResponseWriter, r *http.Request) {
+func metricsHandler(w http.ResponseWriter, _ *http.Request) {
+	s := telemetry.NewSystemUsage()
 
-	var t internal.Telemetry
-
-	if r.Body != nil {
-		defer r.Body.Close()
-	}
-
-	// The micro-service is to be considered the System Of Record (SOR) in terms of accurate information.
-	// Fetch metrics for the scheduler service.
-	var rtm runtime.MemStats
-
-	// Read full memory stats
-	runtime.ReadMemStats(&rtm)
-
-	// Miscellaneous memory stats
-	t.Alloc = rtm.Alloc
-	t.TotalAlloc = rtm.TotalAlloc
-	t.Sys = rtm.Sys
-	t.Mallocs = rtm.Mallocs
-	t.Frees = rtm.Frees
-
-	// Live objects = Mallocs - Frees
-	t.LiveObjects = t.Mallocs - t.Frees
-
-	encode(t, w)
+	encode(s, w)
 
 	return
 }
@@ -113,18 +88,22 @@ func encode(i interface{}, w http.ResponseWriter) {
 
 // HTTPServer function
 func httpServer() http.Handler {
-	mux := bone.New()
+	r := mux.NewRouter()
 
 	// Ping Resource
-	mux.Get(clients.ApiPingRoute, http.HandlerFunc(replyPing))
+	r.HandleFunc(clients.ApiPingRoute, pingHandler).Methods(http.MethodGet)
 
 	// Configuration
-	mux.Get(clients.ApiConfigRoute, http.HandlerFunc(replyConfig))
+	r.HandleFunc(clients.ApiConfigRoute, configHandler).Methods(http.MethodGet)
 
 	// Metrics
-	mux.Get(clients.ApiMetricsRoute, http.HandlerFunc(replyMetrics))
+	r.HandleFunc(clients.ApiMetricsRoute, metricsHandler).Methods(http.MethodGet)
 
-	mux.Put(clients.ApiNotifyRegistrationRoute, http.HandlerFunc(replyNotifyRegistrations))
+	r.HandleFunc(clients.ApiNotifyRegistrationRoute, replyNotifyRegistrations).Methods(http.MethodPut)
 
-	return mux
+	r.Use(correlation.ManageHeader)
+	r.Use(correlation.OnResponseComplete)
+	r.Use(correlation.OnRequestBegin)
+
+	return r
 }

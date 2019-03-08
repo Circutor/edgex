@@ -1,8 +1,10 @@
+[Writable]
 DeviceUpdateLastConnected = false
 MetaDataCheck = false
 PersistData = false
 ServiceUpdateLastConnected = false
 ValidateCheck = false
+LogLevel = 'INFO'
 
 [Service]
 BootTimeout = 30000
@@ -23,7 +25,6 @@ Type = 'consul'
 [Logging]
 EnableRemote = true
 File = './logs/edgex-core-data.log'
-Level = 'INFO'
 
 [Clients]
   [Clients.Metadata]
@@ -51,5 +52,3 @@ Protocol = 'tcp'
 Host = '*'
 Port = 5563
 Type = 'zero'
-
-

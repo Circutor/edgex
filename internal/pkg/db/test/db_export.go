@@ -9,15 +9,11 @@ package test
 import (
 	"testing"
 
+	"github.com/edgexfoundry/go-mod-core-contracts/models"
 	"github.com/edgexfoundry/edgex-go/internal/export"
 )
 
 func TestExportDB(t *testing.T, db export.DBClient) {
-	err := db.Connect()
-	if err != nil {
-		t.Fatalf("Could not connect: %v", err)
-	}
-
 	// Remove previous registrations
 	db.ScrubAllRegistrations()
 
@@ -30,9 +26,9 @@ func TestExportDB(t *testing.T, db export.DBClient) {
 		t.Fatalf("Error: expected 0 registrations; found %d", len(regs))
 	}
 
-	r := export.Registration{}
+	r := models.Registration{}
 	r.Name = "name"
-	id, err := db.AddRegistration(&r)
+	id, err := db.AddRegistration(r)
 	if err != nil {
 		t.Fatalf("Error adding registration %v: %v", r, err)
 	}
@@ -44,11 +40,11 @@ func TestExportDB(t *testing.T, db export.DBClient) {
 	if len(regs) != 1 {
 		t.Fatalf("There should be only one registration instead of %d", len(regs))
 	}
-	r2, err := db.RegistrationById(id.Hex())
+	r2, err := db.RegistrationById(id)
 	if err != nil {
 		t.Fatalf("Error getting registrations by id %v", err)
 	}
-	if r2.ID.Hex() != id.Hex() {
+	if r2.ID != id {
 		t.Fatalf("Id does not match %s - %s", r2.ID, id)
 	}
 	_, err = db.RegistrationById("INVALID")
@@ -73,12 +69,12 @@ func TestExportDB(t *testing.T, db export.DBClient) {
 		t.Fatalf("Registration should not be deleted")
 	}
 
-	err = db.DeleteRegistrationById(id.Hex())
+	err = db.DeleteRegistrationById(id)
 	if err != nil {
 		t.Fatalf("Registration should be deleted: %v", err)
 	}
 
-	id, err = db.AddRegistration(&r)
+	id, err = db.AddRegistration(r)
 	if err != nil {
 		t.Fatalf("Error adding registration %v: %v", r, err)
 	}

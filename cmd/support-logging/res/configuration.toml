@@ -1,4 +1,6 @@
+[Writable]
 Persistence = 'file'
+LogLevel = 'INFO'
 
 [Service]
 BootTimeout = 30000

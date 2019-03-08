@@ -17,26 +17,23 @@
 package agent
 
 import (
-	"net/http"
-	"fmt"
 	"encoding/json"
+	"net/http"
+
+	"github.com/edgexfoundry/edgex-go/internal/system/agent/logger"
 )
 
 // Test if the service is working
-func pingHandler(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-
-	_, err := w.Write([]byte("pong"))
-	if err != nil {
-		LoggingClient.Error("Error writing pong: " + err.Error())
-	}
+func pingHandler(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Content-Type", "text/plain")
+	w.Write([]byte("pong"))
 }
 
 func ProcessResponse(response string) map[string]interface{} {
 	rsp := make(map[string]interface{})
 	err := json.Unmarshal([]byte(response), &rsp)
 	if err != nil {
-		LoggingClient.Error(fmt.Sprintf("ERROR: {%v}", err))
+		logs.LoggingClient.Error("error unmarshalling response from JSON", "error message", err.Error())
 	}
 	return rsp
 }

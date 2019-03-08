@@ -26,49 +26,52 @@ import (
 	"github.com/edgexfoundry/edgex-go"
 	"github.com/edgexfoundry/edgex-go/internal"
 	"github.com/edgexfoundry/edgex-go/internal/core/metadata"
+	"github.com/edgexfoundry/edgex-go/internal/pkg/correlation"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/startup"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/usage"
-	"github.com/edgexfoundry/edgex-go/pkg/clients/logging"
+	"github.com/edgexfoundry/go-mod-core-contracts/clients/logging"
 	"github.com/gorilla/context"
 )
 
 func main() {
 	start := time.Now()
-	var useConsul bool
+	var useRegistry bool
 	var useProfile string
 
-	flag.BoolVar(&useConsul, "consul", false, "Indicates the service should use consul.")
-	flag.BoolVar(&useConsul, "c", false, "Indicates the service should use consul.")
+	flag.BoolVar(&useRegistry, "registry", false, "Indicates the service should use registry service.")
+	flag.BoolVar(&useRegistry, "r", false, "Indicates the service should use registry service.")
 	flag.StringVar(&useProfile, "profile", "", "Specify a profile other than default.")
 	flag.StringVar(&useProfile, "p", "", "Specify a profile other than default.")
 	flag.Usage = usage.HelpCallback
 	flag.Parse()
 
-	params := startup.BootParams{UseConsul: useConsul, UseProfile: useProfile, BootTimeout: internal.BootTimeoutDefault}
+	params := startup.BootParams{UseRegistry: useRegistry, UseProfile: useProfile, BootTimeout: internal.BootTimeoutDefault}
 	startup.Bootstrap(params, metadata.Retry, logBeforeInit)
 
-	ok := metadata.Init(useConsul)
+	ok := metadata.Init(useRegistry)
 	if !ok {
 		logBeforeInit(fmt.Errorf("%s: Service bootstrap failed!", internal.CoreMetaDataServiceKey))
-		return
+		os.Exit(1)
 	}
 
 	metadata.LoggingClient.Info("Service dependencies resolved...")
 	metadata.LoggingClient.Info(fmt.Sprintf("Starting %s %s ", internal.CoreMetaDataServiceKey, edgex.Version))
 
 	http.TimeoutHandler(nil, time.Millisecond*time.Duration(metadata.Configuration.Service.Timeout), "Request timed out")
-	metadata.LoggingClient.Info(metadata.Configuration.Service.StartupMsg, "")
+	metadata.LoggingClient.Info(metadata.Configuration.Service.StartupMsg)
 
 	errs := make(chan error, 2)
 	listenForInterrupt(errs)
 	startHttpServer(errs, metadata.Configuration.Service.Port)
 
 	// Time it took to start service
-	metadata.LoggingClient.Info("Service started in: "+time.Since(start).String(), "")
+	metadata.LoggingClient.Info("Service started in: " + time.Since(start).String())
 	metadata.LoggingClient.Info("Listening on port: " + strconv.Itoa(metadata.Configuration.Service.Port))
 	c := <-errs
 	metadata.Destruct()
 	metadata.LoggingClient.Warn(fmt.Sprintf("terminating: %v", c))
+
+	os.Exit(0)
 }
 
 func logBeforeInit(err error) {
@@ -86,6 +89,7 @@ func listenForInterrupt(errChan chan error) {
 
 func startHttpServer(errChan chan error, port int) {
 	go func() {
+		correlation.LoggingClient = metadata.LoggingClient //Not thrilled about this, can't think of anything better ATM
 		r := metadata.LoadRestRoutes()
 		errChan <- http.ListenAndServe(":"+strconv.Itoa(port), context.ClearHandler(r))
 	}()

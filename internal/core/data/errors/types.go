@@ -15,6 +15,7 @@ package errors
 
 import (
 	"fmt"
+
 	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
 )
 
@@ -91,6 +92,18 @@ func NewErrValueDescriptorInUse(name string) error {
 	return &ErrValueDescriptorInUse{name: name}
 }
 
+type ErrDuplicateValueDescriptorName struct {
+	name string
+}
+
+func (e ErrDuplicateValueDescriptorName) Error() string {
+	return fmt.Sprintf("duplicate name for value descriptor: %s", e.name)
+}
+
+func NewErrDuplicateValueDescriptorName(name string) error {
+	return &ErrDuplicateValueDescriptorName{name: name}
+}
+
 type ErrLimitExceeded struct {
 	limit int
 }
@@ -124,4 +137,16 @@ func (e ErrDbNotFound) Error() string {
 
 func NewErrDbNotFound() error {
 	return &ErrDbNotFound{}
+}
+
+type ErrInvalidId struct {
+	id string
+}
+
+func (e ErrInvalidId) Error() string {
+	return fmt.Sprintf("invalid ID: %s", e.id)
+}
+
+func NewErrInvalidId(id string) error {
+	return &ErrInvalidId{id: id}
 }

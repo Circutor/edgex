@@ -1,8 +1,10 @@
+[Writable]
 DeviceUpdateLastConnected = false
 MetaDataCheck = false
 PersistData = true
 ServiceUpdateLastConnected = false
 ValidateCheck = false
+LogLevel = 'INFO'
 
 [Service]
 BootTimeout = 30000

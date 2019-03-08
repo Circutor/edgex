@@ -15,12 +15,13 @@ package distro
 //   registration channel)
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"time"
 
-	"github.com/edgexfoundry/edgex-go/internal/export"
-	"github.com/edgexfoundry/edgex-go/pkg/models"
+	"github.com/edgexfoundry/edgex-go/internal/pkg/correlation/models"
+	contract "github.com/edgexfoundry/go-mod-core-contracts/models"
 )
 
 const (
@@ -28,24 +29,24 @@ const (
 	awsThingUpdateTopic string = "$aws/things/%s/shadow/update"
 )
 
-var registrationChanges chan models.NotifyUpdate = make(chan models.NotifyUpdate, 2)
+var registrationChanges chan contract.NotifyUpdate = make(chan contract.NotifyUpdate, 2)
 
 // RegistrationInfo - registration info
 type registrationInfo struct {
-	registration export.Registration
+	registration contract.Registration
 	format       formatter
 	compression  transformer
 	encrypt      transformer
 	sender       sender
 	filter       []filterer
 
-	chRegistration chan *export.Registration
+	chRegistration chan *contract.Registration
 	chEvent        chan *models.Event
 
 	deleteFlag bool
 }
 
-func RefreshRegistrations(update models.NotifyUpdate) {
+func RefreshRegistrations(update contract.NotifyUpdate) {
 	// TODO make it not blocking, return bool?
 	registrationChanges <- update
 }
@@ -53,35 +54,35 @@ func RefreshRegistrations(update models.NotifyUpdate) {
 func newRegistrationInfo() *registrationInfo {
 	reg := &registrationInfo{}
 
-	reg.chRegistration = make(chan *export.Registration)
+	reg.chRegistration = make(chan *contract.Registration)
 	reg.chEvent = make(chan *models.Event)
 	return reg
 }
 
-func (reg *registrationInfo) update(newReg export.Registration) bool {
+func (reg *registrationInfo) update(newReg contract.Registration) bool {
 	reg.registration = newReg
 
 	reg.format = nil
 	switch newReg.Format {
-	case export.FormatJSON:
+	case contract.FormatJSON:
 		reg.format = jsonFormatter{}
-	case export.FormatXML:
+	case contract.FormatXML:
 		reg.format = xmlFormatter{}
-	case export.FormatSerialized:
+	case contract.FormatSerialized:
 		reg.format = jsonFormatter{}
-	case export.FormatIoTCoreJSON:
+	case contract.FormatIoTCoreJSON:
 		reg.format = jsonFormatter{}
-	case export.FormatAzureJSON:
+	case contract.FormatAzureJSON:
 		reg.format = azureFormatter{}
-	case export.FormatAWSJSON:
+	case contract.FormatAWSJSON:
 		reg.format = awsFormatter{}
-	case export.FormatCSV:
+	case contract.FormatCSV:
 		// TODO reg.format = distro.NewCsvFormat()
-	case export.FormatThingsBoardJSON:
+	case contract.FormatThingsBoardJSON:
 		reg.format = thingsboardJSONFormatter{}
-	case export.FormatDexmaJSON:
+	case "DEXMA_JSON":
 		reg.format = dexmaJSONFormatter{}
-	case export.FormatNOOP:
+	case contract.FormatNOOP:
 		reg.format = noopFormatter{}
 	default:
 		LoggingClient.Warn(fmt.Sprintf("Format not supported: %s", newReg.Format))
@@ -92,11 +93,11 @@ func (reg *registrationInfo) update(newReg export.Registration) bool {
 	switch newReg.Compression {
 	case "":
 		fallthrough
-	case export.CompNone:
+	case contract.CompNone:
 		reg.compression = nil
-	case export.CompGzip:
+	case contract.CompGzip:
 		reg.compression = &gzipTransformer{}
-	case export.CompZip:
+	case contract.CompZip:
 		reg.compression = &zlibTransformer{}
 	default:
 		LoggingClient.Warn(fmt.Sprintf("Compression not supported: %s", newReg.Compression))
@@ -105,25 +106,25 @@ func (reg *registrationInfo) update(newReg export.Registration) bool {
 
 	reg.sender = nil
 	switch newReg.Destination {
-	case export.DestMQTT, export.DestAzureMQTT:
+	case contract.DestMQTT, contract.DestAzureMQTT:
 		c := Configuration.Certificates["MQTTS"]
 		reg.sender = newMqttSender(newReg.Addressable, c.Cert, c.Key)
-	case export.DestAWSMQTT:
+	case contract.DestAWSMQTT:
 		newReg.Addressable.Protocol = "tls"
 		newReg.Addressable.Path = ""
 		newReg.Addressable.Topic = fmt.Sprintf(awsThingUpdateTopic, newReg.Addressable.Topic)
 		newReg.Addressable.Port = awsMQTTPort
 		c := Configuration.Certificates["AWS"]
 		reg.sender = newMqttSender(newReg.Addressable, c.Cert, c.Key)
-	case export.DestIotCoreMQTT:
+	case contract.DestIotCoreMQTT:
 		reg.sender = newIoTCoreSender(newReg.Addressable)
-	case export.DestRest:
+	case contract.DestRest:
 		reg.sender = newHTTPSender(newReg.Addressable)
-	case export.DestDexmaRest:
+	case "DEXMA_TOPIC":
 		reg.sender = newHTTPDexmaSender(newReg.Addressable)
-	case export.DestXMPP:
+	case contract.DestXMPP:
 		reg.sender = newXMPPSender(newReg.Addressable)
-	case export.DestInfluxDB:
+	case contract.DestInfluxDB:
 		reg.sender = newInfluxDBSender(newReg.Addressable)
 
 	default:
@@ -139,9 +140,9 @@ func (reg *registrationInfo) update(newReg export.Registration) bool {
 	switch newReg.Encryption.Algo {
 	case "":
 		fallthrough
-	case export.EncNone:
+	case contract.EncNone:
 		reg.encrypt = nil
-	case export.EncAes:
+	case contract.EncAes:
 		reg.encrypt = newAESEncryption(newReg.Encryption)
 	default:
 		LoggingClient.Warn(fmt.Sprintf("Encryption not supported: %s", newReg.Encryption.Algo))
@@ -166,9 +167,10 @@ func (reg *registrationInfo) update(newReg export.Registration) bool {
 func (reg registrationInfo) processEvent(event *models.Event) {
 	// Valid Event Filter, needed?
 
+	data := event.ToContract()
 	for _, f := range reg.filter {
 		var accepted bool
-		accepted, event = f.Filter(event)
+		accepted, data = f.Filter(data)
 		if !accepted {
 			LoggingClient.Info("Event filtered")
 			return
@@ -179,11 +181,11 @@ func (reg registrationInfo) processEvent(event *models.Event) {
 		LoggingClient.Warn("registrationInfo with nil format")
 		return
 	}
-	formated := reg.format.Format(event)
+	formatted := reg.format.Format(data)
 
-	compressed := formated
+	compressed := formatted
 	if reg.compression != nil {
-		compressed = reg.compression.Transform(formated)
+		compressed = reg.compression.Transform(formatted)
 	}
 
 	encrypted := compressed
@@ -191,9 +193,9 @@ func (reg registrationInfo) processEvent(event *models.Event) {
 		encrypted = reg.encrypt.Transform(compressed)
 	}
 
-	if reg.sender.Send(encrypted, event) && Configuration.MarkPushed {
-		id := event.ID.Hex()
-		err := ec.MarkPushed(id)
+	if reg.sender.Send(encrypted, event) && Configuration.Writable.MarkPushed {
+		id := event.ID
+		err := ec.MarkPushed(id, context.Background())
 
 		if err != nil {
 			LoggingClient.Error(fmt.Sprintf("Failed to mark event as pushed : event ID = %s: %s", id, err))
@@ -230,10 +232,10 @@ func registrationLoop(reg *registrationInfo) {
 }
 
 func updateRunningRegistrations(running map[string]*registrationInfo,
-	update models.NotifyUpdate) error {
+	update contract.NotifyUpdate) error {
 
 	switch update.Operation {
-	case export.NotifyUpdateDelete:
+	case contract.NotifyUpdateDelete:
 		for k, v := range running {
 			if k == update.Name {
 				v.chRegistration <- nil
@@ -242,7 +244,7 @@ func updateRunningRegistrations(running map[string]*registrationInfo,
 			}
 		}
 		return fmt.Errorf("delete update not processed")
-	case export.NotifyUpdateUpdate:
+	case contract.NotifyUpdateUpdate:
 		reg := getRegistrationByName(update.Name)
 		if reg == nil {
 			return fmt.Errorf("Could not find registration")
@@ -254,7 +256,7 @@ func updateRunningRegistrations(running map[string]*registrationInfo,
 			}
 		}
 		return fmt.Errorf("Could not find running registration")
-	case export.NotifyUpdateAdd:
+	case contract.NotifyUpdateAdd:
 		reg := getRegistrationByName(update.Name)
 		if reg == nil {
 			return fmt.Errorf("Could not find registration")

@@ -16,10 +16,10 @@ package bolt
 
 import (
 	bolt "github.com/coreos/bbolt"
-	"github.com/edgexfoundry/edgex-go/internal/export"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
+	contract "github.com/edgexfoundry/go-mod-core-contracts/models"
+	"github.com/google/uuid"
 	jsoniter "github.com/json-iterator/go"
-	"gopkg.in/mgo.v2/bson"
 )
 
 const (
@@ -30,9 +30,9 @@ const (
 
 // Return all the registrations
 // UnexpectedError - failed to retrieve registrations from the database
-func (bc *BoltClient) Registrations() ([]export.Registration, error) {
-	reg := export.Registration{}
-	regs := []export.Registration{}
+func (bc *BoltClient) Registrations() ([]contract.Registration, error) {
+	reg := contract.Registration{}
+	regs := []contract.Registration{}
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
 
 	err := bc.db.View(func(tx *bolt.Tx) error {
@@ -55,9 +55,10 @@ func (bc *BoltClient) Registrations() ([]export.Registration, error) {
 
 // Add a new registration
 // UnexpectedError - failed to add to database
-func (bc *BoltClient) AddRegistration(reg *export.Registration) (bson.ObjectId, error) {
-	reg.ID = bson.NewObjectId()
+func (bc *BoltClient) AddRegistration(reg contract.Registration) (string, error) {
+	reg.ID = uuid.New().String()
 	reg.Created = db.MakeTimestamp()
+	reg.Modified = reg.Created
 
 	err := bc.add(ExportCollection, reg, reg.ID)
 	return reg.ID, err
@@ -66,7 +67,7 @@ func (bc *BoltClient) AddRegistration(reg *export.Registration) (bson.ObjectId, 
 // Update a registration
 // UnexpectedError - problem updating in database
 // NotFound - no registration with the ID was found
-func (bc *BoltClient) UpdateRegistration(reg export.Registration) error {
+func (bc *BoltClient) UpdateRegistration(reg contract.Registration) error {
 	reg.Modified = db.MakeTimestamp()
 
 	return bc.update(ExportCollection, reg, reg.ID)
@@ -75,8 +76,8 @@ func (bc *BoltClient) UpdateRegistration(reg export.Registration) error {
 // Get a registration by ID
 // UnexpectedError - problem getting in database
 // NotFound - no registration with the ID was found
-func (bc *BoltClient) RegistrationById(id string) (export.Registration, error) {
-	var reg export.Registration
+func (bc *BoltClient) RegistrationById(id string) (contract.Registration, error) {
+	var reg contract.Registration
 	err := bc.getById(&reg, ExportCollection, id)
 	return reg, err
 }
@@ -84,8 +85,8 @@ func (bc *BoltClient) RegistrationById(id string) (export.Registration, error) {
 // Get a registration by name
 // UnexpectedError - problem getting in database
 // NotFound - no registration with the name was found
-func (bc *BoltClient) RegistrationByName(name string) (export.Registration, error) {
-	var reg export.Registration
+func (bc *BoltClient) RegistrationByName(name string) (contract.Registration, error) {
+	var reg contract.Registration
 	err := bc.getByName(&reg, ExportCollection, name)
 	return reg, err
 }

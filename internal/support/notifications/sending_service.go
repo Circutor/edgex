@@ -24,7 +24,7 @@ import (
 	"time"
 
 	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
-	"github.com/edgexfoundry/edgex-go/pkg/models"
+	"github.com/edgexfoundry/go-mod-core-contracts/models"
 )
 
 func sendViaChannel(n models.Notification, c models.Channel, receiver string) {
@@ -68,7 +68,7 @@ func getTransmissionRecord(msg string, st models.TransmissionStatus) models.Tran
 func persistTransmission(tr models.TransmissionRecord, n models.Notification, c models.Channel, rec string) (models.Transmission, error) {
 	trx := models.Transmission{Notification: n, Receiver: rec, Channel: c, ResendCount: 0, Status: tr.Status}
 	trx.Records = []models.TransmissionRecord{tr}
-	_, err := dbClient.AddTransmission(&trx)
+	_, err := dbClient.AddTransmission(trx)
 	if err != nil {
 		LoggingClient.Error("Transmission cannot be persisted: " + trx.String())
 		return trx, err
@@ -112,13 +112,13 @@ func restSend(message string, url string) models.TransmissionRecord {
 
 func handleFailedTransmission(t models.Transmission) {
 	n := t.Notification
-	if t.ResendCount >= Configuration.ResendLimit {
-		LoggingClient.Error("Too many transmission resend attempts!  Giving up on transmission: " + t.ID.String() + ", for notification: " + n.Slug)
+	if t.ResendCount >= Configuration.Writable.ResendLimit {
+		LoggingClient.Error("Too many transmission resend attempts!  Giving up on transmission: " + t.ID + ", for notification: " + n.Slug)
 	}
 	if t.Status == models.Failed && n.Status != models.Escalated {
-		LoggingClient.Debug("Handling failed transmission for: " + t.ID.String() + " for notification: " + t.Notification.Slug + ", resends so far: " + strconv.Itoa(t.ResendCount))
+		LoggingClient.Debug("Handling failed transmission for: " + t.ID + " for notification: " + t.Notification.Slug + ", resends so far: " + strconv.Itoa(t.ResendCount))
 		if n.Severity == models.Critical {
-			if t.ResendCount < Configuration.ResendLimit {
+			if t.ResendCount < Configuration.Writable.ResendLimit {
 				time.AfterFunc(time.Second*5, func() { criticalSeverityResend(t) })
 			} else {
 				escalate(t)

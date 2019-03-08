@@ -12,28 +12,26 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"runtime"
 	"strconv"
 	"strings"
 
-	"github.com/edgexfoundry/edgex-go/internal"
+	"github.com/edgexfoundry/go-mod-core-contracts/clients"
+	"github.com/edgexfoundry/go-mod-core-contracts/clients/logging"
+	"github.com/edgexfoundry/go-mod-core-contracts/models"
+	"github.com/gorilla/mux"
+
+	"github.com/edgexfoundry/edgex-go/internal/pkg/correlation"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
-	"github.com/edgexfoundry/edgex-go/internal/support/logging/models"
-	"github.com/edgexfoundry/edgex-go/pkg/clients"
-	"github.com/edgexfoundry/edgex-go/pkg/clients/logging"
-	"github.com/go-zoo/bone"
+	"github.com/edgexfoundry/edgex-go/internal/pkg/telemetry"
 )
 
-func replyPing(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	str := `{"value" : "pong"}`
-	io.WriteString(w, str)
+// Test if the service is working
+func pingHandler(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Content-Type", "text/plain")
+	w.Write([]byte("pong"))
 }
 
-func replyConfig(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-
+func configHandler(w http.ResponseWriter, _ *http.Request) {
 	encode(Configuration, w)
 }
 
@@ -76,7 +74,9 @@ func checkMaxLimit(limit int) int {
 
 func getCriteria(w http.ResponseWriter, r *http.Request) *matchCriteria {
 	var criteria matchCriteria
-	limit := bone.GetValue(r, "limit")
+	vars := mux.Vars(r)
+
+	limit := vars["limit"]
 	if len(limit) > 0 {
 		var err error
 		criteria.Limit, err = strconv.Atoi(limit)
@@ -84,7 +84,7 @@ func getCriteria(w http.ResponseWriter, r *http.Request) *matchCriteria {
 		if err != nil {
 			s = fmt.Sprintf("Could not parse limit %s", limit)
 		} else if criteria.Limit < 0 {
-			s = fmt.Sprintf("Limit is not positive %d", criteria.Limit)
+			s = fmt.Sprintf("Limit cannot be negative %d", criteria.Limit)
 		}
 		if len(s) > 0 {
 			w.WriteHeader(http.StatusBadRequest)
@@ -95,7 +95,7 @@ func getCriteria(w http.ResponseWriter, r *http.Request) *matchCriteria {
 	//In all cases, cap the # of entries returned at ReadMaxLimit
 	criteria.Limit = checkMaxLimit(criteria.Limit)
 
-	start := bone.GetValue(r, "start")
+	start := vars["start"]
 	if len(start) > 0 {
 		var err error
 		criteria.Start, err = strconv.ParseInt(start, 10, 64)
@@ -103,7 +103,7 @@ func getCriteria(w http.ResponseWriter, r *http.Request) *matchCriteria {
 		if err != nil {
 			s = fmt.Sprintf("Could not parse start %s", start)
 		} else if criteria.Start < 0 {
-			s = fmt.Sprintf("Start is not positive %d", criteria.Start)
+			s = fmt.Sprintf("Start cannot be negative %d", criteria.Start)
 		}
 		if len(s) > 0 {
 			w.WriteHeader(http.StatusBadRequest)
@@ -112,7 +112,7 @@ func getCriteria(w http.ResponseWriter, r *http.Request) *matchCriteria {
 		}
 	}
 
-	end := bone.GetValue(r, "end")
+	end := vars["end"]
 	if len(end) > 0 {
 		var err error
 		criteria.End, err = strconv.ParseInt(end, 10, 64)
@@ -120,7 +120,7 @@ func getCriteria(w http.ResponseWriter, r *http.Request) *matchCriteria {
 		if err != nil {
 			s = fmt.Sprintf("Could not parse end %s", end)
 		} else if criteria.End < 0 {
-			s = fmt.Sprintf("End is not positive %d", criteria.End)
+			s = fmt.Sprintf("End cannot be negative %d", criteria.End)
 		}
 		if len(s) > 0 {
 			w.WriteHeader(http.StatusBadRequest)
@@ -129,43 +129,41 @@ func getCriteria(w http.ResponseWriter, r *http.Request) *matchCriteria {
 		}
 	}
 
-	age := bone.GetValue(r, "age")
+	age := vars["age"]
 	if len(age) > 0 {
 		criteria.Start = 0
+		now := db.MakeTimestamp()
 		var err error
 		criteria.End, err = strconv.ParseInt(age, 10, 64)
 		var s string
 		if err != nil {
 			s = fmt.Sprintf("Could not parse age %s", age)
 		} else if criteria.End < 0 {
-			s = fmt.Sprintf("Age is not positive %d", criteria.End)
+			s = fmt.Sprintf("Age cannot be negative %d", criteria.End)
+		} else if criteria.End > now {
+			s = fmt.Sprintf("Age value too large %d", criteria.End)
 		}
 		if len(s) > 0 {
 			w.WriteHeader(http.StatusBadRequest)
 			io.WriteString(w, s)
 			return nil
 		}
-		criteria.End = db.MakeTimestamp() - criteria.End
+		criteria.End = now - criteria.End
 	}
 
-	labels := bone.GetValue(r, "labels")
-	if len(labels) > 0 {
-		criteria.Labels = append(criteria.Labels, strings.Split(labels, ",")...)
-	}
-
-	services := bone.GetValue(r, "services")
+	services := vars["services"]
 	if len(services) > 0 {
 		criteria.OriginServices = append(criteria.OriginServices,
 			strings.Split(services, ",")...)
 	}
 
-	keywords := bone.GetValue(r, "keywords")
+	keywords := vars["keywords"]
 	if len(keywords) > 0 {
 		criteria.Keywords = append(criteria.Keywords,
 			strings.Split(keywords, ",")...)
 	}
 
-	logLevels := bone.GetValue(r, "levels")
+	logLevels := vars["levels"]
 	if len(logLevels) > 0 {
 		criteria.LogLevels = append(criteria.LogLevels,
 			strings.Split(logLevels, ",")...)
@@ -219,32 +217,10 @@ func delLogs(w http.ResponseWriter, r *http.Request) {
 	io.WriteString(w, strconv.Itoa(removed))
 }
 
-func replyMetrics(w http.ResponseWriter, r *http.Request) {
+func metricsHandler(w http.ResponseWriter, _ *http.Request) {
+	s := telemetry.NewSystemUsage()
 
-	var t internal.Telemetry
-
-	if r.Body != nil {
-		defer r.Body.Close()
-	}
-
-	// The micro-service is to be considered the System Of Record (SOR) in terms of accurate information.
-	// Fetch metrics for the scheduler service.
-	var rtm runtime.MemStats
-
-	// Read full memory stats
-	runtime.ReadMemStats(&rtm)
-
-	// Miscellaneous memory stats
-	t.Alloc = rtm.Alloc
-	t.TotalAlloc = rtm.TotalAlloc
-	t.Sys = rtm.Sys
-	t.Mallocs = rtm.Mallocs
-	t.Frees = rtm.Frees
-
-	// Live objects = Mallocs - Frees
-	t.LiveObjects = t.Mallocs - t.Frees
-
-	encode(t, w)
+	encode(s, w)
 
 	return
 }
@@ -265,38 +241,39 @@ func encode(i interface{}, w http.ResponseWriter) {
 
 // HTTPServer function
 func HttpServer() http.Handler {
-	mux := bone.New()
+	r := mux.NewRouter()
 
 	// Ping Resource
-	mux.Get(clients.ApiPingRoute, http.HandlerFunc(replyPing))
+	r.HandleFunc(clients.ApiPingRoute, pingHandler).Methods(http.MethodGet)
 
 	// Configuration
-	mux.Get(clients.ApiConfigRoute, http.HandlerFunc(replyConfig))
+	r.HandleFunc(clients.ApiConfigRoute, configHandler).Methods(http.MethodGet)
 
 	// Metrics
-	mux.Get(clients.ApiMetricsRoute, http.HandlerFunc(replyMetrics))
+	r.HandleFunc(clients.ApiMetricsRoute, metricsHandler).Methods(http.MethodGet)
 
-	mv1 := mux.Prefix("/api/v1")
+	// Logs
+	r.HandleFunc(clients.ApiLoggingRoute, addLog).Methods(http.MethodPost)
 
-	mv1.Post("/logs", http.HandlerFunc(addLog))
-	mv1.Get("/logs/:limit", http.HandlerFunc(getLogs))
-	mv1.Get("/logs/:start/:end/:limit", http.HandlerFunc(getLogs))
-	mv1.Get("/logs/labels/:labels/:start/:end/:limit", http.HandlerFunc(getLogs))
-	mv1.Get("/logs/originServices/:services/:start/:end/:limit", http.HandlerFunc(getLogs))
-	mv1.Get("/logs/keywords/:keywords/:start/:end/:limit", http.HandlerFunc(getLogs))
-	mv1.Get("/logs/logLevels/:levels/:start/:end/:limit", http.HandlerFunc(getLogs))
-	mv1.Get("/logs/logLevels/:levels/originServices/:services/:start/:end/:limit", http.HandlerFunc(getLogs))
-	mv1.Get("/logs/logLevels/:levels/originServices/:services/labels/:labels/:start/:end/:limit", http.HandlerFunc(getLogs))
-	mv1.Get("/logs/logLevels/:levels/originServices/:services/labels/:labels/keywords/:keywords/:start/:end/:limit", http.HandlerFunc(getLogs))
+	r.HandleFunc(clients.ApiLoggingRoute, getLogs).Methods(http.MethodGet)
+	l := r.PathPrefix(clients.ApiLoggingRoute).Subrouter()
+	l.HandleFunc("/{limit}", getLogs).Methods(http.MethodGet)
+	l.HandleFunc("/{start}/{end}/{limit}", getLogs).Methods(http.MethodGet)
+	l.HandleFunc("/originServices/{services}/{start}/{end}/{limit}", getLogs).Methods(http.MethodGet)
+	l.HandleFunc("/keywords/{keywords}/{start}/{end}/{limit}", getLogs).Methods(http.MethodGet)
+	l.HandleFunc("/logLevels/{levels}/{start}/{end}/{limit}", getLogs).Methods(http.MethodGet)
+	l.HandleFunc("/logLevels/{levels}/originServices/{services}/{start}/{end}/{limit}", getLogs).Methods(http.MethodGet)
 
-	mv1.Delete("/logs/removeold/age/:age", http.HandlerFunc(delLogs))
-	mv1.Delete("/logs/:start/:end", http.HandlerFunc(delLogs))
-	mv1.Delete("/logs/keywords/:keywords/:start/:end", http.HandlerFunc(delLogs))
-	mv1.Delete("/logs/labels/:labels/:start/:end", http.HandlerFunc(delLogs))
-	mv1.Delete("/logs/originServices/:services/:start/:end", http.HandlerFunc(delLogs))
-	mv1.Delete("/logs/logLevels/:levels/:start/:end", http.HandlerFunc(delLogs))
-	mv1.Delete("/logs/logLevels/:levels/originServices/:services/:start/:end", http.HandlerFunc(delLogs))
-	mv1.Delete("/logs/logLevels/:levels/originServices/:services/labels/:labels/:start/:end", http.HandlerFunc(delLogs))
-	mv1.Delete("/logs/logLevels/:levels/originServices/:services/labels/:labels/keywords/:keywords/:start/:end", http.HandlerFunc(delLogs))
-	return mux
+	l.HandleFunc("/{start}/{end}", delLogs).Methods(http.MethodDelete)
+	l.HandleFunc("/keywords/{keywords}/{start}/{end}", delLogs).Methods(http.MethodDelete)
+	l.HandleFunc("/originServices/{services}/{start}/{end}", delLogs).Methods(http.MethodDelete)
+	l.HandleFunc("/logLevels/{levels}/{start}/{end}", delLogs).Methods(http.MethodDelete)
+	l.HandleFunc("/logLevels/{levels}/originServices/{services}/{start}/{end}", delLogs).Methods(http.MethodDelete)
+	l.HandleFunc("/removeold/age/{age}", delLogs).Methods(http.MethodDelete)
+
+	r.Use(correlation.ManageHeader)
+	r.Use(correlation.OnResponseComplete)
+	r.Use(correlation.OnRequestBegin)
+
+	return r
 }

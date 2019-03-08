@@ -16,8 +16,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/edgexfoundry/edgex-go/pkg/models"
-	"github.com/satori/go.uuid"
+	contract "github.com/edgexfoundry/go-mod-core-contracts/models"
+	"github.com/google/uuid"
 )
 
 type jsonFormatter struct {
@@ -33,7 +33,7 @@ const (
 	full
 )
 
-func (jsonTr jsonFormatter) Format(event *models.Event) []byte {
+func (jsonTr jsonFormatter) Format(event *contract.Event) []byte {
 
 	b, err := json.Marshal(event)
 	if err != nil {
@@ -46,7 +46,7 @@ func (jsonTr jsonFormatter) Format(event *models.Event) []byte {
 type xmlFormatter struct {
 }
 
-func (xmlTr xmlFormatter) Format(event *models.Event) []byte {
+func (xmlTr xmlFormatter) Format(event *contract.Event) []byte {
 	b, err := xml.Marshal(event)
 	if err != nil {
 		LoggingClient.Error(fmt.Sprintf("Error parsing XML. Error: %s", err.Error()))
@@ -60,7 +60,7 @@ type thingsboardJSONFormatter struct {
 
 // ThingsBoard JSON formatter
 // https://thingsboard.io/docs/reference/gateway-mqtt-api/#telemetry-upload-api
-func (thingsboardjsonTr thingsboardJSONFormatter) Format(event *models.Event) []byte {
+func (thingsboardjsonTr thingsboardJSONFormatter) Format(event *contract.Event) []byte {
 
 	type Device struct {
 		Ts     int64             `json:"ts"`
@@ -91,7 +91,7 @@ type dexmaJSONFormatter struct {
 
 // Dexma JSON formatter
 //http://support.dexmatech.com/customer/en/portal/articles/1745389-http-json-api-data-insertion-
-func (dexmajsonTr dexmaJSONFormatter) Format(event *models.Event) []byte {
+func (dexmajsonTr dexmaJSONFormatter) Format(event *contract.Event) []byte {
 
 	type Value struct {
 		P int `json:"p"`
@@ -165,10 +165,10 @@ func newAzureMessage() (*AzureMessage, error) {
 		Created:    time.Now(),
 	}
 
-	id := uuid.NewV4()
+	id := uuid.New()
 	msg.ID = id.String()
 
-	correlationID := uuid.NewV4()
+	correlationID := uuid.New()
 	msg.CorrelationID = correlationID.String()
 
 	return msg, nil
@@ -186,7 +186,7 @@ type azureFormatter struct {
 }
 
 // Format method does all foramtting job.
-func (af azureFormatter) Format(event *models.Event) []byte {
+func (af azureFormatter) Format(event *contract.Event) []byte {
 	am, err := newAzureMessage()
 	if err != nil {
 		LoggingClient.Error(fmt.Sprintf("Error creating a new Azure message: %s", err))
@@ -212,7 +212,7 @@ func (af azureFormatter) Format(event *models.Event) []byte {
 type awsFormatter struct {
 }
 
-func (af awsFormatter) Format(event *models.Event) []byte {
+func (af awsFormatter) Format(event *contract.Event) []byte {
 	reported := map[string]interface{}{}
 
 	for _, reading := range event.Readings {
@@ -254,7 +254,7 @@ func (af awsFormatter) Format(event *models.Event) []byte {
 type noopFormatter struct {
 }
 
-func (noopFmt noopFormatter) Format(event *models.Event) []byte {
+func (noopFmt noopFormatter) Format(event *contract.Event) []byte {
 	return []byte{}
 }
 
@@ -286,7 +286,7 @@ func newBIoTMessage() (*BIoTMessage, error) {
 		MsgType:  "Q",
 	}
 
-	id := uuid.NewV1()
+	id := uuid.New()
 	msg.MsgId = id.String()
 
 	return msg, nil
@@ -298,7 +298,7 @@ type biotFormatter struct {
 }
 
 // Format method does all foramtting job.
-func (af biotFormatter) Format(event *models.Event) []byte {
+func (af biotFormatter) Format(event *contract.Event) []byte {
 	bm, err := newBIoTMessage()
 	if err != nil {
 		LoggingClient.Error(fmt.Sprintf("error creating a new BIoT message: %s", err))

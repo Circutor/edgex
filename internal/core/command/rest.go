@@ -14,13 +14,14 @@
 package command
 
 import (
-	"net/http"
-	"runtime"
 	"encoding/json"
+	"net/http"
 
+	"github.com/edgexfoundry/go-mod-core-contracts/clients"
 	"github.com/gorilla/mux"
-	"github.com/edgexfoundry/edgex-go/internal"
-	"github.com/edgexfoundry/edgex-go/pkg/clients"
+
+	"github.com/edgexfoundry/edgex-go/internal/pkg/correlation"
+	"github.com/edgexfoundry/edgex-go/internal/pkg/telemetry"
 )
 
 func LoadRestRoutes() http.Handler {
@@ -35,9 +36,14 @@ func LoadRestRoutes() http.Handler {
 	// Metrics
 	r.HandleFunc(clients.ApiMetricsRoute, metricsHandler).Methods(http.MethodGet)
 
-	b := r.PathPrefix("/api/v1").Subrouter()
+	b := r.PathPrefix(clients.ApiBase).Subrouter()
 
 	loadDeviceRoutes(b)
+
+	r.Use(correlation.ManageHeader)
+	r.Use(correlation.OnResponseComplete)
+	r.Use(correlation.OnRequestBegin)
+
 	return r
 }
 
@@ -68,45 +74,17 @@ func pingHandler(w http.ResponseWriter, _ *http.Request) {
 	w.Write([]byte(PINGRESPONSE))
 }
 
-func configHandler(w http.ResponseWriter, r *http.Request) {
-
-	if r.Body != nil {
-		defer r.Body.Close()
-	}
-
+func configHandler(w http.ResponseWriter, _ *http.Request) {
 	encode(Configuration, w)
 }
 
-func metricsHandler(w http.ResponseWriter, r *http.Request) {
+func metricsHandler(w http.ResponseWriter, _ *http.Request) {
+	s := telemetry.NewSystemUsage()
 
-	var t internal.Telemetry
-
-	if r.Body != nil {
-		defer r.Body.Close()
-	}
-
-	// The micro-service is to be considered the System Of Record (SOR) in terms of accurate information.
-	// Fetch metrics for the command service.
-	var rtm runtime.MemStats
-
-	// Read full memory stats
-	runtime.ReadMemStats(&rtm)
-
-	// Miscellaneous memory stats
-	t.Alloc = rtm.Alloc
-	t.TotalAlloc = rtm.TotalAlloc
-	t.Sys = rtm.Sys
-	t.Mallocs = rtm.Mallocs
-	t.Frees = rtm.Frees
-
-	// Live objects = Mallocs - Frees
-	t.LiveObjects = t.Mallocs - t.Frees
-
-	encode(t, w)
+	encode(s, w)
 
 	return
 }
-
 
 // Helper function for encoding things for returning from REST calls
 func encode(i interface{}, w http.ResponseWriter) {

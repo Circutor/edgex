@@ -9,14 +9,15 @@
 package client
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/edgexfoundry/edgex-go/internal/export"
-	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
-	"github.com/edgexfoundry/edgex-go/pkg/models"
-	"github.com/go-zoo/bone"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
+	"github.com/edgexfoundry/go-mod-core-contracts/models"
+	"github.com/gorilla/mux"
 )
 
 const (
@@ -33,7 +34,9 @@ const (
 )
 
 func getRegByID(w http.ResponseWriter, r *http.Request) {
-	id := bone.GetValue(r, "id")
+	// URL parameters
+	vars := mux.Vars(r)
+	id := vars["id"]
 
 	reg, err := dbClient.RegistrationById(id)
 	if err != nil {
@@ -47,33 +50,35 @@ func getRegByID(w http.ResponseWriter, r *http.Request) {
 }
 
 func getRegList(w http.ResponseWriter, r *http.Request) {
-	t := bone.GetValue(r, "type")
+	// URL parameters
+	vars := mux.Vars(r)
+	t := vars["type"]
 
 	var list []string
 
 	switch t {
 	case typeAlgorithms:
-		list = append(list, export.EncNone)
-		list = append(list, export.EncAes)
+		list = append(list, models.EncNone)
+		list = append(list, models.EncAes)
 	case typeCompressions:
-		list = append(list, export.CompNone)
-		list = append(list, export.CompGzip)
-		list = append(list, export.CompZip)
+		list = append(list, models.CompNone)
+		list = append(list, models.CompGzip)
+		list = append(list, models.CompZip)
 	case typeFormats:
-		list = append(list, export.FormatJSON)
-		list = append(list, export.FormatXML)
-		list = append(list, export.FormatIoTCoreJSON)
-		list = append(list, export.FormatAzureJSON)
-		list = append(list, export.FormatAWSJSON)
-		list = append(list, export.FormatThingsBoardJSON)
-		list = append(list, export.FormatNOOP)
+		list = append(list, models.FormatJSON)
+		list = append(list, models.FormatXML)
+		list = append(list, models.FormatIoTCoreJSON)
+		list = append(list, models.FormatAzureJSON)
+		list = append(list, models.FormatAWSJSON)
+		list = append(list, models.FormatThingsBoardJSON)
+		list = append(list, models.FormatNOOP)
 	case typeDestinations:
-		list = append(list, export.DestMQTT)
-		list = append(list, export.DestIotCoreMQTT)
-		list = append(list, export.DestAzureMQTT)
-		list = append(list, export.DestRest)
-		list = append(list, export.DestXMPP)
-		list = append(list, export.DestAWSMQTT)
+		list = append(list, models.DestMQTT)
+		list = append(list, models.DestIotCoreMQTT)
+		list = append(list, models.DestAzureMQTT)
+		list = append(list, models.DestRest)
+		list = append(list, models.DestXMPP)
+		list = append(list, models.DestAWSMQTT)
 	default:
 		LoggingClient.Error("Unknown type: " + t)
 		http.Error(w, "Unknown type: "+t, http.StatusBadRequest)
@@ -97,7 +102,9 @@ func getAllReg(w http.ResponseWriter, r *http.Request) {
 }
 
 func getRegByName(w http.ResponseWriter, r *http.Request) {
-	name := bone.GetValue(r, "name")
+	// URL parameters
+	vars := mux.Vars(r)
+	name := vars["name"]
 
 	reg, err := dbClient.RegistrationByName(name)
 	if err != nil {
@@ -118,7 +125,7 @@ func addReg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	reg := export.Registration{}
+	reg := models.Registration{}
 	if err := json.Unmarshal(data, &reg); err != nil {
 		LoggingClient.Error(fmt.Sprintf("Failed to query add registration. Error: %s", err.Error()))
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -142,7 +149,7 @@ func addReg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = dbClient.AddRegistration(&reg)
+	id, err := dbClient.AddRegistration(reg)
 	if err != nil {
 		LoggingClient.Error(fmt.Sprintf("Failed to query add registration. Error: %s", err.Error()))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -153,7 +160,7 @@ func addReg(w http.ResponseWriter, r *http.Request) {
 		Operation: "add"})
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(reg.ID.Hex()))
+	w.Write([]byte(id))
 }
 
 func updateReg(w http.ResponseWriter, r *http.Request) {
@@ -164,7 +171,7 @@ func updateReg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var fromReg export.Registration
+	var fromReg models.Registration
 	if err := json.Unmarshal(data, &fromReg); err != nil {
 		LoggingClient.Error(fmt.Sprintf("Failed to unmarshal update registration. Error: %s", err.Error()))
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -172,9 +179,9 @@ func updateReg(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check if the registration exists
-	var toReg export.Registration
+	var toReg models.Registration
 	if fromReg.ID != "" {
-		toReg, err = dbClient.RegistrationById(fromReg.ID.Hex())
+		toReg, err = dbClient.RegistrationById(fromReg.ID)
 	} else if fromReg.Name != "" {
 		toReg, err = dbClient.RegistrationByName(fromReg.Name)
 	} else {
@@ -247,7 +254,10 @@ func updateReg(w http.ResponseWriter, r *http.Request) {
 }
 
 func delRegByID(w http.ResponseWriter, r *http.Request) {
-	id := bone.GetValue(r, "id")
+
+	// URL parameters
+	vars := mux.Vars(r)
+	id := vars["id"]
 
 	// Read the registration, the registration name is needed to
 	// notify distro of the deletion
@@ -274,7 +284,9 @@ func delRegByID(w http.ResponseWriter, r *http.Request) {
 }
 
 func delRegByName(w http.ResponseWriter, r *http.Request) {
-	name := bone.GetValue(r, "name")
+	// URL parameters
+	vars := mux.Vars(r)
+	name := vars["name"]
 
 	err := dbClient.DeleteRegistrationByName(name)
 	if err != nil {
@@ -293,7 +305,7 @@ func delRegByName(w http.ResponseWriter, r *http.Request) {
 
 func notifyUpdatedRegistrations(update models.NotifyUpdate) {
 	go func() {
-		err := dc.NotifyRegistrations(update)
+		err := dc.NotifyRegistrations(update, context.Background())
 		if err != nil {
 			LoggingClient.Error(fmt.Sprintf("error from distro: %s", err.Error()))
 		}

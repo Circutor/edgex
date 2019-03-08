@@ -15,9 +15,8 @@
 package bolt
 
 import (
-	"github.com/edgexfoundry/edgex-go/pkg/models"
+	"github.com/edgexfoundry/go-mod-core-contracts/models"
 	jsoniter "github.com/json-iterator/go"
-	"gopkg.in/mgo.v2/bson"
 )
 
 // Struct that wraps an event to handle DB references
@@ -31,19 +30,18 @@ func (be boltEvent) MarshalJSON() ([]byte, error) {
 	// Turn the readings into DB references
 	var readings []string
 	for _, reading := range be.Event.Readings {
-		readings = append(readings, reading.Id.Hex())
+		readings = append(readings, reading.Id)
 	}
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
 	return json.Marshal(&struct {
-		ID       bson.ObjectId `json:"id,omitempty"`
-		Pushed   int64         `json:"pushed"`
-		Device   string        `json:"device"`
-		Created  int64         `json:"created"`
-		Modified int64         `json:"modified"`
-		Origin   int64         `json:"origin"`
-		Schedule string        `json:"schedule,omitempty"`
-		Event    string        `json:"event"`
-		Readings []string      `json:"readings"`
+		ID       string   `json:"id"`
+		Pushed   int64    `json:"pushed,omitempty"`
+		Device   string   `json:"device"`
+		Created  int64    `json:"created,omitempty"`
+		Modified int64    `json:"modified,omitempty"`
+		Origin   int64    `json:"origin,omitempty"`
+		Event    string   `json:"event"`
+		Readings []string `json:"readings,omitempty"`
 	}{
 		ID:       be.Event.ID,
 		Pushed:   be.Event.Pushed,
@@ -59,14 +57,14 @@ func (be boltEvent) MarshalJSON() ([]byte, error) {
 // Custom unmarshaling out of bolt
 func (be *boltEvent) UnmarshalJSON(data []byte) error {
 	decoded := new(struct {
-		ID       bson.ObjectId `json:"id,omitempty"`
-		Pushed   int64         `json:"pushed"`
-		Device   string        `json:"device"`
-		Created  int64         `json:"created"`
-		Modified int64         `json:"modified"`
-		Origin   int64         `json:"origin"`
-		Event    string        `json:"event"`
-		Readings []string      `json:"readings"`
+		ID       string   `json:"id"`
+		Pushed   int64    `json:"pushed"`
+		Device   string   `json:"device"`
+		Created  int64    `json:"created"`
+		Modified int64    `json:"modified"`
+		Origin   int64    `json:"origin"`
+		Event    string   `json:"event"`
+		Readings []string `json:"readings"`
 	})
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
 	if err := json.Unmarshal(data, &decoded); err != nil {

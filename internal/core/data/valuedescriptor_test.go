@@ -1,53 +1,71 @@
 package data
 
 import (
-	"github.com/edgexfoundry/edgex-go/internal/core/data/errors"
-	"github.com/edgexfoundry/edgex-go/pkg/models"
+	"bytes"
+	"context"
+	"fmt"
+	"net/http"
 	"testing"
+
+	"github.com/edgexfoundry/edgex-go/internal/core/data/errors"
+	"github.com/edgexfoundry/edgex-go/internal/core/data/interfaces/mocks"
+	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
+	"github.com/edgexfoundry/go-mod-core-contracts/clients/types"
+	"github.com/edgexfoundry/go-mod-core-contracts/models"
+
+	"github.com/stretchr/testify/mock"
 )
 
 func TestValidateFormatString(t *testing.T) {
-	match, err := validateFormatString(models.ValueDescriptor{Formatting: "%s"})
+	err := validateFormatString(models.ValueDescriptor{Formatting: "%s"})
 
-	if !match || err != nil {
+	if err != nil {
 		t.Errorf("Should match format specifier")
 	}
 }
 
 func TestValidateFormatStringEmpty(t *testing.T) {
-	match, err := validateFormatString(models.ValueDescriptor{Formatting: ""})
+	err := validateFormatString(models.ValueDescriptor{Formatting: ""})
 
-	if !match || err != nil {
+	if err != nil {
 		t.Errorf("Should match format specifier")
 	}
 }
 
 func TestValidateFormatStringInvalid(t *testing.T) {
-	match, err := validateFormatString(models.ValueDescriptor{Formatting: "error"})
+	err := validateFormatString(models.ValueDescriptor{Formatting: "error"})
 
-	if match  {
-		t.Errorf("Should not match format specifier")
-	}
-
-	if err != nil {
-		t.Errorf("Unexpected error on invalid format string")
+	if err == nil {
+		t.Errorf("Expected error on invalid format string")
 	}
 }
 
 func TestGetValueDescriptorByName(t *testing.T) {
 	reset()
-	dbClient = newMockDb()
+	myMock := &mocks.DBClient{}
 
-	_, err := getValueDescriptorByName("valid")
+	myMock.On("ValueDescriptorByName", mock.Anything).Return(models.ValueDescriptor{Id: testUUIDString}, nil)
+
+	dbClient = myMock
+
+	valueDescriptor, err := getValueDescriptorByName("valid")
 
 	if err != nil {
 		t.Errorf("Unexpected error getting value descriptor by name")
+	}
+
+	if valueDescriptor.Id != testUUIDString {
+		t.Errorf("ID returned doesn't match db")
 	}
 }
 
 func TestGetValueDescriptorByNameNotFound(t *testing.T) {
 	reset()
-	dbClient = newMockDb()
+	myMock := &mocks.DBClient{}
+
+	myMock.On("ValueDescriptorByName", mock.Anything).Return(models.ValueDescriptor{}, db.ErrNotFound)
+
+	dbClient = myMock
 
 	_, err := getValueDescriptorByName("404")
 
@@ -67,7 +85,11 @@ func TestGetValueDescriptorByNameNotFound(t *testing.T) {
 
 func TestGetValueDescriptorByNameError(t *testing.T) {
 	reset()
-	dbClient = newMockDb()
+	myMock := &mocks.DBClient{}
+
+	myMock.On("ValueDescriptorByName", mock.Anything).Return(models.ValueDescriptor{}, fmt.Errorf("some error"))
+
+	dbClient = myMock
 
 	_, err := getValueDescriptorByName("error")
 
@@ -78,18 +100,30 @@ func TestGetValueDescriptorByNameError(t *testing.T) {
 
 func TestGetValueDescriptorById(t *testing.T) {
 	reset()
-	dbClient = newMockDb()
+	myMock := &mocks.DBClient{}
 
-	_, err := getValueDescriptorById("valid")
+	myMock.On("ValueDescriptorById", mock.Anything).Return(models.ValueDescriptor{Id: testUUIDString}, nil)
+
+	dbClient = myMock
+
+	valueDescriptor, err := getValueDescriptorById("valid")
 
 	if err != nil {
 		t.Errorf("Unexpected error getting value descriptor by ID")
+	}
+
+	if valueDescriptor.Id != testUUIDString {
+		t.Errorf("ID returned doesn't match db")
 	}
 }
 
 func TestGetValueDescriptorByIdNotFound(t *testing.T) {
 	reset()
-	dbClient = newMockDb()
+	myMock := &mocks.DBClient{}
+
+	myMock.On("ValueDescriptorById", mock.Anything).Return(models.ValueDescriptor{}, db.ErrNotFound)
+
+	dbClient = myMock
 
 	_, err := getValueDescriptorById("404")
 
@@ -109,7 +143,11 @@ func TestGetValueDescriptorByIdNotFound(t *testing.T) {
 
 func TestGetValueDescriptorByIdError(t *testing.T) {
 	reset()
-	dbClient = newMockDb()
+	myMock := &mocks.DBClient{}
+
+	myMock.On("ValueDescriptorById", mock.Anything).Return(models.ValueDescriptor{}, fmt.Errorf("some error"))
+
+	dbClient = myMock
 
 	_, err := getValueDescriptorById("error")
 
@@ -120,7 +158,11 @@ func TestGetValueDescriptorByIdError(t *testing.T) {
 
 func TestGetValueDescriptorsByUomLabel(t *testing.T) {
 	reset()
-	dbClient = newMockDb()
+	myMock := &mocks.DBClient{}
+
+	myMock.On("ValueDescriptorsByUomLabel", mock.Anything).Return([]models.ValueDescriptor{}, nil)
+
+	dbClient = myMock
 
 	_, err := getValueDescriptorsByUomLabel("valid")
 
@@ -131,7 +173,11 @@ func TestGetValueDescriptorsByUomLabel(t *testing.T) {
 
 func TestGetValueDescriptorsByUomLabelNotFound(t *testing.T) {
 	reset()
-	dbClient = newMockDb()
+	myMock := &mocks.DBClient{}
+
+	myMock.On("ValueDescriptorsByUomLabel", mock.Anything).Return([]models.ValueDescriptor{}, db.ErrNotFound)
+
+	dbClient = myMock
 
 	_, err := getValueDescriptorsByUomLabel("404")
 
@@ -151,7 +197,11 @@ func TestGetValueDescriptorsByUomLabelNotFound(t *testing.T) {
 
 func TestGetValueDescriptorsByUomLabelError(t *testing.T) {
 	reset()
-	dbClient = newMockDb()
+	myMock := &mocks.DBClient{}
+
+	myMock.On("ValueDescriptorsByUomLabel", mock.Anything).Return([]models.ValueDescriptor{}, fmt.Errorf("some error"))
+
+	dbClient = myMock
 
 	_, err := getValueDescriptorsByUomLabel("error")
 
@@ -162,18 +212,32 @@ func TestGetValueDescriptorsByUomLabelError(t *testing.T) {
 
 func TestGetValueDescriptorsByLabel(t *testing.T) {
 	reset()
-	dbClient = newMockDb()
+	myMock := &mocks.DBClient{}
 
-	_, err := getValueDescriptorsByLabel("valid")
+	myMock.On("ValueDescriptorsByLabel", mock.MatchedBy(func(name string) bool {
+		return name == testUUIDString
+	})).Return([]models.ValueDescriptor{{Id: testUUIDString}}, nil)
+
+	dbClient = myMock
+
+	valueDescriptor, err := getValueDescriptorsByLabel(testUUIDString)
 
 	if err != nil {
 		t.Errorf("Unexpected error getting value descriptor by label")
+	}
+
+	if valueDescriptor[0].Id != testUUIDString {
+		t.Errorf("ValueDescriptor received doesn't match expectation")
 	}
 }
 
 func TestGetValueDescriptorsByLabelNotFound(t *testing.T) {
 	reset()
-	dbClient = newMockDb()
+	myMock := &mocks.DBClient{}
+
+	myMock.On("ValueDescriptorsByLabel", mock.Anything).Return([]models.ValueDescriptor{}, db.ErrNotFound)
+
+	dbClient = myMock
 
 	_, err := getValueDescriptorsByLabel("404")
 
@@ -193,7 +257,11 @@ func TestGetValueDescriptorsByLabelNotFound(t *testing.T) {
 
 func TestGetValueDescriptorsByLabelError(t *testing.T) {
 	reset()
-	dbClient = newMockDb()
+	myMock := &mocks.DBClient{}
+
+	myMock.On("ValueDescriptorsByLabel", mock.Anything).Return([]models.ValueDescriptor{}, fmt.Errorf("some error"))
+
+	dbClient = myMock
 
 	_, err := getValueDescriptorsByLabel("error")
 
@@ -204,7 +272,11 @@ func TestGetValueDescriptorsByLabelError(t *testing.T) {
 
 func TestGetValueDescriptorsByType(t *testing.T) {
 	reset()
-	dbClient = newMockDb()
+	myMock := &mocks.DBClient{}
+
+	myMock.On("ValueDescriptorsByType", mock.Anything).Return([]models.ValueDescriptor{}, nil)
+
+	dbClient = myMock
 
 	_, err := getValueDescriptorsByType("valid")
 
@@ -215,7 +287,11 @@ func TestGetValueDescriptorsByType(t *testing.T) {
 
 func TestGetValueDescriptorsByTypeNotFound(t *testing.T) {
 	reset()
-	dbClient = newMockDb()
+	myMock := &mocks.DBClient{}
+
+	myMock.On("ValueDescriptorsByType", mock.Anything).Return([]models.ValueDescriptor{}, db.ErrNotFound)
+
+	dbClient = myMock
 
 	_, err := getValueDescriptorsByType("404")
 
@@ -235,7 +311,11 @@ func TestGetValueDescriptorsByTypeNotFound(t *testing.T) {
 
 func TestGetValueDescriptorsByTypeError(t *testing.T) {
 	reset()
-	dbClient = newMockDb()
+	myMock := &mocks.DBClient{}
+
+	myMock.On("ValueDescriptorsByType", mock.Anything).Return([]models.ValueDescriptor{}, fmt.Errorf("some error"))
+
+	dbClient = myMock
 
 	_, err := getValueDescriptorsByType("R")
 
@@ -246,9 +326,9 @@ func TestGetValueDescriptorsByTypeError(t *testing.T) {
 
 func TestGetValueDescriptorsByDeviceName(t *testing.T) {
 	reset()
-	dbClient = newMockDb()
+	dbClient = nil
 
-	_, err := getValueDescriptorsByDeviceName(testDeviceName)
+	_, err := getValueDescriptorsByDeviceName(testDeviceName, context.Background())
 
 	if err != nil {
 		t.Errorf("Unexpected error getting value descriptor by device name")
@@ -257,13 +337,16 @@ func TestGetValueDescriptorsByDeviceName(t *testing.T) {
 
 func TestGetValueDescriptorsByDeviceNameNotFound(t *testing.T) {
 	reset()
-	dbClient = newMockDb()
+	dbClient = nil
 
-	_, err := getValueDescriptorsByDeviceName("404")
+	_, err := getValueDescriptorsByDeviceName("404", context.Background())
 
 	if err != nil {
-		switch err.(type) {
-		case *errors.ErrDbNotFound:
+		switch err := err.(type) {
+		case *types.ErrServiceClient:
+			if err.StatusCode != http.StatusNotFound {
+				t.Errorf("Expected a 404 error")
+			}
 			return
 		default:
 			t.Errorf("Unexpected error getting value descriptor by device name missing in DB")
@@ -277,9 +360,9 @@ func TestGetValueDescriptorsByDeviceNameNotFound(t *testing.T) {
 
 func TestGetValueDescriptorsByDeviceNameError(t *testing.T) {
 	reset()
-	dbClient = newMockDb()
+	dbClient = nil
 
-	_, err := getValueDescriptorsByDeviceName("error")
+	_, err := getValueDescriptorsByDeviceName("error", context.Background())
 
 	if err == nil {
 		t.Errorf("Expected error getting value descriptor by device name with some error")
@@ -288,9 +371,9 @@ func TestGetValueDescriptorsByDeviceNameError(t *testing.T) {
 
 func TestGetValueDescriptorsByDeviceId(t *testing.T) {
 	reset()
-	dbClient = newMockDb()
+	dbClient = nil
 
-	_, err := getValueDescriptorsByDeviceId("valid")
+	_, err := getValueDescriptorsByDeviceId("valid", context.Background())
 
 	if err != nil {
 		t.Errorf("Unexpected error getting value descriptor by device id")
@@ -299,13 +382,16 @@ func TestGetValueDescriptorsByDeviceId(t *testing.T) {
 
 func TestGetValueDescriptorsByDeviceIdNotFound(t *testing.T) {
 	reset()
-	dbClient = newMockDb()
+	dbClient = nil
 
-	_, err := getValueDescriptorsByDeviceId("404")
+	_, err := getValueDescriptorsByDeviceId("404", context.Background())
 
 	if err != nil {
-		switch err.(type) {
-		case *errors.ErrDbNotFound:
+		switch err := err.(type) {
+		case *types.ErrServiceClient:
+			if err.StatusCode != http.StatusNotFound {
+				t.Errorf("Expected a 404 error")
+			}
 			return
 		default:
 			t.Errorf("Unexpected error getting value descriptor by device id missing in DB")
@@ -319,9 +405,9 @@ func TestGetValueDescriptorsByDeviceIdNotFound(t *testing.T) {
 
 func TestGetValueDescriptorsByDeviceIdError(t *testing.T) {
 	reset()
-	dbClient = newMockDb()
+	dbClient = nil
 
-	_, err := getValueDescriptorsByDeviceId("error")
+	_, err := getValueDescriptorsByDeviceId("error", context.Background())
 
 	if err == nil {
 		t.Errorf("Expected error getting value descriptor by device id with some error")
@@ -330,7 +416,15 @@ func TestGetValueDescriptorsByDeviceIdError(t *testing.T) {
 
 func TestGetAllValueDescriptors(t *testing.T) {
 	reset()
-	// this test uses the memdb on purpose
+
+	vds := []models.ValueDescriptor{
+		{Id: testUUIDString},
+		{Id: testBsonString},
+	}
+
+	myMock := &mocks.DBClient{}
+	myMock.On("ValueDescriptors").Return(vds, nil)
+	dbClient = myMock
 
 	_, err := getAllValueDescriptors()
 
@@ -341,7 +435,11 @@ func TestGetAllValueDescriptors(t *testing.T) {
 
 func TestGetAllValueDescriptorsError(t *testing.T) {
 	reset()
-	dbClient = newMockDb()
+	myMock := &mocks.DBClient{}
+
+	myMock.On("ValueDescriptors").Return([]models.ValueDescriptor{}, fmt.Errorf("some error"))
+
+	dbClient = myMock
 
 	_, err := getAllValueDescriptors()
 
@@ -352,7 +450,11 @@ func TestGetAllValueDescriptorsError(t *testing.T) {
 
 func TestAddValueDescriptor(t *testing.T) {
 	reset()
-	dbClient = newMockDb()
+	myMock := &mocks.DBClient{}
+
+	myMock.On("AddValueDescriptor", mock.Anything).Return("", nil)
+
+	dbClient = myMock
 
 	_, err := addValueDescriptor(models.ValueDescriptor{Name: "valid"})
 
@@ -361,18 +463,22 @@ func TestAddValueDescriptor(t *testing.T) {
 	}
 }
 
-func TestAddValueDescriptorInUse(t *testing.T) {
+func TestAddDuplicateValueDescriptor(t *testing.T) {
 	reset()
-	dbClient = newMockDb()
+	myMock := &mocks.DBClient{}
+
+	myMock.On("AddValueDescriptor", mock.Anything).Return("", db.ErrNotUnique)
+
+	dbClient = myMock
 
 	_, err := addValueDescriptor(models.ValueDescriptor{Name: "409"})
 
 	if err != nil {
 		switch err.(type) {
-		case *errors.ErrValueDescriptorInUse:
+		case *errors.ErrDuplicateValueDescriptorName:
 			return
 		default:
-			t.Errorf("Unexpected error getting value descriptor by UOM label missing in DB")
+			t.Errorf("Unexpected error adding value descriptor that already exists")
 		}
 	}
 
@@ -383,7 +489,11 @@ func TestAddValueDescriptorInUse(t *testing.T) {
 
 func TestAddValueDescriptorError(t *testing.T) {
 	reset()
-	dbClient = newMockDb()
+	myMock := &mocks.DBClient{}
+
+	myMock.On("AddValueDescriptor", mock.Anything).Return("", fmt.Errorf("some error"))
+
+	dbClient = myMock
 
 	_, err := addValueDescriptor(models.ValueDescriptor{})
 
@@ -394,9 +504,14 @@ func TestAddValueDescriptorError(t *testing.T) {
 
 func TestDeleteValueDescriptor(t *testing.T) {
 	reset()
-	dbClient = newMockDb()
+	myMock := &mocks.DBClient{}
 
-	err := deleteValueDescriptor(models.ValueDescriptor{Name: "valid", Id: "valid"})
+	myMock.On("DeleteValueDescriptorById", mock.Anything).Return(nil)
+	myMock.On("ReadingsByValueDescriptor", mock.Anything, mock.Anything).Return([]models.Reading{}, nil)
+
+	dbClient = myMock
+
+	err := deleteValueDescriptor(models.ValueDescriptor{Name: "valid", Id: testBsonString})
 
 	if err != nil {
 		t.Errorf("Unexpected error deleting value descriptor")
@@ -405,7 +520,11 @@ func TestDeleteValueDescriptor(t *testing.T) {
 
 func TestDeleteValueDescriptorInUse(t *testing.T) {
 	reset()
-	dbClient = newMockDb()
+	myMock := &mocks.DBClient{}
+
+	myMock.On("ReadingsByValueDescriptor", mock.Anything, mock.Anything).Return([]models.Reading{{Id: testUUIDString}}, nil)
+
+	dbClient = myMock
 
 	err := deleteValueDescriptor(models.ValueDescriptor{Name: "409"})
 
@@ -425,7 +544,11 @@ func TestDeleteValueDescriptorInUse(t *testing.T) {
 
 func TestDeleteValueDescriptorErrorReadingsLookup(t *testing.T) {
 	reset()
-	dbClient = newMockDb()
+	myMock := &mocks.DBClient{}
+
+	myMock.On("ReadingsByValueDescriptor", mock.Anything, mock.Anything).Return([]models.Reading{}, fmt.Errorf("some error"))
+
+	dbClient = myMock
 
 	err := deleteValueDescriptor(models.ValueDescriptor{})
 
@@ -436,11 +559,51 @@ func TestDeleteValueDescriptorErrorReadingsLookup(t *testing.T) {
 
 func TestDeleteValueDescriptorError(t *testing.T) {
 	reset()
-	dbClient = newMockDb()
+	myMock := &mocks.DBClient{}
+
+	myMock.On("ReadingsByValueDescriptor", mock.Anything, mock.Anything).Return([]models.Reading{}, nil)
+	myMock.On("DeleteValueDescriptorById", mock.Anything).Return(fmt.Errorf("some error"))
+
+	dbClient = myMock
 
 	err := deleteValueDescriptor(models.ValueDescriptor{Name: "validErrorTest"})
 
 	if err == nil {
 		t.Errorf("Expected error deleting value descriptor some error")
+	}
+}
+
+type closingBuffer struct {
+	*bytes.Buffer
+}
+
+func (cb *closingBuffer) Close() (err error) {
+	return nil
+}
+
+func TestDecodeValueDescriptorBadFormatting(t *testing.T) {
+	reset()
+	dbClient = nil
+
+	cb := &closingBuffer{bytes.NewBufferString(`{
+		"name": "co2",
+		"min": "12",
+		"max": "15",
+		"type": "F",
+		"uomLabel": "degreecel",
+		"defaultValue": "0",
+		"formatting": "%",
+		"labels": [
+			"NHCO2",
+		"hvac"
+	]
+	}`)}
+	_, err := decodeValueDescriptor(cb)
+
+	switch err.(type) {
+	case *errors.ErrValueDescriptorInvalid:
+		return
+	default:
+		t.Errorf("Expected an error of type *ErrValueDescriptorInvalid")
 	}
 }

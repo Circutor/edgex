@@ -6,6 +6,7 @@ glide.lock
 docker/docker-compose.yml
 .project
 .vscode/
+go.sum
 *.db
 
 # binary files
@@ -19,7 +20,9 @@ cmd/support-logging/support-logging
 cmd/support-notifications/support-notifications
 cmd/sys-mgmt-agent/sys-mgmt-agent
 cmd/support-scheduler/support-scheduler
+cmd/sys-mgmt-executor/sys-mgmt-executor
 cmd/edgex/edgex
+docs/_build/
 
 # log dirs
 **/logs
@@ -32,3 +35,4 @@ parts/*
 prime/*
 stage/*
 snap/.snapcraft/*
+go.sum

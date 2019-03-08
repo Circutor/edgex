@@ -20,7 +20,6 @@ import (
 	bolt "github.com/coreos/bbolt"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
 	jsoniter "github.com/json-iterator/go"
-	"gopkg.in/mgo.v2/bson"
 )
 
 var currentBoltClient *BoltClient
@@ -63,7 +62,7 @@ func getCurrentBoltClient() (*BoltClient, error) {
 }
 
 // Add an element
-func (bc *BoltClient) add(bucket string, element interface{}, id bson.ObjectId) error {
+func (bc *BoltClient) add(bucket string, element interface{}, id string) error {
 	return bc.db.Update(func(tx *bolt.Tx) error {
 		b, _ := tx.CreateBucketIfNotExists([]byte(bucket))
 		if b == nil {
@@ -79,7 +78,7 @@ func (bc *BoltClient) add(bucket string, element interface{}, id bson.ObjectId) 
 }
 
 // Update an element
-func (bc *BoltClient) update(bucket string, element interface{}, id bson.ObjectId) error {
+func (bc *BoltClient) update(bucket string, element interface{}, id string) error {
 	return bc.db.Update(func(tx *bolt.Tx) error {
 		b, _ := tx.CreateBucketIfNotExists([]byte(bucket))
 		if b == nil {
@@ -100,7 +99,7 @@ func (bc *BoltClient) update(bucket string, element interface{}, id bson.ObjectI
 // Delete from the collection based on ID
 func (bc *BoltClient) deleteById(id string, bucket string) error {
 	// Check if id is a hexstring
-	if !bson.IsObjectIdHex(id) {
+	if !isIdValid(id) {
 		return db.ErrInvalidObjectId
 	}
 	err := bc.db.Update(func(tx *bolt.Tx) error {
@@ -108,7 +107,11 @@ func (bc *BoltClient) deleteById(id string, bucket string) error {
 		if b == nil {
 			return db.ErrUnsupportedDatabase
 		}
-		return b.Delete([]byte(bson.ObjectIdHex(id)))
+		encoded := b.Get([]byte(id))
+		if encoded == nil {
+			return db.ErrNotFound
+		}
+		return b.Delete([]byte(id))
 	})
 	return err
 }
@@ -141,10 +144,10 @@ func (bc *BoltClient) deleteByName(name string, bucket string) error {
 	return err
 }
 
-// Get an element by ID
-func (bc *BoltClient) getById(v interface{}, bucket string, gid string) error {
+// Check if an element exists by ID
+func (bc *BoltClient) checkId(bucket string, gid string) error {
 	// Check if id is a hexstring
-	if !bson.IsObjectIdHex(gid) {
+	if !isIdValid(gid) {
 		return db.ErrInvalidObjectId
 	}
 	err := bc.db.View(func(tx *bolt.Tx) error {
@@ -152,7 +155,27 @@ func (bc *BoltClient) getById(v interface{}, bucket string, gid string) error {
 		if b == nil {
 			return db.ErrNotFound
 		}
-		encoded := b.Get([]byte(bson.ObjectIdHex(gid)))
+		encoded := b.Get([]byte(gid))
+		if encoded == nil {
+			return db.ErrNotFound
+		}
+		return nil
+	})
+	return err
+}
+
+// Get an element by ID
+func (bc *BoltClient) getById(v interface{}, bucket string, gid string) error {
+	// Check if id is a hexstring
+	if !isIdValid(gid) {
+		return db.ErrInvalidObjectId
+	}
+	err := bc.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(bucket))
+		if b == nil {
+			return db.ErrNotFound
+		}
+		encoded := b.Get([]byte(gid))
 		if encoded == nil {
 			return db.ErrNotFound
 		}
@@ -212,4 +235,12 @@ func (bc *BoltClient) scrubAll(bucket string) error {
 		tx.CreateBucketIfNotExists([]byte(bucket))
 		return nil
 	})
+}
+
+// Check if is a valid ID
+func isIdValid(id string) bool {
+	if id == "" {
+		return false
+	}
+	return true
 }

@@ -1,34 +1,38 @@
 package data
 
 import (
+	"context"
 	"fmt"
+	"github.com/google/uuid"
 	"math"
+	"net/http"
 	"os"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/edgexfoundry/edgex-go/internal/core/data/interfaces"
-	dbMock "github.com/edgexfoundry/edgex-go/internal/core/data/interfaces/mocks"
 	"github.com/edgexfoundry/edgex-go/internal/core/data/messaging"
+	"github.com/edgexfoundry/edgex-go/internal/pkg/correlation/models"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
-	"github.com/edgexfoundry/edgex-go/internal/pkg/db/memory"
 
-	"github.com/edgexfoundry/edgex-go/pkg/clients/logging"
-	"github.com/edgexfoundry/edgex-go/pkg/clients/metadata/mocks"
-	"github.com/edgexfoundry/edgex-go/pkg/clients/types"
-	"github.com/edgexfoundry/edgex-go/pkg/models"
+	"github.com/edgexfoundry/go-mod-core-contracts/clients/logging"
+	"github.com/edgexfoundry/go-mod-core-contracts/clients/metadata/mocks"
+	"github.com/edgexfoundry/go-mod-core-contracts/clients/types"
+	contract "github.com/edgexfoundry/go-mod-core-contracts/models"
+
+	"github.com/globalsign/mgo/bson"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/mock"
-	"gopkg.in/mgo.v2/bson"
 )
 
-var testEvent models.Event
+var testEvent contract.Event
 var testRoutes *mux.Router
 
 const (
 	testDeviceName string = "Test Device"
 	testOrigin     int64  = 123456789
+	testBsonString string = "57e59a71e4b0ca8e6d6d4cc2"
+	testUUIDString string = "ca93c8fa-9919-4ec5-85d3-f81b2b6a7bc1"
 )
 
 // Mock implementation of the event publisher for testing purposes
@@ -58,7 +62,6 @@ func TestCheckMaxLimitOverLimit(t *testing.T) {
 	}
 }
 
-
 func newMockEventPublisher(config messaging.PubSubConfiguration) messaging.EventPublisher {
 	return &mockEventPublisher{}
 }
@@ -80,262 +83,66 @@ func TestMain(m *testing.M) {
 // Reset() re-initializes dependencies for each test
 func reset() {
 	Configuration = &ConfigurationStruct{}
+	testEvent.ID = testBsonString
 	testEvent.Device = testDeviceName
 	testEvent.Origin = testOrigin
 	testEvent.Readings = buildReadings()
-	dbClient = &memory.MemDB{}
-	testEvent.ID, _ = dbClient.AddEvent(&testEvent)
 }
 
 func newMockDeviceClient() *mocks.DeviceClient {
 	client := &mocks.DeviceClient{}
 
-	mockAddressable := models.Addressable{
-		Address:  "localhost",
-		Name:     "Test Addressable",
-		Port:     3000,
-		Protocol: "http"}
+	protocols := getProtocols()
 
-	mockDeviceResultFn := func(id string) models.Device {
+	mockDeviceResultFn := func(id string, ctx context.Context) contract.Device {
 		if bson.IsObjectIdHex(id) {
-			return models.Device{Id: bson.ObjectIdHex(id), Name: testEvent.Device, Addressable: mockAddressable}
+			return contract.Device{Id: id, Name: testDeviceName, Protocols: protocols}
 		}
-		return models.Device{}
+		return contract.Device{}
 	}
-	client.On("Device", mock.MatchedBy(func(id string) bool {
-		return id == "valid"
-	})).Return(mockDeviceResultFn, nil)
-	client.On("Device", mock.MatchedBy(func(id string) bool {
-		return id == "404"
-	})).Return(mockDeviceResultFn, types.ErrNotFound{})
-	client.On("Device", mock.Anything).Return(mockDeviceResultFn, fmt.Errorf("some error"))
+	client.On("Device", "valid", context.Background()).Return(mockDeviceResultFn, nil)
+	client.On("Device", "404", context.Background()).Return(mockDeviceResultFn,
+		types.NewErrServiceClient(http.StatusNotFound, []byte{}))
+	client.On("Device", mock.Anything, context.Background()).Return(mockDeviceResultFn, fmt.Errorf("some error"))
 
-	mockDeviceForNameResultFn := func(name string) models.Device {
-		device := models.Device{Id: bson.NewObjectId(), Name: name, Addressable: mockAddressable}
+	mockDeviceForNameResultFn := func(name string, ctx context.Context) contract.Device {
+		device := contract.Device{Id: uuid.New().String(), Name: name, Protocols: protocols}
 
 		return device
 	}
-	client.On("DeviceForName", mock.MatchedBy(func(name string) bool {
-		return name == testEvent.Device
-	})).Return(mockDeviceForNameResultFn, nil)
-	client.On("DeviceForName", mock.MatchedBy(func(name string) bool {
-		return name == "404"
-	})).Return(mockDeviceForNameResultFn, types.ErrNotFound{})
-	client.On("DeviceForName", mock.Anything).Return(mockDeviceForNameResultFn, fmt.Errorf("some error"))
+	client.On("DeviceForName", testDeviceName, context.Background()).Return(mockDeviceForNameResultFn, nil)
+	client.On("DeviceForName", "404", context.Background()).Return(mockDeviceForNameResultFn,
+		types.NewErrServiceClient(http.StatusNotFound, []byte{}))
+	client.On("DeviceForName", mock.Anything, context.Background()).Return(mockDeviceForNameResultFn,
+		fmt.Errorf("some error"))
 
 	return client
 }
 
-func newMockDb() interfaces.DBClient {
-	DB := &dbMock.DBClient{}
-
-	DB.On("EventsOlderThanAge", mock.MatchedBy(func(age int64) bool {
-		return age == -1
-	})).Return(nil, fmt.Errorf("expected testing error"))
-
-
-	DB.On("ValueDescriptorByName", mock.MatchedBy(func(name string) bool {
-		return name == "Temperature"
-	})).Return(models.ValueDescriptor{Type: "8"}, nil)
-
-	DB.On("ValueDescriptorByName", mock.MatchedBy(func(name string) bool {
-		return name == "Pressure"
-	})).Return(models.ValueDescriptor{}, fmt.Errorf("some error"))
-
-
-	DB.On("EventsForDeviceLimit", mock.MatchedBy(func(deviceId string) bool {
-		return deviceId == "valid"
-	}), mock.Anything).Return([]models.Event{}, nil)
-
-	DB.On("EventsForDeviceLimit", mock.MatchedBy(func(deviceId string) bool {
-		return deviceId == "error"
-	}), mock.Anything).Return(nil, fmt.Errorf("some error"))
-
-
-	DB.On("EventsForDevice", mock.MatchedBy(func(deviceId string) bool {
-		return deviceId == "valid"
-	})).Return([]models.Event{{Readings: append(buildReadings(), buildReadings()...)}}, nil)
-
-	DB.On("EventsForDevice", mock.MatchedBy(func(deviceId string) bool {
-		return deviceId == "error"
-	})).Return(nil, fmt.Errorf("some error"))
-
-
-	DB.On("EventsByCreationTime", mock.MatchedBy(func(start int64) bool {
-		return start == 0xF00D
-	}), mock.Anything, mock.Anything).Return([]models.Event{}, nil)
-
-	DB.On("EventsByCreationTime", mock.MatchedBy(func(start int64) bool {
-		return start == 0xBADF00D
-	}), mock.Anything, mock.Anything).Return(nil, fmt.Errorf("some error"))
-
-
-	DB.On("EventsForDevice", mock.MatchedBy(func(deviceId string) bool {
-		return deviceId == testEvent.ID.Hex()
-	})).Return([]models.Event{testEvent}, nil)
-
-	DB.On("EventsForDevice", mock.MatchedBy(func(deviceId string) bool {
-		return deviceId == "error"
-	})).Return(nil, fmt.Errorf("some error"))
-
-
-	DB.On("DeleteEventById", mock.Anything).Return(nil)
-
-
-	DB.On("ValueDescriptorByName", mock.MatchedBy(func(name string) bool {
-		return name == "valid"
-	})).Return(models.ValueDescriptor{}, nil)
-
-	DB.On("ValueDescriptorByName", mock.MatchedBy(func(name string) bool {
-		return name == "404"
-	})).Return(models.ValueDescriptor{}, db.ErrNotFound)
-
-	DB.On("ValueDescriptorByName", mock.Anything).Return(models.ValueDescriptor{}, fmt.Errorf("some error"))
-
-
-	DB.On("ValueDescriptorById", mock.MatchedBy(func(id string) bool {
-		return id == "valid"
-	})).Return(models.ValueDescriptor{}, nil)
-
-	DB.On("ValueDescriptorById", mock.MatchedBy(func(id string) bool {
-		return id == "404"
-	})).Return(models.ValueDescriptor{}, db.ErrNotFound)
-
-	DB.On("ValueDescriptorById", mock.Anything).Return(models.ValueDescriptor{}, fmt.Errorf("some error"))
-
-
-	DB.On("ValueDescriptorsByUomLabel", mock.MatchedBy(func(name string) bool {
-		return name == "valid"
-	})).Return([]models.ValueDescriptor{}, nil)
-
-	DB.On("ValueDescriptorsByUomLabel", mock.MatchedBy(func(name string) bool {
-		return name == "404"
-	})).Return([]models.ValueDescriptor{}, db.ErrNotFound)
-
-	DB.On("ValueDescriptorsByUomLabel", mock.Anything).Return([]models.ValueDescriptor{}, fmt.Errorf("some error"))
-
-
-	DB.On("ValueDescriptorsByLabel", mock.MatchedBy(func(name string) bool {
-		return name == "valid"
-	})).Return([]models.ValueDescriptor{}, nil)
-
-	DB.On("ValueDescriptorsByLabel", mock.MatchedBy(func(name string) bool {
-		return name == "404"
-	})).Return([]models.ValueDescriptor{}, db.ErrNotFound)
-
-	DB.On("ValueDescriptorsByLabel", mock.Anything).Return([]models.ValueDescriptor{}, fmt.Errorf("some error"))
-
-
-	DB.On("ValueDescriptorsByType", mock.MatchedBy(func(name string) bool {
-		return name == "valid"
-	})).Return([]models.ValueDescriptor{}, nil)
-
-	DB.On("ValueDescriptorsByType", mock.MatchedBy(func(name string) bool {
-		return name == "404"
-	})).Return([]models.ValueDescriptor{}, db.ErrNotFound)
-
-	DB.On("ValueDescriptorsByType", mock.Anything).Return([]models.ValueDescriptor{}, fmt.Errorf("some error"))
-
-
-	DB.On("ValueDescriptors").Return([]models.ValueDescriptor{}, fmt.Errorf("some error"))
-
-
-	DB.On("AddValueDescriptor", mock.MatchedBy(func(vd models.ValueDescriptor) bool {
-		return vd.Name == "valid"
-	})).Return(bson.ObjectId(""), nil)
-
-	DB.On("AddValueDescriptor", mock.MatchedBy(func(vd models.ValueDescriptor) bool {
-		return vd.Name == "409"
-	})).Return(bson.ObjectId(""), db.ErrNotUnique)
-
-	DB.On("AddValueDescriptor", mock.Anything).Return(bson.ObjectId(""), fmt.Errorf("some error"))
-
-
-	DB.On("DeleteValueDescriptorById", mock.MatchedBy(func(id string) bool {
-		return id == bson.ObjectId("valid").Hex()
-	})).Return(nil)
-
-	DB.On("DeleteValueDescriptorById", mock.Anything).Return(fmt.Errorf("some error"))
-
-
-	DB.On("Readings").Return([]models.Reading{}, fmt.Errorf("some error"))
-
-
-	DB.On("AddReading", mock.MatchedBy(func(reading models.Reading) bool {
-		return reading.Name == "valid"
-	})).Return(bson.ObjectId(""), nil)
-
-	DB.On("AddReading", mock.Anything).Return(bson.ObjectId(""), fmt.Errorf("some error"))
-
-
-	DB.On("ReadingById", mock.MatchedBy(func(id string) bool {
-		return id == "valid"
-	})).Return(models.Reading{}, nil)
-
-	DB.On("ReadingById", mock.MatchedBy(func(id string) bool {
-		return id == "404"
-	})).Return(models.Reading{}, db.ErrNotFound)
-
-	DB.On("ReadingById", mock.Anything).Return(models.Reading{}, fmt.Errorf("some error"))
-
-
-	// these are reversed from usual because of a call in events.go
-	DB.On("DeleteReadingById", mock.MatchedBy(func(id string) bool {
-		return id == "invalid"
-	})).Return( fmt.Errorf("some error"))
-
-	DB.On("DeleteReadingById", mock.Anything).Return(nil)
-
-
-	DB.On("ReadingCount").Return(0, fmt.Errorf("some error"))
-
-
-	DB.On("ReadingsByDevice", mock.MatchedBy(func(name string) bool {
-		return name == "valid"
-	}), mock.Anything).Return([]models.Reading{}, nil)
-
-	DB.On("ReadingsByDevice", mock.Anything, mock.Anything).Return([]models.Reading{}, fmt.Errorf("some error"))
-
-
-	// also used by TestDeleteValueDescriptor
-	DB.On("ReadingsByValueDescriptor", mock.MatchedBy(func(name string) bool {
-		return name == "valid"
-	}), mock.Anything).Return([]models.Reading{}, nil)
-
-	DB.On("ReadingsByValueDescriptor", mock.MatchedBy(func(name string) bool {
-		return name == "409"
-	}), mock.Anything).Return([]models.Reading{{}}, nil)
-
-	DB.On("ReadingsByValueDescriptor", mock.Anything, mock.Anything).Return([]models.Reading{}, fmt.Errorf("some error"))
-
-
-	DB.On("ReadingsByValueDescriptorNames", mock.MatchedBy(func(names []string) bool {
-		return names[0] == "valid"
-	}), mock.Anything).Return([]models.Reading{}, nil)
-
-	DB.On("ReadingsByValueDescriptorNames", mock.Anything, mock.Anything).Return([]models.Reading{}, fmt.Errorf("some error"))
-
-
-	DB.On("ReadingsByCreationTime", mock.MatchedBy(func(start int64) bool {
-		return start == 0x0BEEF
-	}), mock.Anything, mock.Anything).Return([]models.Reading{}, nil)
-
-	DB.On("ReadingsByCreationTime", mock.Anything, mock.Anything, mock.Anything).Return([]models.Reading{}, fmt.Errorf("some error"))
-
-
-	DB.On("ReadingsByDeviceAndValueDescriptor", mock.MatchedBy(func(device string) bool {
-		return device == "valid"
-	}), mock.Anything, mock.Anything).Return([]models.Reading{}, nil)
-
-	DB.On("ReadingsByDeviceAndValueDescriptor", mock.Anything, mock.Anything, mock.Anything).Return([]models.Reading{}, fmt.Errorf("some error"))
-
-
-	return DB
+func getProtocols() map[string]map[string]string {
+	p1 := make(map[string]string)
+	p1["host"] = "localhost"
+	p1["port"] = "1234"
+	p1["unitID"] = "1"
+
+	p2 := make(map[string]string)
+	p2["serialPort"] = "/dev/USB0"
+	p2["baudRate"] = "19200"
+	p2["dataBits"] = "8"
+	p2["stopBits"] = "1"
+	p2["parity"] = "0"
+	p2["unitID"] = "2"
+
+	wrap := make(map[string]map[string]string)
+	wrap["modbus-ip"] = p1
+	wrap["modbus-rtu"] = p2
+
+	return wrap
 }
 
-func buildReadings() []models.Reading {
+func buildReadings() []contract.Reading {
 	ticks := db.MakeTimestamp()
-	r1 := models.Reading{Id: bson.NewObjectId(),
+	r1 := contract.Reading{Id: bson.NewObjectId().Hex(),
 		Name:     "Temperature",
 		Value:    "45",
 		Origin:   testOrigin,
@@ -344,7 +151,7 @@ func buildReadings() []models.Reading {
 		Pushed:   ticks,
 		Device:   testDeviceName}
 
-	r2 := models.Reading{Id: bson.NewObjectId(),
+	r2 := contract.Reading{Id: bson.NewObjectId().Hex(),
 		Name:     "Pressure",
 		Value:    "1.01325",
 		Origin:   testOrigin,
@@ -352,7 +159,7 @@ func buildReadings() []models.Reading {
 		Modified: ticks,
 		Pushed:   ticks,
 		Device:   testDeviceName}
-	readings := []models.Reading{}
+	readings := []contract.Reading{}
 	readings = append(readings, r1, r2)
 	return readings
 }
@@ -366,7 +173,7 @@ func handleDomainEvents(bitEvents []bool, wait *sync.WaitGroup, t *testing.T) {
 			case DeviceLastReported:
 				e := evt.(DeviceLastReported)
 				if e.DeviceName != testDeviceName {
-					t.Errorf("DeviceLastReported name mistmatch %s", e.DeviceName)
+					t.Errorf("DeviceLastReported name mismatch %s", e.DeviceName)
 					return
 				}
 				bitEvents[0] = true
@@ -374,7 +181,7 @@ func handleDomainEvents(bitEvents []bool, wait *sync.WaitGroup, t *testing.T) {
 			case DeviceServiceLastReported:
 				e := evt.(DeviceServiceLastReported)
 				if e.DeviceName != testDeviceName {
-					t.Errorf("DeviceLastReported name mistmatch %s", e.DeviceName)
+					t.Errorf("DeviceLastReported name mismatch %s", e.DeviceName)
 					return
 				}
 				bitEvents[1] = true

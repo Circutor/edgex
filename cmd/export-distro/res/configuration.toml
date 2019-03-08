@@ -1,4 +1,6 @@
+[Writable]
 MarkPushed = false
+LogLevel = 'INFO'
 
 [Service]
 BootTimeout = 30000
@@ -19,7 +21,6 @@ Type = 'consul'
 [Logging]
 EnableRemote = true
 File = './logs/edgex-export-distro.log'
-Level = 'INFO'
 
 [Clients]
   [Clients.Export]

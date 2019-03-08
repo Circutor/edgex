@@ -14,9 +14,8 @@
 package bolt
 
 import (
-	"github.com/edgexfoundry/edgex-go/pkg/models"
+	"github.com/edgexfoundry/go-mod-core-contracts/models"
 	jsoniter "github.com/json-iterator/go"
-	"gopkg.in/mgo.v2/bson"
 )
 
 // Internal version of the device service struct
@@ -30,29 +29,31 @@ func (bd boltDevice) MarshalJSON() ([]byte, error) {
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
 	return json.Marshal(&struct {
 		models.DescribedObject `json:",inline"`
-		Id                     bson.ObjectId         `json:"id,omitempty"`
-		Name                   string                `json:"name"`           // Unique name for identifying a device
-		AdminState             models.AdminState     `json:"adminState"`     // Admin state (locked/unlocked)
-		OperatingState         models.OperatingState `json:"operatingState"` // Operating state (enabled/disabled)
-		Addressable            bson.ObjectId         `json:"addressableId"`  // Addressable for the device - stores information about it's address
-		LastConnected          int64                 `json:"lastConnected"`  // Time (milliseconds) that the device last provided any feedback or responded to any request
-		LastReported           int64                 `json:"lastReported"`   // Time (milliseconds) that the device reported data to the core microservice
-		Labels                 []string              `json:"labels"`         // Other labels applied to the device to help with searching
-		Location               interface{}           `json:"location"`       // Device service specific location (interface{} is an empty interface so it can be anything)
-		ServiceID              string                `json:"serviceId"`      // Associated Device Service - One per device
-		ProfileID              string                `json:"profileId"`
+		Id                     string                       `json:"id"`
+		Name                   string                       `json:"name"`                    // Unique name for identifying a device
+		AdminState             models.AdminState            `json:"adminState"`              // Admin state (locked/unlocked)
+		OperatingState         models.OperatingState        `json:"operatingState"`          // Operating state (enabled/disabled)
+		Protocols              map[string]map[string]string `json:"protocols"`               // A map of supported protocols for the given device
+		LastConnected          int64                        `json:"lastConnected,omitempty"` // Time (milliseconds) that the device last provided any feedback or responded to any request
+		LastReported           int64                        `json:"lastReported,omitempty"`  // Time (milliseconds) that the device reported data to the core microservice
+		Labels                 []string                     `json:"labels,omitempty"`        // Other labels applied to the device to help with searching
+		Location               interface{}                  `json:"location"`                // Device service specific location (interface{} is an empty interface so it can be anything)
+		ServiceID              string                       `json:"serviceId"`               // Associated Device Service - One per device
+		ProfileID              string                       `json:"profileId"`
+		AutoEvents             []models.AutoEvent           `json:"autoEvents"`
 	}{
 		DescribedObject: bd.DescribedObject,
 		Id:              bd.Id,
 		Name:            bd.Name,
 		AdminState:      bd.AdminState,
 		OperatingState:  bd.OperatingState,
-		Addressable:     bd.Addressable.Id,
+		Protocols:       bd.Protocols,
 		LastConnected:   bd.LastConnected,
 		LastReported:    bd.LastReported,
 		Labels:          bd.Labels,
-		ServiceID:       bd.Service.Id.Hex(),
-		ProfileID:       bd.Profile.Id.Hex(),
+		ServiceID:       bd.Service.Id,
+		ProfileID:       bd.Profile.Id,
+		AutoEvents:      bd.AutoEvents,
 	})
 }
 
@@ -60,17 +61,18 @@ func (bd boltDevice) MarshalJSON() ([]byte, error) {
 func (bd *boltDevice) UnmarshalJSON(data []byte) error {
 	decoded := new(struct {
 		models.DescribedObject `json:",inline"`
-		Id                     bson.ObjectId         `json:"id,omitempty"`
-		Name                   string                `json:"name"`           // Unique name for identifying a device
-		AdminState             models.AdminState     `json:"adminState"`     // Admin state (locked/unlocked)
-		OperatingState         models.OperatingState `json:"operatingState"` // Operating state (enabled/disabled)
-		Addressable            bson.ObjectId         `json:"addressableId"`  // Addressable for the device - stores information about it's address
-		LastConnected          int64                 `json:"lastConnected"`  // Time (milliseconds) that the device last provided any feedback or responded to any request
-		LastReported           int64                 `json:"lastReported"`   // Time (milliseconds) that the device reported data to the core microservice
-		Labels                 []string              `json:"labels"`         // Other labels applied to the device to help with searching
-		Location               interface{}           `json:"location"`       // Device service specific location (interface{} is an empty interface so it can be anything)
-		ServiceID              string                `json:"serviceId"`      // Associated Device Service - One per device
-		ProfileID              string                `json:"profileId"`
+		Id                     string                       `json:"id"`
+		Name                   string                       `json:"name"`           // Unique name for identifying a device
+		AdminState             models.AdminState            `json:"adminState"`     // Admin state (locked/unlocked)
+		OperatingState         models.OperatingState        `json:"operatingState"` // Operating state (enabled/disabled)
+		Protocols              map[string]map[string]string `json:"protocols"`      // A map of supported protocols for the given device
+		LastConnected          int64                        `json:"lastConnected"`  // Time (milliseconds) that the device last provided any feedback or responded to any request
+		LastReported           int64                        `json:"lastReported"`   // Time (milliseconds) that the device reported data to the core microservice
+		Labels                 []string                     `json:"labels"`         // Other labels applied to the device to help with searching
+		Location               interface{}                  `json:"location"`       // Device service specific location (interface{} is an empty interface so it can be anything)
+		ServiceID              string                       `json:"serviceId"`      // Associated Device Service - One per device
+		ProfileID              string                       `json:"profileId"`
+		AutoEvents             []models.AutoEvent           `json:"autoEvents"`
 	})
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
 	if err := json.Unmarshal(data, &decoded); err != nil {
@@ -83,35 +85,30 @@ func (bd *boltDevice) UnmarshalJSON(data []byte) error {
 	bd.Name = decoded.Name
 	bd.AdminState = decoded.AdminState
 	bd.OperatingState = decoded.OperatingState
+	bd.Protocols = decoded.Protocols
 	bd.LastConnected = decoded.LastConnected
 	bd.LastReported = decoded.LastReported
 	bd.Labels = decoded.Labels
 	bd.Location = decoded.Location
+	bd.AutoEvents = decoded.AutoEvents
 
 	m, err := getCurrentBoltClient()
 	if err != nil {
 		return err
 	}
 
-	var a models.Addressable
-	err = m.GetAddressableById(&a, decoded.Addressable.Hex())
-	if err != nil {
-		return err
-	}
-
 	var ds models.DeviceService
-	err = m.GetDeviceServiceById(&ds, decoded.ServiceID)
+	ds, err = m.GetDeviceServiceById(decoded.ServiceID)
 	if err != nil {
 		return err
 	}
 
 	var dp models.DeviceProfile
-	err = m.GetDeviceProfileById(&dp, decoded.ProfileID)
+	dp, err = m.GetDeviceProfileById(decoded.ProfileID)
 	if err != nil {
 		return err
 	}
 
-	bd.Addressable = a
 	bd.Profile = dp
 	bd.Service = ds
 

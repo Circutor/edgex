@@ -9,15 +9,14 @@ package distro
 import (
 	"fmt"
 
-	"github.com/edgexfoundry/edgex-go/internal/export"
-	"github.com/edgexfoundry/edgex-go/pkg/models"
+	contract "github.com/edgexfoundry/go-mod-core-contracts/models"
 )
 
 type devIdFilterDetails struct {
 	deviceIDs []string
 }
 
-func newDevIdFilter(filter export.Filter) filterer {
+func newDevIdFilter(filter contract.Filter) filterer {
 
 	filterer := devIdFilterDetails{
 		deviceIDs: filter.DeviceIDs,
@@ -25,7 +24,7 @@ func newDevIdFilter(filter export.Filter) filterer {
 	return filterer
 }
 
-func (filter devIdFilterDetails) Filter(event *models.Event) (bool, *models.Event) {
+func (filter devIdFilterDetails) Filter(event *contract.Event) (bool, *contract.Event) {
 
 	if event == nil {
 		return false, nil
@@ -44,26 +43,26 @@ type valueDescFilterDetails struct {
 	valueDescIDs []string
 }
 
-func newValueDescFilter(filter export.Filter) filterer {
+func newValueDescFilter(filter contract.Filter) filterer {
 	filterer := valueDescFilterDetails{
 		valueDescIDs: filter.ValueDescriptorIDs,
 	}
 	return filterer
 }
 
-func (filter valueDescFilterDetails) Filter(event *models.Event) (bool, *models.Event) {
+func (filter valueDescFilterDetails) Filter(event *contract.Event) (bool, *contract.Event) {
 
 	if event == nil {
 		return false, nil
 	}
 
-	auxEvent := &models.Event{
+	auxEvent := &contract.Event{
 		Pushed:   event.Pushed,
 		Device:   event.Device,
 		Created:  event.Created,
 		Modified: event.Modified,
 		Origin:   event.Origin,
-		Readings: []models.Reading{},
+		Readings: []contract.Reading{},
 	}
 
 	for _, filterId := range filter.valueDescIDs {

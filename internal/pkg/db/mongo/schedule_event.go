@@ -14,10 +14,11 @@
 package mongo
 
 import (
+	"github.com/globalsign/mgo"
+	"github.com/globalsign/mgo/bson"
+
 	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
-	"github.com/edgexfoundry/edgex-go/pkg/models"
-	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
+	"github.com/edgexfoundry/go-mod-core-contracts/models"
 )
 
 // Internal version of the schedule event struct
@@ -30,14 +31,13 @@ type mongoScheduleEvent struct {
 func (mse mongoScheduleEvent) GetBSON() (interface{}, error) {
 	return struct {
 		models.BaseObject `bson:",inline"`
-		Id                bson.ObjectId `bson:"_id,omitempty"`
+		Id                string `bson:"_id,omitempty"`
 		Name              string        `bson:"name"`        // non-database unique identifier for a schedule event
 		Schedule          string        `bson:"schedule"`    // Name to associated owning schedule
 		Addressable       mgo.DBRef     `bson:"addressable"` // address {MQTT topic, HTTP address, serial bus, etc.} for the action (can be empty)
 		Parameters        string        `bson:"parameters"`  // json body for parameters
 		Service           string        `bson:"service"`     // json body for parameters
 	}{
-		BaseObject:  mse.BaseObject,
 		Id:          mse.Id,
 		Name:        mse.Name,
 		Schedule:    mse.Schedule,
@@ -51,7 +51,7 @@ func (mse mongoScheduleEvent) GetBSON() (interface{}, error) {
 func (mse *mongoScheduleEvent) SetBSON(raw bson.Raw) error {
 	decoded := new(struct {
 		models.BaseObject `bson:",inline"`
-		Id                bson.ObjectId `bson:"_id,omitempty"`
+		Id                string `bson:"_id,omitempty"`
 		Name              string        `bson:"name"`        // non-database unique identifier for a schedule event
 		Schedule          string        `bson:"schedule"`    // Name to associated owning schedule
 		Addressable       mgo.DBRef     `bson:"addressable"` // address {MQTT topic, HTTP address, serial bus, etc.} for the action (can be empty)
@@ -65,7 +65,6 @@ func (mse *mongoScheduleEvent) SetBSON(raw bson.Raw) error {
 	}
 
 	// Copy over the non-DBRef fields
-	mse.BaseObject = decoded.BaseObject
 	mse.Id = decoded.Id
 	mse.Name = decoded.Name
 	mse.Schedule = decoded.Schedule
@@ -84,7 +83,11 @@ func (mse *mongoScheduleEvent) SetBSON(raw bson.Raw) error {
 
 	var a models.Addressable
 
-	if err := addCol.FindId(decoded.Addressable.Id).One(&a); err != nil {
+	err = addCol.Find(bson.M{"_id": decoded.Addressable.Id}).One(&a)
+	if err == mgo.ErrNotFound {
+		err = addCol.Find(bson.M{"uuid": decoded.Addressable.Id}).One(&a)
+	}
+	if err != nil {
 		return err
 	}
 

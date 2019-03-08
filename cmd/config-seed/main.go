@@ -16,18 +16,20 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 	"sync"
 
 	"github.com/edgexfoundry/edgex-go/internal"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/usage"
 	"github.com/edgexfoundry/edgex-go/internal/seed/config"
-	"github.com/edgexfoundry/edgex-go/pkg/clients/logging"
+	"github.com/edgexfoundry/go-mod-core-contracts/clients/logging"
 )
 
 func main() {
 	var useProfile string
 	var dirCmd string
 	var dirProperties string
+	var overwriteConfig bool
 
 	flag.StringVar(&useProfile, "profile", "", "Specify a profile other than default.")
 	flag.StringVar(&useProfile, "p", "", "Specify a profile other than default.")
@@ -35,6 +37,8 @@ func main() {
 	flag.StringVar(&dirProperties, "r", "./res/properties", "Specify alternate properties location as absolute path")
 	flag.StringVar(&dirCmd, "cmd", "../cmd", "Specify alternate cmd location as absolute path")
 	flag.StringVar(&dirCmd, "c", "../cmd", "Specify alternate cmd location as absolute path")
+	flag.BoolVar(&overwriteConfig, "overwrite", false, "Overwrite configuration in Registry")
+	flag.BoolVar(&overwriteConfig, "o", false, "Overwrite configuration in Registry")
 
 	flag.Usage = usage.HelpCallbackConfigSeed
 	flag.Parse()
@@ -43,17 +47,21 @@ func main() {
 	ok := config.Init()
 	if !ok {
 		logBeforeInit(fmt.Errorf("%s: Service bootstrap failed!", internal.ConfigSeedServiceKey))
-		return
+		os.Exit(1)
 	}
 	config.LoggingClient.Info("Service dependencies resolved...")
+
 	err := config.ImportProperties(dirProperties)
 	if err != nil {
 		config.LoggingClient.Error(err.Error())
 	}
-	err = config.ImportConfiguration(dirCmd, useProfile)
+
+	err = config.ImportConfiguration(dirCmd, useProfile, overwriteConfig)
 	if err != nil {
 		config.LoggingClient.Error(err.Error())
 	}
+
+	os.Exit(0)
 }
 
 func bootstrap(profile string) {

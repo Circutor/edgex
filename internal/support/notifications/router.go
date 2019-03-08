@@ -17,14 +17,17 @@ package notifications
 
 import (
 	"net/http"
-	"runtime"
+
+	"github.com/edgexfoundry/go-mod-core-contracts/clients"
 	"github.com/gorilla/mux"
-	"github.com/edgexfoundry/edgex-go/pkg/clients"
-	"github.com/edgexfoundry/edgex-go/internal"
+
+	"github.com/edgexfoundry/edgex-go/internal/pkg/correlation"
+	"github.com/edgexfoundry/edgex-go/internal/pkg/telemetry"
 )
 
 func LoadRestRoutes() *mux.Router {
 	r := mux.NewRouter()
+
 	// Ping Resource
 	r.HandleFunc(clients.ApiPingRoute, pingHandler).Methods(http.MethodGet)
 
@@ -34,7 +37,7 @@ func LoadRestRoutes() *mux.Router {
 	// Metrics
 	r.HandleFunc(clients.ApiMetricsRoute, metricsHandler).Methods(http.MethodGet)
 
-	b := r.PathPrefix("/api/v1").Subrouter()
+	b := r.PathPrefix(clients.ApiBase).Subrouter()
 
 	// Notifications
 	b.HandleFunc("/notification", notificationHandler).Methods(http.MethodPost)
@@ -49,7 +52,7 @@ func LoadRestRoutes() *mux.Router {
 	b.HandleFunc("/notification/labels/{labels}/{limit:[0-9]+}", notificationsByLabelsHandler).Methods(http.MethodGet)
 	b.HandleFunc("/notification/new/{limit:[0-9]+}", notificationsNewHandler).Methods(http.MethodGet)
 
-	// Subscriptions
+	// GetSubscriptions
 	b.HandleFunc("/subscription", subscriptionHandler).Methods(http.MethodGet, http.MethodPut, http.MethodPost)
 	b.HandleFunc("/subscription/{id}", subscriptionByIDHandler).Methods(http.MethodGet)
 	b.HandleFunc("/subscription/slug/{slug}", subscriptionsBySlugHandler).Methods(http.MethodGet, http.MethodDelete)
@@ -75,44 +78,21 @@ func LoadRestRoutes() *mux.Router {
 	b.HandleFunc("/cleanup", cleanupHandler).Methods(http.MethodDelete)
 	b.HandleFunc("/cleanup/age/{age:[0-9]+}", cleanupAgeHandler).Methods(http.MethodDelete)
 
+	r.Use(correlation.ManageHeader)
+	r.Use(correlation.OnResponseComplete)
+	r.Use(correlation.OnRequestBegin)
+
 	return r
 }
 
-func configHandler(w http.ResponseWriter, r *http.Request) {
-
-	if r.Body != nil {
-		defer r.Body.Close()
-	}
-
+func configHandler(w http.ResponseWriter, _ *http.Request) {
 	encode(Configuration, w)
 }
 
-func metricsHandler(w http.ResponseWriter, r *http.Request) {
+func metricsHandler(w http.ResponseWriter, _ *http.Request) {
+	s := telemetry.NewSystemUsage()
 
-	var t internal.Telemetry
-
-	if r.Body != nil {
-		defer r.Body.Close()
-	}
-
-	// The micro-service is to be considered the System Of Record (SOR) in terms of accurate information.
-	// Fetch metrics for the notifications service.
-	var rtm runtime.MemStats
-
-	// Read full memory stats
-	runtime.ReadMemStats(&rtm)
-
-	// Miscellaneous memory stats
-	t.Alloc = rtm.Alloc
-	t.TotalAlloc = rtm.TotalAlloc
-	t.Sys = rtm.Sys
-	t.Mallocs = rtm.Mallocs
-	t.Frees = rtm.Frees
-
-	// Live objects = Mallocs - Frees
-	t.LiveObjects = t.Mallocs - t.Frees
-
-	encode(t, w)
+	encode(s, w)
 
 	return
 }

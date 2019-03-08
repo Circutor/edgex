@@ -16,25 +16,26 @@
 package notifications
 
 import (
-	"github.com/edgexfoundry/edgex-go/pkg/models"
+	"github.com/edgexfoundry/go-mod-core-contracts/models"
 )
 
 func escalate(t models.Transmission) {
-	LoggingClient.Warn("Escalating transmission: " + t.ID.String() + ", for: " + t.Notification.Slug)
+	LoggingClient.Warn("Escalating transmission: " + t.ID + ", for: " + t.Notification.Slug)
 
 	var err error
-	s, err := dbClient.SubscriptionBySlug(ESCALATIONSUBSCRIPTIONSLUG)
-	if err == nil {
-		n, err := createEscalatedNotification(t)
-		if err == nil {
-			send(n, s)
-		} else {
-			LoggingClient.Error("Unable to create new escalating notice to send escalation notice for " + t.ID.String())
-		}
-	} else {
-		LoggingClient.Error("Unable to find Escalation subcriber to send escalation notice for " + t.ID.String())
+	s, err := dbClient.GetSubscriptionBySlug(ESCALATIONSUBSCRIPTIONSLUG)
+	if err != nil {
+		LoggingClient.Error("Unable to find Escalation subcriber to send escalation notice for " + t.ID)
+		return
 	}
 
+	n, err := createEscalatedNotification(t)
+	if err != nil {
+		LoggingClient.Error("Unable to create new escalating notice to send escalation notice for " + t.ID)
+		return
+	}
+
+	send(n, s)
 }
 
 func createEscalatedNotification(t models.Transmission) (models.Notification, error) {
@@ -44,6 +45,6 @@ func createEscalatedNotification(t models.Transmission) (models.Notification, er
 	n.Sender = ESCALATIONPREFIX + old.Sender
 	n.Content = ESCALATEDCONTENTNOTICE + " " + t.String() + " " + old.Content
 	n.Status = models.Escalated
-	_, err := dbClient.AddNotification(&n)
+	_, err := dbClient.AddNotification(n)
 	return n, err
 }

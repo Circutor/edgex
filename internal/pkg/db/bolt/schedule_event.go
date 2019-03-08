@@ -14,9 +14,9 @@
 package bolt
 
 import (
-	"github.com/edgexfoundry/edgex-go/pkg/models"
+	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
+	"github.com/edgexfoundry/go-mod-core-contracts/models"
 	jsoniter "github.com/json-iterator/go"
-	"gopkg.in/mgo.v2/bson"
 )
 
 // Internal version of the schedule event struct
@@ -29,34 +29,40 @@ type boltScheduleEvent struct {
 func (bse boltScheduleEvent) MarshalJSON() ([]byte, error) {
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
 	return json.Marshal(&struct {
-		models.BaseObject `json:",inline"`
-		Id                bson.ObjectId `json:"id,omitempty"`
-		Name              string        `json:"name"`          // non-database unique identifier for a schedule event
-		Schedule          string        `json:"schedule"`      // Name to associated owning schedule
-		AddressableID     string        `json:"addressableId"` // address {MQTT topic, HTTP address, serial bus, etc.} for the action (can be empty)
-		Parameters        string        `json:"parameters"`    // json body for parameters
-		Service           string        `json:"service"`       // json body for parameters
+		Created       int64  `json:"created"`
+		Modified      int64  `json:"modified"`
+		Origin        int64  `json:"origin"`
+		Id            string `json:"id"`
+		Name          string `json:"name"`          // non-database unique identifier for a schedule event
+		Schedule      string `json:"schedule"`      // Name to associated owning schedule
+		AddressableID string `json:"addressableId"` // address {MQTT topic, HTTP address, serial bus, etc.} for the action (can be empty)
+		Parameters    string `json:"parameters"`    // json body for parameters
+		Service       string `json:"service"`       // json body for parameters
 	}{
-		BaseObject:    bse.BaseObject,
+		Created:       bse.Created,
+		Modified:      bse.Modified,
+		Origin:        bse.Origin,
 		Id:            bse.Id,
 		Name:          bse.Name,
 		Schedule:      bse.Schedule,
 		Parameters:    bse.Parameters,
 		Service:       bse.Service,
-		AddressableID: bse.Addressable.Id.Hex(),
+		AddressableID: bse.Addressable.Id,
 	})
 }
 
 // Custom unmarshaling out of bolt
 func (bse *boltScheduleEvent) UnmarshalJSON(data []byte) error {
 	decoded := new(struct {
-		models.BaseObject `json:",inline"`
-		Id                bson.ObjectId `json:"id,omitempty"`
-		Name              string        `json:"name"`          // non-database unique identifier for a schedule event
-		Schedule          string        `json:"schedule"`      // Name to associated owning schedule
-		AddressableID     string        `json:"addressableId"` // address {MQTT topic, HTTP address, serial bus, etc.} for the action (can be empty)
-		Parameters        string        `json:"parameters"`    // json body for parameters
-		Service           string        `json:"service"`       // json body for parameters
+		Created       int64  `json:"created"`
+		Modified      int64  `json:"modified"`
+		Origin        int64  `json:"origin"`
+		Id            string `json:"id"`
+		Name          string `json:"name"`          // non-database unique identifier for a schedule event
+		Schedule      string `json:"schedule"`      // Name to associated owning schedule
+		AddressableID string `json:"addressableId"` // address {MQTT topic, HTTP address, serial bus, etc.} for the action (can be empty)
+		Parameters    string `json:"parameters"`    // json body for parameters
+		Service       string `json:"service"`       // json body for parameters
 	})
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
 	if err := json.Unmarshal(data, &decoded); err != nil {
@@ -64,7 +70,9 @@ func (bse *boltScheduleEvent) UnmarshalJSON(data []byte) error {
 	}
 
 	// Copy over the non-DBRef fields
-	bse.BaseObject = decoded.BaseObject
+	bse.Created = decoded.Created
+	bse.Modified = decoded.Modified
+	bse.Origin = decoded.Origin
 	bse.Id = decoded.Id
 	bse.Name = decoded.Name
 	bse.Schedule = decoded.Schedule
@@ -76,5 +84,5 @@ func (bse *boltScheduleEvent) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	return b.GetAddressableById(&bse.Addressable, decoded.AddressableID)
+	return b.getById(&bse.Addressable, db.Addressable, decoded.AddressableID)
 }

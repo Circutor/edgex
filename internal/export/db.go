@@ -14,37 +14,35 @@
 package export
 
 import (
-	"gopkg.in/mgo.v2/bson"
+	contract "github.com/edgexfoundry/go-mod-core-contracts/models"
 )
 
 type DBClient interface {
 	CloseSession()
 
-	Connect() error
-
 	// ********************** REGISTRATION FUNCTIONS *****************************
 	// Return all the registrations
 	// UnexpectedError - failed to retrieve registrations from the database
-	Registrations() ([]Registration, error)
+	Registrations() ([]contract.Registration, error)
 
 	// Add a new registration
 	// UnexpectedError - failed to add to database
-	AddRegistration(reg *Registration) (bson.ObjectId, error)
+	AddRegistration(reg contract.Registration) (string, error)
 
 	// Update a registration
 	// UnexpectedError - problem updating in database
 	// NotFound - no registration with the ID was found
-	UpdateRegistration(reg Registration) error
+	UpdateRegistration(reg contract.Registration) error
 
 	// Get a registration by ID
 	// UnexpectedError - problem getting in database
 	// NotFound - no registration with the ID was found
-	RegistrationById(id string) (Registration, error)
+	RegistrationById(id string) (contract.Registration, error)
 
 	// Get a registration by name
 	// UnexpectedError - problem getting in database
 	// NotFound - no registration with the name was found
-	RegistrationByName(name string) (Registration, error)
+	RegistrationByName(name string) (contract.Registration, error)
 
 	// Delete a registration by ID
 	// UnexpectedError - problem getting in database

@@ -17,13 +17,15 @@ package agent
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
 
-	"github.com/edgexfoundry/edgex-go/pkg/models"
+	"github.com/edgexfoundry/go-mod-core-contracts/models"
 	"github.com/gorilla/mux"
+
+	"github.com/edgexfoundry/edgex-go/internal/pkg/correlation"
+	"github.com/edgexfoundry/edgex-go/internal/system/agent/logger"
 )
 
 func LoadRestRoutes() *mux.Router {
@@ -34,9 +36,17 @@ func LoadRestRoutes() *mux.Router {
 	b.HandleFunc("/config/{services}", configHandler).Methods(http.MethodGet)
 	b.HandleFunc("/metrics/{services}", metricsHandler).Methods(http.MethodGet)
 
+	// Health Resource
+	// /api/v1/health
+	b.HandleFunc("/health/{services}", healthHandler).Methods(http.MethodGet)
+
 	// Ping Resource
 	// /api/v1/ping
 	b.HandleFunc("/ping", pingHandler).Methods(http.MethodGet)
+
+	r.Use(correlation.ManageHeader)
+	r.Use(correlation.OnResponseComplete)
+	r.Use(correlation.OnRequestBegin)
 
 	return r
 }
@@ -47,24 +57,24 @@ func operationHandler(w http.ResponseWriter, r *http.Request) {
 	b, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		LoggingClient.Error(fmt.Sprintf("unable to read request body (%s)", err.Error()))
+		logs.LoggingClient.Error("unable to read request body", "errMsg", err.Error())
 		return
 	}
 	o := models.Operation{}
 	err = o.UnmarshalJSON(b)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		LoggingClient.Error("Error decoding operation: " + err.Error())
+		logs.LoggingClient.Error("error decoding operation", "errMsg", err.Error())
 		return
 	} else if o.Action == "" {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		LoggingClient.Error("action is required")
+		logs.LoggingClient.Error("action is required")
 		return
 	}
 
 	switch o.Action {
 
-	// Make asynchronous goroutine call(s) to the appropriate internal function (respectively, to stop, start, or restart the service(s).
+	// Call the appropriate internal function (respectively, to stop, start, or restart the service(s)).
 	case STOP:
 		InvokeOperation(STOP, o.Services)
 		w.WriteHeader(http.StatusOK)
@@ -78,34 +88,31 @@ func operationHandler(w http.ResponseWriter, r *http.Request) {
 		break
 
 	case RESTART:
-		// First, stop the requested services.
-		InvokeOperation(STOP, o.Services)
-		// Second, start the requested services (thereby effectively restarting those services).
-		InvokeOperation(START, o.Services)
-		w.WriteHeader(http.StatusCreated)
+		InvokeOperation(RESTART, o.Services)
+		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("Done. Restarted the requested services."))
 		break
 
 	default:
-		LoggingClient.Info(fmt.Sprintf(">> Unknown action %v\n", o.Action))
+		logs.LoggingClient.Warn("unknown action", "action name", o.Action)
 	}
 }
 
 func configHandler(w http.ResponseWriter, r *http.Request) {
-
-	if r.Body != nil {
-		defer r.Body.Close()
-	}
-
 	vars := mux.Vars(r)
-	LoggingClient.Debug(fmt.Sprintf("It is for these micro-service that their configuration data has been requested: %v", vars))
+	logs.LoggingClient.Debug("service configuration data requested", "service names", vars)
 
 	list := vars["services"]
 	var services []string
 	services = strings.Split(list, ",")
 
-	var send = ConfigRespMap{}
-	send, _ = getConfig(services)
+	ctx := r.Context()
+	send, err := getConfig(services, ctx)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		logs.LoggingClient.Error("could not retrieve configuration", "errMsg", err.Error())
+		return
+	}
 
 	w.Header().Add("Content-Type", "application/json")
 	encode(send, w)
@@ -113,19 +120,40 @@ func configHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func metricsHandler(w http.ResponseWriter, r *http.Request) {
-
-	if r.Body != nil {
-		defer r.Body.Close()
-	}
-
 	vars := mux.Vars(r)
-	LoggingClient.Debug(fmt.Sprintf("It is for these micro-service that their metrics data has been requested: %v", vars))
+	logs.LoggingClient.Debug("service configuration data requested", "service names", vars)
 
 	list := vars["services"]
 	var services []string
 	services = strings.Split(list, ",")
 
-	send, _ := getMetrics(services)
+	ctx := r.Context()
+	send, err := getMetrics(services, ctx)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		logs.LoggingClient.Error("could not retrieve metrics", "errMsg", err.Error())
+		return
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	encode(send, w)
+	return
+}
+
+func healthHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	logs.LoggingClient.Debug("health status data requested", "service names", vars)
+
+	list := vars["services"]
+	var services []string
+	services = strings.Split(list, ",")
+
+	send, err := getHealth(services)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		logs.LoggingClient.Error("could not retrieve health", "errMsg", err.Error())
+		return
+	}
 
 	w.Header().Add("Content-Type", "application/json")
 	encode(send, w)
@@ -140,7 +168,7 @@ func encode(i interface{}, w http.ResponseWriter) {
 	err := enc.Encode(i)
 
 	if err != nil {
-		LoggingClient.Error("Error encoding the data: " + err.Error())
+		logs.LoggingClient.Error("error during encoding", "errMsg", err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
