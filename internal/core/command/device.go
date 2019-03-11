@@ -16,9 +16,11 @@ package command
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"net/http"
 	"strings"
 
+	"github.com/edgexfoundry/go-mod-core-contracts/clients"
 	"github.com/edgexfoundry/go-mod-core-contracts/clients/types"
 	"github.com/edgexfoundry/go-mod-core-contracts/models"
 )
@@ -52,19 +54,8 @@ func commandByDeviceID(did string, cid string, b string, p bool, ctx context.Con
 		return "", http.StatusLocked
 	}
 
-	c, err := cc.Command(cid, ctx)
-	if err != nil {
-		LoggingClient.Error(err.Error())
-
-		chk, ok := err.(*types.ErrServiceClient)
-		if ok {
-			return "", chk.StatusCode
-		} else {
-			return "", http.StatusInternalServerError
-		}
-	}
+	url := d.Service.Addressable.GetBaseURL() + clients.ApiDeviceRoute + "/" + d.Id + "/" + cid
 	if p {
-		url := d.Service.Addressable.GetBaseURL() + strings.Replace(c.Put.Action.Path, DEVICEIDURLPARAM, d.Id, -1)
 		LoggingClient.Debug("Issuing PUT command to: " + url)
 		req, err := http.NewRequest(http.MethodPut, url, strings.NewReader(b))
 		if err != nil {
@@ -78,7 +69,6 @@ func commandByDeviceID(did string, cid string, b string, p bool, ctx context.Con
 		buf.ReadFrom(resp.Body)
 		return buf.String(), resp.StatusCode
 	} else {
-		url := d.Service.Addressable.GetBaseURL() + strings.Replace(c.Get.Action.Path, DEVICEIDURLPARAM, d.Id, -1)
 		LoggingClient.Debug("Issuing GET command to: " + url)
 		req, err := http.NewRequest(http.MethodGet, url, nil)
 		if err != nil {
@@ -166,7 +156,7 @@ func getCommands(ctx context.Context) (int, []models.CommandResponse, error) {
 	}
 	var cr []models.CommandResponse
 	for _, d := range devices {
-		cr = append(cr, models.CommandResponseFromDevice(d, Configuration.Service.Url()))
+		cr = append(cr, commandResponseFromDevice(d, Configuration.Service.Url()))
 	}
 	return http.StatusOK, cr, err
 
@@ -182,7 +172,7 @@ func getCommandsByDeviceID(did string, ctx context.Context) (int, models.Command
 			return http.StatusInternalServerError, models.CommandResponse{}, err
 		}
 	}
-	return http.StatusOK, models.CommandResponseFromDevice(d, Configuration.Service.Url()), err
+	return http.StatusOK, commandResponseFromDevice(d, Configuration.Service.Url()), err
 }
 
 func getCommandsByDeviceName(dn string, ctx context.Context) (int, models.CommandResponse, error) {
@@ -195,5 +185,42 @@ func getCommandsByDeviceName(dn string, ctx context.Context) (int, models.Comman
 			return http.StatusInternalServerError, models.CommandResponse{}, err
 		}
 	}
-	return http.StatusOK, models.CommandResponseFromDevice(d, Configuration.Service.Url()), err
+	return http.StatusOK, commandResponseFromDevice(d, Configuration.Service.Url()), err
+}
+
+func commandResponseFromDevice(d models.Device, cmdURL string) models.CommandResponse {
+	cmdResp := models.CommandResponse{
+		Id:             d.Id,
+		Name:           d.Name,
+		AdminState:     d.AdminState,
+		OperatingState: d.OperatingState,
+		LastConnected:  d.LastConnected,
+		LastReported:   d.LastReported,
+		Labels:         d.Labels,
+		Location:       d.Location,
+	}
+
+	basePath := fmt.Sprintf("%s%s/%s/command/", cmdURL, clients.ApiDeviceRoute, d.Id)
+
+	for _, rp := range d.Profile.Resources {
+		var c models.Command
+		c.Name = rp.Name
+
+		if len(rp.Get) != 0 {
+			var get models.Get
+			get.Path = clients.ApiDeviceRoute + "/{deviceId}/" + rp.Name
+			get.URL = basePath + rp.Name
+			c.Get = &get
+		}
+		if len(rp.Set) != 0 {
+			var put models.Put
+			put.Path = clients.ApiDeviceRoute + "/{deviceId}/" + rp.Name
+			put.URL = basePath + rp.Name
+			c.Put = &put
+		}
+
+		cmdResp.Commands = append(cmdResp.Commands, c)
+	}
+
+	return cmdResp
 }
