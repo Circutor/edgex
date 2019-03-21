@@ -35,13 +35,6 @@ func TestMongoDB(t *testing.T) {
 	}
 	test.TestDataDB(t, mongo)
 
-	config.DatabaseName = "scheduler"
-	mongo, err = NewClient(config)
-	if err != nil {
-		t.Fatalf("Could not connect: %v", err)
-	}
-	test.TestSchedulerDB(t, mongo)
-
 	config.DatabaseName = "metadata"
 	mongo, err = NewClient(config)
 	if err != nil {

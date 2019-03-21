@@ -40,7 +40,6 @@ func (be boltEvent) MarshalJSON() ([]byte, error) {
 		Created  int64    `json:"created,omitempty"`
 		Modified int64    `json:"modified,omitempty"`
 		Origin   int64    `json:"origin,omitempty"`
-		Event    string   `json:"event"`
 		Readings []string `json:"readings,omitempty"`
 	}{
 		ID:       be.Event.ID,
@@ -49,7 +48,6 @@ func (be boltEvent) MarshalJSON() ([]byte, error) {
 		Created:  be.Event.Created,
 		Modified: be.Event.Modified,
 		Origin:   be.Event.Origin,
-		Event:    be.Event.Event,
 		Readings: readings,
 	})
 }
@@ -63,7 +61,6 @@ func (be *boltEvent) UnmarshalJSON(data []byte) error {
 		Created  int64    `json:"created"`
 		Modified int64    `json:"modified"`
 		Origin   int64    `json:"origin"`
-		Event    string   `json:"event"`
 		Readings []string `json:"readings"`
 	})
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
@@ -78,7 +75,6 @@ func (be *boltEvent) UnmarshalJSON(data []byte) error {
 	be.Event.Created = decoded.Created
 	be.Event.Modified = decoded.Modified
 	be.Event.Origin = decoded.Origin
-	be.Event.Event = decoded.Event
 	be.Readings = decoded.Readings
 
 	return nil

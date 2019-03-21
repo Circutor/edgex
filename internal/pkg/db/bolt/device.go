@@ -29,18 +29,18 @@ func (bd boltDevice) MarshalJSON() ([]byte, error) {
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
 	return json.Marshal(&struct {
 		models.DescribedObject `json:",inline"`
-		Id                     string                       `json:"id"`
-		Name                   string                       `json:"name"`                    // Unique name for identifying a device
-		AdminState             models.AdminState            `json:"adminState"`              // Admin state (locked/unlocked)
-		OperatingState         models.OperatingState        `json:"operatingState"`          // Operating state (enabled/disabled)
-		Protocols              map[string]map[string]string `json:"protocols"`               // A map of supported protocols for the given device
-		LastConnected          int64                        `json:"lastConnected,omitempty"` // Time (milliseconds) that the device last provided any feedback or responded to any request
-		LastReported           int64                        `json:"lastReported,omitempty"`  // Time (milliseconds) that the device reported data to the core microservice
-		Labels                 []string                     `json:"labels,omitempty"`        // Other labels applied to the device to help with searching
-		Location               interface{}                  `json:"location"`                // Device service specific location (interface{} is an empty interface so it can be anything)
-		ServiceID              string                       `json:"serviceId"`               // Associated Device Service - One per device
-		ProfileID              string                       `json:"profileId"`
-		AutoEvents             []models.AutoEvent           `json:"autoEvents"`
+		Id                     string                               `json:"id"`
+		Name                   string                               `json:"name"`                    // Unique name for identifying a device
+		AdminState             models.AdminState                    `json:"adminState"`              // Admin state (locked/unlocked)
+		OperatingState         models.OperatingState                `json:"operatingState"`          // Operating state (enabled/disabled)
+		Protocols              map[string]models.ProtocolProperties `json:"protocols"`               // A map of supported protocols for the given device
+		LastConnected          int64                                `json:"lastConnected,omitempty"` // Time (milliseconds) that the device last provided any feedback or responded to any request
+		LastReported           int64                                `json:"lastReported,omitempty"`  // Time (milliseconds) that the device reported data to the core microservice
+		Labels                 []string                             `json:"labels,omitempty"`        // Other labels applied to the device to help with searching
+		Location               interface{}                          `json:"location"`                // Device service specific location (interface{} is an empty interface so it can be anything)
+		ServiceID              string                               `json:"serviceId"`               // Associated Device Service - One per device
+		ProfileID              string                               `json:"profileId"`
+		AutoEvents             []models.AutoEvent                   `json:"autoEvents"`
 	}{
 		DescribedObject: bd.DescribedObject,
 		Id:              bd.Id,
@@ -61,18 +61,18 @@ func (bd boltDevice) MarshalJSON() ([]byte, error) {
 func (bd *boltDevice) UnmarshalJSON(data []byte) error {
 	decoded := new(struct {
 		models.DescribedObject `json:",inline"`
-		Id                     string                       `json:"id"`
-		Name                   string                       `json:"name"`           // Unique name for identifying a device
-		AdminState             models.AdminState            `json:"adminState"`     // Admin state (locked/unlocked)
-		OperatingState         models.OperatingState        `json:"operatingState"` // Operating state (enabled/disabled)
-		Protocols              map[string]map[string]string `json:"protocols"`      // A map of supported protocols for the given device
-		LastConnected          int64                        `json:"lastConnected"`  // Time (milliseconds) that the device last provided any feedback or responded to any request
-		LastReported           int64                        `json:"lastReported"`   // Time (milliseconds) that the device reported data to the core microservice
-		Labels                 []string                     `json:"labels"`         // Other labels applied to the device to help with searching
-		Location               interface{}                  `json:"location"`       // Device service specific location (interface{} is an empty interface so it can be anything)
-		ServiceID              string                       `json:"serviceId"`      // Associated Device Service - One per device
-		ProfileID              string                       `json:"profileId"`
-		AutoEvents             []models.AutoEvent           `json:"autoEvents"`
+		Id                     string                               `json:"id"`
+		Name                   string                               `json:"name"`           // Unique name for identifying a device
+		AdminState             models.AdminState                    `json:"adminState"`     // Admin state (locked/unlocked)
+		OperatingState         models.OperatingState                `json:"operatingState"` // Operating state (enabled/disabled)
+		Protocols              map[string]models.ProtocolProperties `json:"protocols"`      // A map of supported protocols for the given device
+		LastConnected          int64                                `json:"lastConnected"`  // Time (milliseconds) that the device last provided any feedback or responded to any request
+		LastReported           int64                                `json:"lastReported"`   // Time (milliseconds) that the device reported data to the core microservice
+		Labels                 []string                             `json:"labels"`         // Other labels applied to the device to help with searching
+		Location               interface{}                          `json:"location"`       // Device service specific location (interface{} is an empty interface so it can be anything)
+		ServiceID              string                               `json:"serviceId"`      // Associated Device Service - One per device
+		ProfileID              string                               `json:"profileId"`
+		AutoEvents             []models.AutoEvent                   `json:"autoEvents"`
 	})
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
 	if err := json.Unmarshal(data, &decoded); err != nil {

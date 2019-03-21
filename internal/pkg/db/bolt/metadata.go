@@ -23,177 +23,6 @@ import (
 	jsoniter "github.com/json-iterator/go"
 )
 
-/* -----------------------Schedule Event ------------------------*/
-func (bc *BoltClient) UpdateScheduleEvent(se models.ScheduleEvent) error {
-	se.Modified = db.MakeTimestamp()
-	bse := boltScheduleEvent{ScheduleEvent: se}
-	return bc.update(db.ScheduleEvent, bse, bse.Id)
-}
-
-func (bc *BoltClient) AddScheduleEvent(se *models.ScheduleEvent) error {
-
-	// Check if the name exist
-	var dummy models.ScheduleEvent
-	err := bc.GetScheduleEventByName(&dummy, se.Name)
-	if err == nil {
-		return db.ErrNotUnique
-	}
-
-	se.Id = uuid.New().String()
-	se.Created = db.MakeTimestamp()
-	se.Modified = se.Created
-
-	bse := boltScheduleEvent{ScheduleEvent: *se}
-	return bc.add(db.ScheduleEvent, bse, bse.Id)
-}
-
-func (bc *BoltClient) GetAllScheduleEvents(se *[]models.ScheduleEvent) error {
-	return bc.getScheduleEventsBy(se, func(encoded []byte) bool {
-		return true
-	})
-}
-
-func (bc *BoltClient) GetScheduleEventByName(se *models.ScheduleEvent, n string) error {
-	bse := boltScheduleEvent{ScheduleEvent: *se}
-	err := bc.getByName(&bse, db.ScheduleEvent, n)
-	*se = bse.ScheduleEvent
-	return err
-}
-
-func (bc *BoltClient) GetScheduleEventById(se *models.ScheduleEvent, id string) error {
-	bse := boltScheduleEvent{ScheduleEvent: *se}
-	err := bc.getById(&bse, db.ScheduleEvent, id)
-	*se = bse.ScheduleEvent
-	return err
-}
-
-func (bc *BoltClient) getScheduleEventsBy(ses *[]models.ScheduleEvent, fn func(encoded []byte) bool) error {
-	bse := boltScheduleEvent{}
-	*ses = []models.ScheduleEvent{}
-	json := jsoniter.ConfigCompatibleWithStandardLibrary
-
-	err := bc.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(db.ScheduleEvent))
-		if b == nil {
-			return nil
-		}
-		err := b.ForEach(func(id, encoded []byte) error {
-			if fn(encoded) == true {
-				err := json.Unmarshal(encoded, &bse)
-				if err != nil {
-					return err
-				}
-				*ses = append(*ses, bse.ScheduleEvent)
-			}
-			return nil
-		})
-		return err
-	})
-	return err
-}
-
-func (bc *BoltClient) GetScheduleEventsByScheduleName(se *[]models.ScheduleEvent, n string) error {
-	return bc.getScheduleEventsBy(se, func(encoded []byte) bool {
-		value := jsoniter.Get(encoded, "schedule").ToString()
-		if value == n {
-			return true
-		}
-		return false
-	})
-}
-
-func (bc *BoltClient) GetScheduleEventsByAddressableId(se *[]models.ScheduleEvent, id string) error {
-	if isIdValid(id) {
-		return bc.getScheduleEventsBy(se, func(encoded []byte) bool {
-			value := jsoniter.Get(encoded, "addressableId").ToString()
-			if value == id {
-				return true
-			}
-			return false
-		})
-	} else {
-		return db.ErrInvalidObjectId
-	}
-}
-
-func (bc *BoltClient) GetScheduleEventsByServiceName(se *[]models.ScheduleEvent, n string) error {
-	return bc.getScheduleEventsBy(se, func(encoded []byte) bool {
-		value := jsoniter.Get(encoded, "service").ToString()
-		if value == n {
-			return true
-		}
-		return false
-	})
-}
-
-func (bc *BoltClient) DeleteScheduleEventById(id string) error {
-	return bc.deleteById(id, db.ScheduleEvent)
-}
-
-//  --------------------------Schedule ---------------------------*/
-func (bc *BoltClient) GetAllSchedules(sch *[]models.Schedule) error {
-	return bc.getSchedulesBy(sch, func(encoded []byte) bool {
-		return true
-	})
-}
-
-func (bc *BoltClient) GetScheduleByName(sch *models.Schedule, n string) error {
-	return bc.getByName(sch, db.Schedule, n)
-}
-
-func (bc *BoltClient) GetScheduleById(sch *models.Schedule, id string) error {
-	return bc.getById(sch, db.Schedule, id)
-}
-
-func (bc *BoltClient) AddSchedule(sch *models.Schedule) error {
-	// Check if the name exist
-	var dummy models.Schedule
-	err := bc.GetScheduleByName(&dummy, sch.Name)
-	if err == nil {
-		return db.ErrNotUnique
-	}
-
-	sch.Id = uuid.New().String()
-	sch.Created = db.MakeTimestamp()
-	sch.Modified = sch.Created
-
-	return bc.add(db.Schedule, sch, sch.Id)
-}
-
-func (bc *BoltClient) UpdateSchedule(sch models.Schedule) error {
-	sch.Modified = db.MakeTimestamp()
-	return bc.update(db.Schedule, sch, sch.Id)
-}
-
-func (bc *BoltClient) DeleteScheduleById(id string) error {
-	return bc.deleteById(id, db.Schedule)
-}
-
-func (bc *BoltClient) getSchedulesBy(schs *[]models.Schedule, fn func(encoded []byte) bool) error {
-	sch := models.Schedule{}
-	*schs = []models.Schedule{}
-	json := jsoniter.ConfigCompatibleWithStandardLibrary
-
-	err := bc.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(db.Schedule))
-		if b == nil {
-			return nil
-		}
-		err := b.ForEach(func(id, encoded []byte) error {
-			if fn(encoded) == true {
-				err := json.Unmarshal(encoded, &sch)
-				if err != nil {
-					return err
-				}
-				*schs = append(*schs, sch)
-			}
-			return nil
-		})
-		return err
-	})
-	return err
-}
-
 /* ----------------------Device Report --------------------------*/
 func (bc *BoltClient) GetAllDeviceReports() ([]models.DeviceReport, error) {
 	return bc.getDeviceReportsBy(func(encoded []byte) bool {
@@ -223,9 +52,9 @@ func (bc *BoltClient) GetDeviceReportById(id string) (models.DeviceReport, error
 	return dr, err
 }
 
-func (bc *BoltClient) GetDeviceReportsByScheduleEventName(n string) ([]models.DeviceReport, error) {
+func (bc *BoltClient) GetDeviceReportsByAction(n string) ([]models.DeviceReport, error) {
 	return bc.getDeviceReportsBy(func(encoded []byte) bool {
-		value := jsoniter.Get(encoded, "event").ToString()
+		value := jsoniter.Get(encoded, "action").ToString()
 		if value == n {
 			return true
 		}
@@ -964,10 +793,6 @@ func (bc *BoltClient) ScrubMetadata() error {
 		return err
 	}
 	err = bc.scrubAll(db.DeviceReport)
-	if err != nil {
-		return err
-	}
-	err = bc.scrubAll(db.ScheduleEvent)
 	if err != nil {
 		return err
 	}

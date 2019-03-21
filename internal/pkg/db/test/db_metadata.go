@@ -34,7 +34,7 @@ func TestMetadataDB(t *testing.T, db interfaces.DBClient) {
 	db.CloseSession()
 }
 
-func getProtocols() map[string]map[string]string {
+func getProtocols() map[string]models.ProtocolProperties {
 	p1 := make(map[string]string)
 	p1["host"] = "localhost"
 	p1["port"] = "1234"
@@ -48,7 +48,7 @@ func getProtocols() map[string]map[string]string {
 	p2["parity"] = "0"
 	p2["unitID"] = "2"
 
-	wrap := make(map[string]map[string]string)
+	wrap := make(map[string]models.ProtocolProperties)
 	wrap["modbus-ip"] = p1
 	wrap["modbus-rtu"] = p2
 
@@ -171,7 +171,7 @@ func populateDeviceReport(db interfaces.DBClient, count int) (string, error) {
 		dr := models.DeviceReport{}
 		dr.Name = name
 		dr.Device = name
-		dr.Event = name
+		dr.Action = name
 		dr.Expected = append(dr.Expected, name)
 		id, err = db.AddDeviceReport(dr)
 		if err != nil {
@@ -738,7 +738,7 @@ func testDBDeviceReport(t *testing.T, db interfaces.DBClient) {
 		t.Fatalf("There should be 0 deviceReports instead of %d", len(deviceReports))
 	}
 
-	deviceReports, err = db.GetDeviceReportsByScheduleEventName("name1")
+	deviceReports, err = db.GetDeviceReportsByAction("name1")
 	if err != nil {
 		t.Fatalf("Error getting deviceReports %v", err)
 	}
@@ -746,7 +746,7 @@ func testDBDeviceReport(t *testing.T, db interfaces.DBClient) {
 		t.Fatalf("There should be 1 deviceReports instead of %d", len(deviceReports))
 	}
 
-	deviceReports, err = db.GetDeviceReportsByScheduleEventName("name")
+	deviceReports, err = db.GetDeviceReportsByAction("name")
 	if err != nil {
 		t.Fatalf("Error getting deviceReports %v", err)
 	}

@@ -42,8 +42,6 @@ const (
 	Addressable      = "addressable"
 	Command          = "command"
 	DeviceReport     = "deviceReport"
-	ScheduleEvent    = "scheduleEvent"
-	Schedule         = "schedule"
 	ProvisionWatcher = "provisionWatcher"
 	Interval         = "interval"
 	IntervalAction   = "intervalAction"
