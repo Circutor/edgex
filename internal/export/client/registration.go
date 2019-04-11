@@ -10,7 +10,9 @@ package client
 
 import (
 	"context"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -132,7 +134,13 @@ func addReg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if valid, err := reg.Validate(); !valid {
+	if reg.Format == "DEXMA_JSON" && reg.Destination == "DEXMA_TOPIC" {
+		if reg.Name == "" {
+			LoggingClient.Error(fmt.Sprintf("Failed to validate registrations fields: %X. Error: Name is required", data))
+			http.Error(w, "Could not validate json fields", http.StatusBadRequest)
+			return
+		}
+	} else if valid, err := reg.Validate(); !valid {
 		LoggingClient.Error(fmt.Sprintf("Failed to validate registrations fields: %X. Error: %s", data, err.Error()))
 		http.Error(w, "Could not validate json fields", http.StatusBadRequest)
 		return
@@ -149,16 +157,98 @@ func addReg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if reg.Name == "Amazon" { //|| reg.Name == "Google" {
+		/*var keyDirAmd64 string
+		//var keyDirArm string
+		var certDirAmd64 string
+		//var certDirArm string
+		var keyRegister string
+		var certRegister string
+
+		if reg.Name == "Amazon" {
+			keyDirAmd64 = "./keys/aws_key.key"
+			//keyDirArm = "/etc/edgex/aws_key.key"
+			certDirAmd64 = "./keys/aws_cert.crt"
+			//certDirArm = "/etc/edgex/aws_cert.crt"
+			keyRegister = reg.Addressable.Path
+			certRegister = reg.Addressable.Protocol
+		} else if reg.Name == "Google" {
+			keyDirAmd64 = "./keys/giot_key.key"
+			//keyDirArm = "/etc/edgex/giot_key.key"
+			certDirAmd64 = "./keys/giot_cert.crt"
+			//certDirArm = "/etc/edgex/giot_cert.crt"
+			keyRegister = reg.Addressable.Password
+			certRegister = reg.Addressable.User
+		}
+		*/
+		keyDirAmd64 := "./keys/aws_key.key"
+		//keyDirArm := "/etc/edgex/aws_key.key"
+		certDirAmd64 := "./keys/aws_cert.crt"
+		//certDirArm := "/etc/edgex/aws_cert.crt"
+		keyRegister := reg.Addressable.Path
+		certRegister := reg.Addressable.Protocol
+
+		LoggingClient.Debug("Check Private Key")
+		blockkey, _ := pem.Decode([]byte(keyRegister))
+		if blockkey == nil {
+			LoggingClient.Error("Error decoding Private Key")
+			http.Error(w, "Error decoding Private Key", http.StatusInternalServerError)
+			return
+		}
+		_, err = x509.ParsePKCS8PrivateKey(blockkey.Bytes)
+		if err != nil {
+			_, err = x509.ParsePKCS1PrivateKey(blockkey.Bytes)
+			if err != nil {
+				LoggingClient.Error(fmt.Sprintf("Error validating Private Key. Error: %s", err.Error()))
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
+
+		err = ioutil.WriteFile(keyDirAmd64, ([]byte(keyRegister)), 0644)
+		if err != nil {
+			LoggingClient.Error(fmt.Sprintf("Error Writting Private Key. Error: %s", err.Error()))
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		LoggingClient.Debug("Check Certificate")
+		block, _ := pem.Decode([]byte(certRegister))
+		if block == nil {
+			LoggingClient.Error("Error decoding Certificate")
+			http.Error(w, "Error decoding Certificate", http.StatusInternalServerError)
+			return
+		}
+		_, err = x509.ParseCertificate(block.Bytes)
+		if err != nil {
+			LoggingClient.Error("Error validating Certificate")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		err = ioutil.WriteFile(certDirAmd64, ([]byte(certRegister)), 0644)
+		if err != nil {
+			LoggingClient.Error(fmt.Sprintf("Error Writting Certificate. Error: %s", err.Error()))
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		//if reg.Name == "Amazon" {
+		reg.Addressable.Path = ""
+		reg.Addressable.Protocol = ""
+		//} else if reg.Name == "Google" {
+		//	reg.Addressable.Password = ""
+		//	reg.Addressable.User = "unused"
+		//}
+	}
+
 	id, err := dbClient.AddRegistration(reg)
 	if err != nil {
 		LoggingClient.Error(fmt.Sprintf("Failed to query add registration. Error: %s", err.Error()))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
 	notifyUpdatedRegistrations(models.NotifyUpdate{Name: reg.Name,
 		Operation: "add"})
-
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(id))
 }
@@ -232,7 +322,13 @@ func updateReg(w http.ResponseWriter, r *http.Request) {
 		toReg.Enable = fromReg.Enable
 	}
 
-	if valid, err := toReg.Validate(); !valid {
+	if toReg.Format == "DEXMA_JSON" && toReg.Destination == "DEXMA_TOPIC" {
+		if toReg.Name == "" {
+			LoggingClient.Error(fmt.Sprintf("Failed to validate registrations fields: %X. Error: Name is required", data))
+			http.Error(w, "Could not validate json fields", http.StatusBadRequest)
+			return
+		}
+	} else if valid, err := toReg.Validate(); !valid {
 		LoggingClient.Error(fmt.Sprintf("Failed to validate registrations fields: %X. Error: %s", data, err.Error()))
 		http.Error(w, "Could not validate json fields", http.StatusBadRequest)
 		return

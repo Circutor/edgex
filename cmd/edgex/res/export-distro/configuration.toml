@@ -43,9 +43,16 @@ File = './logs/edgex-export-distro.log'
   Cert = ""
   Key = ""
 
+  #[Certificates.GIOT]
+  #Cert = "./keys/giot_cert.crt"
+  #Key = "./keys/giot_key.key"
+
   [Certificates.AWS]
-  Cert = 'dummy.crt'
-  Key = 'dummy.key'
+  Cert = "./keys/aws_cert.crt"
+  Key = "./keys/aws_key.key"
+  #Cert =  "/etc/edgex/aws_cert.crt"
+  #Key = "/etc/edgex/aws_key.key"
+
 
 [MessageQueue]
 Protocol = 'tcp'

@@ -39,7 +39,11 @@ func getRegistrationsURL(url string) ([]contract.Registration, error) {
 
 	results := make([]contract.Registration, 0)
 	for _, reg := range registrations {
-		if valid, err := reg.Validate(); valid {
+		if reg.Format == "DEXMA_JSON" && reg.Destination == "DEXMA_TOPIC" {
+			if reg.Name == "" {
+				LoggingClient.Error(fmt.Sprintf("Could not validate registration. Error: Name is required"))
+			}
+		} else if valid, err := reg.Validate(); valid {
 			results = append(results, reg)
 		} else {
 			LoggingClient.Error(fmt.Sprintf("Could not validate registration. Error: %s", err.Error()))
@@ -67,8 +71,12 @@ func getRegistrationByNameURL(url string) *contract.Registration {
 		LoggingClient.Error(fmt.Sprintf("Could not parse json. Error: %s", err.Error()))
 		return nil
 	}
-
-	if valid, err := reg.Validate(); !valid {
+	if reg.Format == "DEXMA_JSON" && reg.Destination == "DEXMA_TOPIC" {
+		if reg.Name == "" {
+			LoggingClient.Error(fmt.Sprintf("Could not validate registration. Error: Name is required"))
+			return nil
+		}
+	} else if valid, err := reg.Validate(); !valid {
 		LoggingClient.Error(fmt.Sprintf("Failed to validate registrations fields. Error: %s", err.Error()))
 		return nil
 	}

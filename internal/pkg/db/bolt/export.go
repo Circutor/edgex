@@ -31,7 +31,6 @@ const (
 // Return all the registrations
 // UnexpectedError - failed to retrieve registrations from the database
 func (bc *BoltClient) Registrations() ([]contract.Registration, error) {
-	reg := contract.Registration{}
 	regs := []contract.Registration{}
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
 
@@ -41,6 +40,7 @@ func (bc *BoltClient) Registrations() ([]contract.Registration, error) {
 			return nil
 		}
 		err := b.ForEach(func(id, encoded []byte) error {
+			reg := contract.Registration{}
 			err := json.Unmarshal(encoded, &reg)
 			if err != nil {
 				return err
