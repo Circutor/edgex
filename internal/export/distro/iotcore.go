@@ -11,49 +11,61 @@ import (
 	"crypto/tls"
 	"fmt"
 	"strings"
+	"time"
 
+	jwt "github.com/dgrijalva/jwt-go"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"github.com/edgexfoundry/go-mod-core-contracts/models"
 )
 
 const (
-	tcpsPrefix    = "tcps"
-	sslPrefix     = "ssl"
-	tlsPrefix     = "tls"
-	devicesPrefix = "/devices/"
+	tcpsPrefix      = "tcps"
+	sslPrefix       = "ssl"
+	tlsPrefix       = "tls"
+	projectsPrefix  = "/projects/"
+	locationsPrefix = "/locations/"
+	devicesPrefix   = "/devices/"
 )
-
-type iotCoreSender struct {
-	client MQTT.Client
-	topic  string
-}
 
 // newIoTCoreSender returns new Google IoT Core sender instance.
 func newIoTCoreSender(addr models.Addressable) sender {
 	protocol := strings.ToLower(addr.Protocol)
 	broker := fmt.Sprintf("%s%s", addr.GetBaseURL(), addr.Path)
 	deviceID := extractDeviceID(addr.Publisher)
+	projectID := extractProjectID(addr.Publisher)
 
 	opts := MQTT.NewClientOptions()
 	opts.AddBroker(broker)
 	opts.SetClientID(addr.Publisher)
 	opts.SetUsername(addr.User)
-	opts.SetPassword(addr.Password)
-	opts.SetAutoReconnect(false)
+	opts.SetAutoReconnect(true)
+	opts.SetProtocolVersion(4)
 
 	if validateProtocol(protocol) {
-		c := Configuration.Certificates["MQTTS"]
+		c := Configuration.Certificates["GIOT"]
 		cert, err := tls.LoadX509KeyPair(c.Cert, c.Key)
 		if err != nil {
-			LoggingClient.Error("Failed loading x509 data")
+			LoggingClient.Error(fmt.Sprintf("Failed loading x509 data: %s", err.Error()))
 			return nil
 		}
 
 		opts.SetTLSConfig(&tls.Config{
-			ClientCAs:          nil,
 			InsecureSkipVerify: true,
 			Certificates:       []tls.Certificate{cert},
 		})
+
+		now := time.Now()
+		t := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.StandardClaims{
+			IssuedAt:  now.Unix(),
+			ExpiresAt: now.Add(time.Hour * 24).Unix(),
+			Audience:  projectID,
+		})
+		password, err := t.SignedString(cert.PrivateKey)
+		if err != nil {
+			LoggingClient.Error(fmt.Sprintf("Could not generate JWT: %s", err.Error()))
+			return nil
+		}
+		opts.SetPassword(password)
 	}
 
 	if addr.Topic == "" {
@@ -66,30 +78,12 @@ func newIoTCoreSender(addr models.Addressable) sender {
 	}
 }
 
-func (sender *iotCoreSender) Send(data []byte) bool {
-	if !sender.client.IsConnected() {
-		LoggingClient.Info("Connecting to mqtt server")
-		token := sender.client.Connect()
-		token.Wait()
-		if token.Error() != nil {
-			LoggingClient.Error(fmt.Sprintf("Could not connect to mqtt server, drop event. Error: %s", token.Error().Error()))
-			return false
-		}
-	}
-
-	token := sender.client.Publish(sender.topic, 0, false, data)
-	token.Wait()
-	if token.Error() != nil {
-		LoggingClient.Error(token.Error().Error())
-		return false
-	}
-
-	LoggingClient.Debug(fmt.Sprintf("Sent data: %X", data))
-	return true
-}
-
 func extractDeviceID(addr string) string {
 	return addr[strings.Index(addr, devicesPrefix)+len(devicesPrefix):]
+}
+
+func extractProjectID(addr string) string {
+	return addr[len(projectsPrefix)-1 : strings.Index(addr, locationsPrefix)]
 }
 
 func validateProtocol(protocol string) bool {
