@@ -88,7 +88,7 @@ func (sender *mqttSender) Send(data []byte, event *models.Event) bool {
 		LoggingClient.Error(token.Error().Error())
 		return false
 	} else {
-		LoggingClient.Debug(fmt.Sprintf("Sent data: %X", data))
+		LoggingClient.Info(fmt.Sprintf("Sent data to mqtt server"))
 		return true
 	}
 }

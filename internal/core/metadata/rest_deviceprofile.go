@@ -23,7 +23,7 @@ import (
 	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
 	"github.com/edgexfoundry/go-mod-core-contracts/models"
 	"github.com/gorilla/mux"
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 )
 
 func restGetAllDeviceProfiles(w http.ResponseWriter, _ *http.Request) {
@@ -353,7 +353,7 @@ func deleteDeviceProfile(dp models.DeviceProfile, w http.ResponseWriter) error {
 		return err
 	}
 	if len(pw) > 0 {
-		err = errors.New("Cant delete device profile, the profile is still in use by a provision watcher")
+		err = errors.New("Cant delete device profile, the profile is still in use by the system")
 		http.Error(w, err.Error(), http.StatusConflict)
 		return err
 	}

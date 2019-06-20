@@ -50,10 +50,10 @@ File = './logs/edgex-export-distro.log'
   #Key = "/etc/edgex/giot_private.pem"
 
   [Certificates.AWS]
-  Cert = "./keys/aws_cert.crt"
-  Key = "./keys/aws_key.key"
-  #Cert = "/etc/edgex/aws_cert.crt"
-  #Key = "/etc/edgex/aws_key.key"
+  Cert = "./keys/aws_cert.pem"
+  Key = "./keys/aws_private.pem"
+  #Cert = "/etc/edgex/aws_cert.pem"
+  #Key = "/etc/edgex/aws_private.pem"
 
 
 [MessageQueue]

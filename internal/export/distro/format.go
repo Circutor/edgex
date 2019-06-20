@@ -202,7 +202,7 @@ func (af azureFormatter) Format(event *contract.Event) []byte {
 	am.Body = data
 	msg, err := json.Marshal(am)
 	if err != nil {
-		LoggingClient.Error(fmt.Sprintf("Error parsing AzureMessage data: %s", err))
+		LoggingClient.Error(fmt.Sprintf("Error parsing Azure Message data: %s", err))
 		return []byte{}
 	}
 	return msg

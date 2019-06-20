@@ -157,36 +157,27 @@ func addReg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if reg.Name == "Amazon" { //|| reg.Name == "Google" {
-		/*var keyDirAmd64 string
+	if reg.Name == "Amazon Web Services (AWS)" || reg.Name == "Google Cloud IoT Core" {
+		var keyDirAmd64 string
 		//var keyDirArm string
 		var certDirAmd64 string
 		//var certDirArm string
 		var keyRegister string
 		var certRegister string
 
-		if reg.Name == "Amazon" {
-			keyDirAmd64 = "./keys/aws_key.key"
-			//keyDirArm = "/etc/edgex/aws_key.key"
-			certDirAmd64 = "./keys/aws_cert.crt"
-			//certDirArm = "/etc/edgex/aws_cert.crt"
-			keyRegister = reg.Addressable.Path
-			certRegister = reg.Addressable.Protocol
-		} else if reg.Name == "Google" {
-			keyDirAmd64 = "./keys/giot_key.key"
-			//keyDirArm = "/etc/edgex/giot_key.key"
-			certDirAmd64 = "./keys/giot_cert.crt"
-			//certDirArm = "/etc/edgex/giot_cert.crt"
-			keyRegister = reg.Addressable.Password
-			certRegister = reg.Addressable.User
+		if reg.Name == "Amazon Web Services (AWS)" {
+			keyDirAmd64 = "./keys/aws_private.pem"
+			//keyDirArm = "/etc/edgex/aws_private.pem"
+			certDirAmd64 = "./keys/aws_cert.pem"
+			//certDirArm = "/etc/edgex/aws_cert.pem"
+		} else if reg.Name == "Google Cloud IoT Core" {
+			keyDirAmd64 = "./keys/giot_private.pem"
+			//keyDirArm = "/etc/edgex/giot_private.pem"
+			certDirAmd64 = "./keys/giot_cert.pem"
+			//certDirArm = "/etc/edgex/giot_cert.pem"
 		}
-		*/
-		keyDirAmd64 := "./keys/aws_key.key"
-		//keyDirArm := "/etc/edgex/aws_key.key"
-		certDirAmd64 := "./keys/aws_cert.crt"
-		//certDirArm := "/etc/edgex/aws_cert.crt"
-		keyRegister := reg.Addressable.Path
-		certRegister := reg.Addressable.Protocol
+		keyRegister = reg.Addressable.Path
+		certRegister = reg.Addressable.Protocol
 
 		LoggingClient.Debug("Check Private Key")
 		blockkey, _ := pem.Decode([]byte(keyRegister))
@@ -232,13 +223,13 @@ func addReg(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		//if reg.Name == "Amazon" {
+
 		reg.Addressable.Path = ""
-		reg.Addressable.Protocol = ""
-		//} else if reg.Name == "Google" {
-		//	reg.Addressable.Password = ""
-		//	reg.Addressable.User = "unused"
-		//}
+		if reg.Name == "Amazon Web Services (AWS)" {
+			reg.Addressable.Protocol = ""
+		} else if reg.Name == "Google Cloud IoT Core" {
+			reg.Addressable.Protocol = "tls"
+		}
 	}
 
 	id, err := dbClient.AddRegistration(reg)
