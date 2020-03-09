@@ -19,8 +19,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/edgexfoundry/edgex-go/internal"
-	"github.com/edgexfoundry/edgex-go/internal/system/agent/interfaces"
+	"github.com/Circutor/edgex/internal"
+	"github.com/Circutor/edgex/internal/system/agent/interfaces"
 )
 
 const (

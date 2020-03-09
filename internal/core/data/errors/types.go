@@ -16,7 +16,7 @@ package errors
 import (
 	"fmt"
 
-	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
+	"github.com/Circutor/edgex/internal/pkg/db"
 )
 
 type ErrEventNotFound struct {

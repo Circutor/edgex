@@ -7,7 +7,7 @@
 package export
 
 import (
-	"github.com/edgexfoundry/edgex-go/pkg/models"
+	"github.com/Circutor/edgex/pkg/models"
 	"testing"
 )
 

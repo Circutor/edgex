@@ -18,7 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/edgexfoundry/edgex-go/pkg/clients"
+	"github.com/Circutor/edgex/pkg/clients"
 )
 
 /*

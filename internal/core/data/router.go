@@ -20,14 +20,14 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/edgexfoundry/edgex-go/pkg/clients"
-	"github.com/edgexfoundry/edgex-go/pkg/clients/types"
-	"github.com/edgexfoundry/edgex-go/pkg/models"
+	"github.com/Circutor/edgex/pkg/clients"
+	"github.com/Circutor/edgex/pkg/clients/types"
+	"github.com/Circutor/edgex/pkg/models"
 	"github.com/gorilla/mux"
 
-	"github.com/edgexfoundry/edgex-go/internal/core/data/errors"
-	"github.com/edgexfoundry/edgex-go/internal/pkg/correlation"
-	"github.com/edgexfoundry/edgex-go/internal/pkg/telemetry"
+	"github.com/Circutor/edgex/internal/core/data/errors"
+	"github.com/Circutor/edgex/internal/pkg/correlation"
+	"github.com/Circutor/edgex/internal/pkg/telemetry"
 )
 
 const maxExceededString string = "Error, exceeded the max limit as defined in config"

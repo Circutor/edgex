@@ -13,12 +13,12 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/edgexfoundry/edgex-go/pkg/clients"
-	"github.com/edgexfoundry/edgex-go/pkg/models"
+	"github.com/Circutor/edgex/pkg/clients"
+	"github.com/Circutor/edgex/pkg/models"
 	"github.com/gorilla/mux"
 
-	"github.com/edgexfoundry/edgex-go/internal/pkg/correlation"
-	"github.com/edgexfoundry/edgex-go/internal/pkg/telemetry"
+	"github.com/Circutor/edgex/internal/pkg/correlation"
+	"github.com/Circutor/edgex/internal/pkg/telemetry"
 )
 
 // Test if the service is working

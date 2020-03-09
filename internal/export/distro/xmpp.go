@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/edgexfoundry/edgex-go/internal/pkg/correlation/models"
-	contract "github.com/edgexfoundry/edgex-go/pkg/models"
+	"github.com/Circutor/edgex/internal/pkg/correlation/models"
+	contract "github.com/Circutor/edgex/pkg/models"
 
 	"github.com/mattn/go-xmpp"
 )

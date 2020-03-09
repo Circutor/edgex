@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/edgexfoundry/edgex-go/internal/core/data/errors"
-	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
-	contract "github.com/edgexfoundry/edgex-go/pkg/models"
+	"github.com/Circutor/edgex/internal/core/data/errors"
+	"github.com/Circutor/edgex/internal/pkg/db"
+	contract "github.com/Circutor/edgex/pkg/models"
 )
 
 func getAllReadings() (readings []contract.Reading, err error) {

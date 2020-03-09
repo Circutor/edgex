@@ -17,8 +17,8 @@ package distro
 import (
 	"context"
 
-	"github.com/edgexfoundry/edgex-go/pkg/clients"
-	"github.com/edgexfoundry/edgex-go/pkg/models"
+	"github.com/Circutor/edgex/pkg/clients"
+	"github.com/Circutor/edgex/pkg/models"
 )
 
 type DistroClient interface {

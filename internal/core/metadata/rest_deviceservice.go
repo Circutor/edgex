@@ -22,8 +22,8 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
-	"github.com/edgexfoundry/edgex-go/pkg/models"
+	"github.com/Circutor/edgex/internal/pkg/db"
+	"github.com/Circutor/edgex/pkg/models"
 	"github.com/gorilla/mux"
 )
 

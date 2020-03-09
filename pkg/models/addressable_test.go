@@ -19,7 +19,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/edgexfoundry/edgex-go/pkg/clients"
+	"github.com/Circutor/edgex/pkg/clients"
 )
 
 const testAddrName = "TEST_ADDR.NAME"

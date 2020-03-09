@@ -28,13 +28,13 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/edgexfoundry/edgex-go"
-	"github.com/edgexfoundry/edgex-go/internal"
-	"github.com/edgexfoundry/edgex-go/internal/pkg/correlation"
-	"github.com/edgexfoundry/edgex-go/internal/pkg/startup"
-	"github.com/edgexfoundry/edgex-go/internal/pkg/usage"
-	"github.com/edgexfoundry/edgex-go/internal/support/notifications"
-	"github.com/edgexfoundry/edgex-go/pkg/clients/logger"
+	"github.com/Circutor/edgex"
+	"github.com/Circutor/edgex/internal"
+	"github.com/Circutor/edgex/internal/pkg/correlation"
+	"github.com/Circutor/edgex/internal/pkg/startup"
+	"github.com/Circutor/edgex/internal/pkg/usage"
+	"github.com/Circutor/edgex/internal/support/notifications"
+	"github.com/Circutor/edgex/pkg/clients/logger"
 )
 
 func main() {

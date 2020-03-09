@@ -17,7 +17,7 @@ package models
 import (
 	"testing"
 
-	"github.com/edgexfoundry/edgex-go/pkg/clients"
+	"github.com/Circutor/edgex/pkg/clients"
 )
 
 var TestMediaType = clients.ContentTypeCBOR

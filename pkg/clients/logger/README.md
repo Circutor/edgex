@@ -4,7 +4,7 @@ This package contains the logging client written in the Go programming language.
 ### How To Use ###
 To use the support-logging client package you first need to import the library into your project:
 ```
-import "github.com/edgexfoundry/edgex-go/pkg/clients/logger"
+import "github.com/Circutor/edgex/pkg/clients/logger"
 ```
 To send a log message to the centralized logging service, you first need to get a LoggingClient and then you can send logging messages into the service (indicating the level with the various log function call.
 ```

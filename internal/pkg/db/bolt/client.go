@@ -18,7 +18,7 @@ import (
 	"errors"
 
 	bolt "github.com/coreos/bbolt"
-	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
+	"github.com/Circutor/edgex/internal/pkg/db"
 	jsoniter "github.com/json-iterator/go"
 )
 

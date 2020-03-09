@@ -15,7 +15,7 @@
 package models
 
 import (
-	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
+	"github.com/Circutor/edgex/internal/pkg/db"
 	"github.com/globalsign/mgo/bson"
 	"github.com/google/uuid"
 )

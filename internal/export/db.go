@@ -14,7 +14,7 @@
 package export
 
 import (
-	contract "github.com/edgexfoundry/edgex-go/pkg/models"
+	contract "github.com/Circutor/edgex/pkg/models"
 )
 
 type DBClient interface {

@@ -1,5 +1,5 @@
 # EdgeX Foundry Services
-[![Go Report Card](https://goreportcard.com/badge/github.com/edgexfoundry/edgex-go)](https://goreportcard.com/report/github.com/edgexfoundry/edgex-go)
+[![Go Report Card](https://goreportcard.com/badge/github.com/Circutor/edgex)](https://goreportcard.com/report/github.com/Circutor/edgex)
 [![license](https://img.shields.io/badge/license-Apache%20v2.0-blue.svg)](LICENSE)
 
 EdgeX Foundry is a vendor-neutral open source project hosted by The Linux Foundation building a common open framework for IoT edge computing.  At the heart of the project is an interoperability framework hosted within a full hardware- and OS-agnostic reference software platform to enable an ecosystem of plug-and-play components that unifies the marketplace and accelerates the deployment of IoT solutions.  This repository contains the Go implementation of EdgeX Foundry microservices.  It also includes files for building the services, containerizing the services, and initializing (bootstrapping) the services.
@@ -56,7 +56,7 @@ brew install pkg-config
 ### Installation and Execution
 To fetch the code and build the microservices execute the following in a directory of your choosing:
 ```
-go get github.com/edgexfoundry/edgex-go
+go get github.com/Circutor/edgex
 # download dependencies and build services
 make build
 # run the services
@@ -66,8 +66,8 @@ If you are still utilizing the GOPATH as your primary working directory, you can
 ```
 set GO111MODULE=on
 cd $GOPATH/src
-go get github.com/edgexfoundry/edgex-go
-cd $GOPATH/src/github.com/edgexfoundry/edgex-go
+go get github.com/Circutor/edgex
+cd $GOPATH/src/github.com/Circutor/edgex
 # download dependencies and build services
 make build
 # run the services

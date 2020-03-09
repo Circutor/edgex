@@ -13,7 +13,7 @@
  *******************************************************************************/
 package scheduler
 
-import "github.com/edgexfoundry/edgex-go/internal/pkg/config"
+import "github.com/Circutor/edgex/internal/pkg/config"
 
 // Configuration V2 for the Support Scheduler Service
 type ConfigurationStruct struct {

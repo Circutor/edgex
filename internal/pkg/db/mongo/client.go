@@ -17,7 +17,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
+	"github.com/Circutor/edgex/internal/pkg/db"
 	"github.com/globalsign/mgo"
 )
 

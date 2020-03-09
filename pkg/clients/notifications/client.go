@@ -17,7 +17,7 @@ package notifications
 import (
 	"context"
 
-	"github.com/edgexfoundry/edgex-go/pkg/clients"
+	"github.com/Circutor/edgex/pkg/clients"
 )
 
 type CategoryEnum string

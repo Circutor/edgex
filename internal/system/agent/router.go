@@ -21,10 +21,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/edgexfoundry/edgex-go/pkg/models"
+	"github.com/Circutor/edgex/pkg/models"
 	"github.com/gorilla/mux"
 
-	"github.com/edgexfoundry/edgex-go/internal/pkg/correlation"
+	"github.com/Circutor/edgex/internal/pkg/correlation"
 )
 
 func LoadRestRoutes() *mux.Router {

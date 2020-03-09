@@ -18,13 +18,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/edgexfoundry/edgex-go/pkg/clients"
-	"github.com/edgexfoundry/edgex-go/pkg/clients/logger"
-	"github.com/edgexfoundry/edgex-go/pkg/clients/metadata"
+	"github.com/Circutor/edgex/pkg/clients"
+	"github.com/Circutor/edgex/pkg/clients/logger"
+	"github.com/Circutor/edgex/pkg/clients/metadata"
 
-	"github.com/edgexfoundry/edgex-go/internal"
-	"github.com/edgexfoundry/edgex-go/internal/pkg/config"
-	"github.com/edgexfoundry/edgex-go/internal/pkg/telemetry"
+	"github.com/Circutor/edgex/internal"
+	"github.com/Circutor/edgex/internal/pkg/config"
+	"github.com/Circutor/edgex/internal/pkg/telemetry"
 )
 
 var Configuration *ConfigurationStruct

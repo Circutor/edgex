@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/edgexfoundry/edgex-go/internal/pkg/correlation/models"
+	"github.com/Circutor/edgex/internal/pkg/correlation/models"
 	"nanomsg.org/go-mangos"
 	"nanomsg.org/go-mangos/protocol/sub"
 	"nanomsg.org/go-mangos/transport/ipc"

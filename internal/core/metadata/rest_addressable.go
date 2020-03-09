@@ -20,9 +20,9 @@ import (
 	"net/url"
 	"strconv"
 
-	types "github.com/edgexfoundry/edgex-go/internal/core/metadata/errors"
-	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
-	"github.com/edgexfoundry/edgex-go/pkg/models"
+	types "github.com/Circutor/edgex/internal/core/metadata/errors"
+	"github.com/Circutor/edgex/internal/pkg/db"
+	"github.com/Circutor/edgex/pkg/models"
 	"github.com/gorilla/mux"
 )
 

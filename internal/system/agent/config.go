@@ -13,7 +13,7 @@
  *******************************************************************************/
 package agent
 
-import "github.com/edgexfoundry/edgex-go/internal/pkg/config"
+import "github.com/Circutor/edgex/internal/pkg/config"
 
 type ConfigurationStruct struct {
 	Writable        WritableInfo

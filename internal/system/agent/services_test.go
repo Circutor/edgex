@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/edgexfoundry/edgex-go/pkg/clients/logger"
+	"github.com/Circutor/edgex/pkg/clients/logger"
 )
 
 func TestProcessResponse(t *testing.T) {

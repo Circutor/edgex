@@ -14,7 +14,7 @@
 package messaging
 
 import (
-	"github.com/edgexfoundry/edgex-go/internal/pkg/correlation/models"
+	"github.com/Circutor/edgex/internal/pkg/correlation/models"
 )
 
 // Configuration struct for PubSub

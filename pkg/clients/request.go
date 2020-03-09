@@ -27,7 +27,7 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/edgexfoundry/edgex-go/pkg/clients/types"
+	"github.com/Circutor/edgex/pkg/clients/types"
 )
 
 // Helper method to get the body from the response after making the request

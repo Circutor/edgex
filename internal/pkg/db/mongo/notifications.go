@@ -16,9 +16,9 @@
 package mongo
 
 import (
-	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
-	"github.com/edgexfoundry/edgex-go/internal/pkg/db/mongo/models"
-	contract "github.com/edgexfoundry/edgex-go/pkg/models"
+	"github.com/Circutor/edgex/internal/pkg/db"
+	"github.com/Circutor/edgex/internal/pkg/db/mongo/models"
+	contract "github.com/Circutor/edgex/pkg/models"
 	"github.com/globalsign/mgo/bson"
 )
 

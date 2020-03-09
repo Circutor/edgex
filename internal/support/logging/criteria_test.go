@@ -9,8 +9,8 @@ package logging
 import (
 	"testing"
 
-	"github.com/edgexfoundry/edgex-go/pkg/clients/logger"
-	"github.com/edgexfoundry/edgex-go/pkg/models"
+	"github.com/Circutor/edgex/pkg/clients/logger"
+	"github.com/Circutor/edgex/pkg/models"
 )
 
 func TestCriteriaMatch(t *testing.T) {

@@ -19,12 +19,12 @@ import (
 	"os"
 	"testing"
 
-	metadataErrors "github.com/edgexfoundry/edgex-go/internal/core/metadata/errors"
-	"github.com/edgexfoundry/edgex-go/internal/core/metadata/interfaces"
-	dbMock "github.com/edgexfoundry/edgex-go/internal/core/metadata/interfaces/mocks"
-	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
-	"github.com/edgexfoundry/edgex-go/pkg/clients/logger"
-	"github.com/edgexfoundry/edgex-go/pkg/models"
+	metadataErrors "github.com/Circutor/edgex/internal/core/metadata/errors"
+	"github.com/Circutor/edgex/internal/core/metadata/interfaces"
+	dbMock "github.com/Circutor/edgex/internal/core/metadata/interfaces/mocks"
+	"github.com/Circutor/edgex/internal/pkg/db"
+	"github.com/Circutor/edgex/pkg/clients/logger"
+	"github.com/Circutor/edgex/pkg/models"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/mock"
 )

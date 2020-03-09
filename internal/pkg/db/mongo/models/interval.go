@@ -15,8 +15,8 @@
 package models
 
 import (
-	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
-	contract "github.com/edgexfoundry/edgex-go/pkg/models"
+	"github.com/Circutor/edgex/internal/pkg/db"
+	contract "github.com/Circutor/edgex/pkg/models"
 	"github.com/globalsign/mgo/bson"
 )
 
