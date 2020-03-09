@@ -16,9 +16,9 @@ import (
 	"testing"
 
 	"github.com/edgexfoundry/edgex-go/internal/pkg/config"
-	"github.com/edgexfoundry/go-mod-core-contracts/clients"
-	"github.com/edgexfoundry/go-mod-core-contracts/clients/logging"
-	"github.com/edgexfoundry/go-mod-core-contracts/models"
+	"github.com/edgexfoundry/edgex-go/pkg/clients"
+	"github.com/edgexfoundry/edgex-go/pkg/clients/logger"
+	"github.com/edgexfoundry/edgex-go/pkg/models"
 )
 
 type dummyPersist struct {

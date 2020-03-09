@@ -10,7 +10,7 @@ package distro
 import (
 	"strconv"
 
-	"github.com/edgexfoundry/go-mod-core-contracts/models"
+	"github.com/edgexfoundry/edgex-go/pkg/models"
 )
 
 var DexmaParameterTable = []struct {

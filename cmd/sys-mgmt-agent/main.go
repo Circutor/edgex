@@ -16,7 +16,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/gorilla/context"
 	"net/http"
 	"os"
 	"os/signal"
@@ -24,31 +23,30 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gorilla/context"
+
 	"github.com/edgexfoundry/edgex-go"
 	"github.com/edgexfoundry/edgex-go/internal"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/correlation"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/startup"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/usage"
 	"github.com/edgexfoundry/edgex-go/internal/system/agent"
-	"github.com/edgexfoundry/go-mod-core-contracts/clients/logging"
+	"github.com/edgexfoundry/edgex-go/pkg/clients/logger"
 )
 
 func main() {
 	start := time.Now()
-	var useRegistry bool
 	var useProfile string
 
-	flag.BoolVar(&useRegistry, "registry", false, "Indicates the service should use registry service.")
-	flag.BoolVar(&useRegistry, "r", false, "Indicates the service should use registry service.")
 	flag.StringVar(&useProfile, "profile", "", "Specify a profile other than default.")
 	flag.StringVar(&useProfile, "p", "", "Specify a profile other than default.")
 	flag.Usage = usage.HelpCallback
 	flag.Parse()
 
-	params := startup.BootParams{UseRegistry: useRegistry, UseProfile: useProfile, BootTimeout: internal.BootTimeoutDefault}
+	params := startup.BootParams{UseProfile: useProfile, BootTimeout: internal.BootTimeoutDefault}
 	startup.Bootstrap(params, agent.Retry, logBeforeInit)
 
-	ok := agent.Init(useRegistry)
+	ok := agent.Init()
 	if !ok {
 		logBeforeInit(fmt.Errorf("%s: service bootstrap failed", internal.SystemManagementAgentServiceKey))
 		os.Exit(1)

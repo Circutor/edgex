@@ -33,7 +33,7 @@ import (
 	"github.com/edgexfoundry/edgex-go/internal/pkg/startup"
 	"github.com/edgexfoundry/edgex-go/internal/support/logging"
 	"github.com/edgexfoundry/edgex-go/internal/support/scheduler"
-	"github.com/edgexfoundry/go-mod-core-contracts/clients/logging"
+	"github.com/edgexfoundry/edgex-go/pkg/clients/logger"
 	"github.com/gorilla/context"
 )
 
@@ -95,9 +95,9 @@ func main() {
 
 // Initialize support-logging
 func iniSupportLogging(errCh chan error) {
-	params := startup.BootParams{UseRegistry: false, UseProfile: "support-logging", BootTimeout: internal.BootTimeoutDefault}
+	params := startup.BootParams{UseProfile: "support-logging", BootTimeout: internal.BootTimeoutDefault}
 	startup.Bootstrap(params, logging.Retry, logBeforeInit)
-	if logging.Init(false) == false {
+	if logging.Init() == false {
 		time.Sleep(time.Millisecond * time.Duration(15))
 		fmt.Printf("%s: Service bootstrap failed\n", internal.SupportLoggingServiceKey)
 		os.Exit(1)
@@ -111,9 +111,9 @@ func iniSupportLogging(errCh chan error) {
 
 // Initialize support-scheduler
 func iniSupportScheduler(errCh chan error) {
-	params := startup.BootParams{UseRegistry: false, UseProfile: "support-scheduler", BootTimeout: internal.BootTimeoutDefault}
+	params := startup.BootParams{UseProfile: "support-scheduler", BootTimeout: internal.BootTimeoutDefault}
 	startup.Bootstrap(params, scheduler.Retry, logBeforeInit)
-	ok := scheduler.Init(false)
+	ok := scheduler.Init()
 	if !ok {
 		loggingClient.Error(fmt.Sprintf("%s: Service bootstrap failed", internal.SupportSchedulerServiceKey))
 		os.Exit(1)
@@ -139,9 +139,9 @@ func iniSupportScheduler(errCh chan error) {
 
 // Initialize core-data
 func iniCoreData(errCh chan error) {
-	params := startup.BootParams{UseRegistry: false, UseProfile: "core-data", BootTimeout: internal.BootTimeoutDefault}
+	params := startup.BootParams{UseProfile: "core-data", BootTimeout: internal.BootTimeoutDefault}
 	startup.Bootstrap(params, data.Retry, logBeforeInit)
-	ok := data.Init(false)
+	ok := data.Init()
 	if !ok {
 		loggingClient.Error(fmt.Sprintf("%s: Service bootstrap failed", internal.CoreDataServiceKey))
 		os.Exit(1)
@@ -157,9 +157,9 @@ func iniCoreData(errCh chan error) {
 
 // Initialize core-metadata
 func iniCoreMetadata(errCh chan error) {
-	params := startup.BootParams{UseRegistry: false, UseProfile: "core-metadata", BootTimeout: internal.BootTimeoutDefault}
+	params := startup.BootParams{UseProfile: "core-metadata", BootTimeout: internal.BootTimeoutDefault}
 	startup.Bootstrap(params, metadata.Retry, logBeforeInit)
-	ok := metadata.Init(false)
+	ok := metadata.Init()
 	if !ok {
 		loggingClient.Error(fmt.Sprintf("%s: Service bootstrap failed", internal.CoreMetaDataServiceKey))
 		os.Exit(1)
@@ -174,9 +174,9 @@ func iniCoreMetadata(errCh chan error) {
 
 // Initialize core-command
 func iniCoreCommand(errCh chan error) {
-	params := startup.BootParams{UseRegistry: false, UseProfile: "core-command", BootTimeout: internal.BootTimeoutDefault}
+	params := startup.BootParams{UseProfile: "core-command", BootTimeout: internal.BootTimeoutDefault}
 	startup.Bootstrap(params, command.Retry, logBeforeInit)
-	ok := command.Init(false)
+	ok := command.Init()
 	if !ok {
 		loggingClient.Error(fmt.Sprintf("%s: Service bootstrap failed", internal.CoreCommandServiceKey))
 		os.Exit(1)
@@ -191,9 +191,9 @@ func iniCoreCommand(errCh chan error) {
 
 // Initialize export-client
 func iniExportClient(errCh chan error) {
-	params := startup.BootParams{UseRegistry: false, UseProfile: "export-client", BootTimeout: internal.BootTimeoutDefault}
+	params := startup.BootParams{UseProfile: "export-client", BootTimeout: internal.BootTimeoutDefault}
 	startup.Bootstrap(params, client.Retry, logBeforeInit)
-	ok := client.Init(false)
+	ok := client.Init()
 	if !ok {
 		loggingClient.Error(fmt.Sprintf("%s: Service bootstrap failed", internal.ExportClientServiceKey))
 		os.Exit(1)
@@ -205,9 +205,9 @@ func iniExportClient(errCh chan error) {
 
 // Initialize export-distro
 func iniExportDistro() {
-	params := startup.BootParams{UseRegistry: false, UseProfile: "export-distro", BootTimeout: internal.BootTimeoutDefault}
+	params := startup.BootParams{UseProfile: "export-distro", BootTimeout: internal.BootTimeoutDefault}
 	startup.Bootstrap(params, distro.Retry, logBeforeInit)
-	if ok := distro.Init(false); !ok {
+	if ok := distro.Init(); !ok {
 		loggingClient.Error(fmt.Sprintf("%s: Service bootstrap failed", internal.ExportDistroServiceKey))
 		os.Exit(1)
 	}

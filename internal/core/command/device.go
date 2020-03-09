@@ -20,9 +20,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/edgexfoundry/go-mod-core-contracts/clients"
-	"github.com/edgexfoundry/go-mod-core-contracts/clients/types"
-	"github.com/edgexfoundry/go-mod-core-contracts/models"
+	"github.com/edgexfoundry/edgex-go/pkg/clients"
+	"github.com/edgexfoundry/edgex-go/pkg/clients/types"
+	"github.com/edgexfoundry/edgex-go/pkg/models"
 )
 
 func issueCommand(req *http.Request) (*http.Response, error) {

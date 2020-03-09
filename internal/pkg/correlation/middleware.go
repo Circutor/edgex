@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/edgexfoundry/edgex-go/internal"
-	"github.com/edgexfoundry/go-mod-core-contracts/clients"
-	"github.com/edgexfoundry/go-mod-core-contracts/clients/logging"
+	"github.com/edgexfoundry/edgex-go/pkg/clients"
+	"github.com/edgexfoundry/edgex-go/pkg/clients/logger"
 )
 
 var LoggingClient logger.LoggingClient

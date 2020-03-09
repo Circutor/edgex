@@ -24,7 +24,7 @@ import (
 	"time"
 
 	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
-	"github.com/edgexfoundry/go-mod-core-contracts/models"
+	"github.com/edgexfoundry/edgex-go/pkg/models"
 )
 
 func sendViaChannel(n models.Notification, c models.Channel, receiver string) {

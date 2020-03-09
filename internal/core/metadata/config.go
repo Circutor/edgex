@@ -24,10 +24,9 @@ type ConfigurationStruct struct {
 	Databases     map[string]config.DatabaseInfo
 	Logging       config.LoggingInfo
 	Notifications config.NotificationInfo
-	Registry      config.RegistryInfo
 	Service       config.ServiceInfo
 }
 
 type WritableInfo struct {
-	LogLevel   string
+	LogLevel string
 }

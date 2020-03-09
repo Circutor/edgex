@@ -9,7 +9,7 @@ package logging
 import (
 	"testing"
 
-	"github.com/edgexfoundry/go-mod-core-contracts/clients/logging"
+	"github.com/edgexfoundry/edgex-go/pkg/clients/logger"
 )
 
 func logAllLevels(pl privLogger, msg string) {

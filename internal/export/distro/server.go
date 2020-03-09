@@ -13,8 +13,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/edgexfoundry/go-mod-core-contracts/clients"
-	"github.com/edgexfoundry/go-mod-core-contracts/models"
+	"github.com/edgexfoundry/edgex-go/pkg/clients"
+	"github.com/edgexfoundry/edgex-go/pkg/models"
 	"github.com/gorilla/mux"
 
 	"github.com/edgexfoundry/edgex-go/internal/pkg/correlation"

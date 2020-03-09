@@ -16,7 +16,7 @@ package config
 import (
 	"fmt"
 
-	"github.com/edgexfoundry/go-mod-core-contracts/clients"
+	"github.com/edgexfoundry/edgex-go/pkg/clients"
 )
 
 // ServiceInfo contains configuration settings necessary for the basic operation of any EdgeX service.
@@ -24,10 +24,6 @@ type ServiceInfo struct {
 	// BootTimeout indicates, in milliseconds, how long the service will retry connecting to upstream dependencies
 	// before giving up. Default is 30,000.
 	BootTimeout int
-	// Health check interval
-	CheckInterval string
-	// Indicates the interval in milliseconds at which service clients should check for any configuration updates
-	ClientMonitor int
 	// Host is the hostname or IP address of the service.
 	Host string
 	// Port is the HTTP port of the service.
@@ -57,13 +53,6 @@ func (s ServiceInfo) HealthCheck() string {
 func (s ServiceInfo) Url() string {
 	url := fmt.Sprintf("%s://%s:%v", s.Protocol, s.Host, s.Port)
 	return url
-}
-
-// RegistryInfo defines the type and location (via host/port) of the desired service registry (e.g. Consul, Eureka)
-type RegistryInfo struct {
-	Host string
-	Port int
-	Type string
 }
 
 // LoggingInfo provides basic parameters related to where logs should be written.
@@ -100,7 +89,6 @@ type DatabaseInfo struct {
 	Name     string
 }
 
-
 type IntervalInfo struct {
 	// Name of the schedule must be unique?
 	Name string
@@ -136,7 +124,6 @@ type IntervalActionInfo struct {
 	// Associated Schedule for the Event
 	Interval string
 }
-
 
 // ScheduleEventInfo helper function
 func (e IntervalActionInfo) Url() string {

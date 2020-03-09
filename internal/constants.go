@@ -14,16 +14,13 @@
 package internal
 
 const (
-	BootTimeoutDefault   = 30000
-	ClientMonitorDefault = 15000
-	ConfigFileName       = "configuration.toml"
-	ConfigRegistryStem   = "edgex/core/1.0/"
-	LogDurationKey       = "duration"
+	BootTimeoutDefault = 30000
+	ConfigFileName     = "configuration.toml"
+	LogDurationKey     = "duration"
 )
 
 const (
 	ServiceKeyPrefix                = "edgex-"
-	ConfigSeedServiceKey            = "edgex-config-seed"
 	CoreCommandServiceKey           = "edgex-core-command"
 	CoreDataServiceKey              = "edgex-core-data"
 	CoreMetaDataServiceKey          = "edgex-core-metadata"

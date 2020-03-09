@@ -20,7 +20,7 @@ import (
 	"net/url"
 
 	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
-	"github.com/edgexfoundry/go-mod-core-contracts/models"
+	"github.com/edgexfoundry/edgex-go/pkg/models"
 	"github.com/gorilla/mux"
 )
 
@@ -369,6 +369,7 @@ func restAddProvisionWatcher(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	pw.Id = id
 
 	// Notify Associates
 	if err = notifyProvisionWatcherAssociates(pw, http.MethodPost); err != nil {

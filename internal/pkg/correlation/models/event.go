@@ -17,7 +17,7 @@ package models
 import (
 	"encoding/json"
 
-	contract "github.com/edgexfoundry/go-mod-core-contracts/models"
+	contract "github.com/edgexfoundry/edgex-go/pkg/models"
 )
 
 type Event struct {

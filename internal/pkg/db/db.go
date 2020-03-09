@@ -21,18 +21,17 @@ import (
 
 const (
 	// Databases
-	MongoDB  = "mongodb"
-	BoltDB   = "boltdb"
+	MongoDB = "mongodb"
+	BoltDB  = "boltdb"
 
 	// Data
-	EventsCollection          = "event"
-	ReadingsCollection        = "reading"
-	ValueDescriptorCollection = "valueDescriptor"
+	EventsCollection   = "event"
+	ReadingsCollection = "reading"
 
-	//Export
+	// Export
 	ExportCollection = "exportConfiguration"
 
-	//Logging
+	// Logging
 	LogsCollection = "logEntry"
 
 	// Metadata
@@ -41,7 +40,6 @@ const (
 	DeviceService    = "deviceService"
 	Addressable      = "addressable"
 	Command          = "command"
-	DeviceReport     = "deviceReport"
 	ProvisionWatcher = "provisionWatcher"
 	Interval         = "interval"
 	IntervalAction   = "intervalAction"

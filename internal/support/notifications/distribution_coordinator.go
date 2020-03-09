@@ -16,7 +16,7 @@
 package notifications
 
 import (
-	"github.com/edgexfoundry/go-mod-core-contracts/models"
+	"github.com/edgexfoundry/edgex-go/pkg/models"
 )
 
 func distribute(n models.Notification) error {

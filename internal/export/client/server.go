@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/edgexfoundry/go-mod-core-contracts/clients"
+	"github.com/edgexfoundry/edgex-go/pkg/clients"
 	"github.com/gorilla/mux"
 
 	"github.com/edgexfoundry/edgex-go/internal/pkg/correlation"

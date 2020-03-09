@@ -15,8 +15,6 @@ package data
 
 import (
 	"encoding/json"
-	"io"
-	"io/ioutil"
 	"net/http"
 )
 
@@ -32,17 +30,4 @@ func encode(i interface{}, w http.ResponseWriter) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-}
-
-// Printing function purely for debugging purposes
-// Print the body of a request to the console
-func printBody(r io.ReadCloser) {
-	body, err := ioutil.ReadAll(r)
-	bodyString := string(body)
-
-	if err != nil {
-		LoggingClient.Error(err.Error())
-	}
-
-	LoggingClient.Info(bodyString)
 }

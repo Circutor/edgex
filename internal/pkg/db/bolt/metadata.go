@@ -18,97 +18,10 @@ import (
 
 	bolt "github.com/coreos/bbolt"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
-	"github.com/edgexfoundry/go-mod-core-contracts/models"
+	"github.com/edgexfoundry/edgex-go/pkg/models"
 	"github.com/google/uuid"
 	jsoniter "github.com/json-iterator/go"
 )
-
-/* ----------------------Device Report --------------------------*/
-func (bc *BoltClient) GetAllDeviceReports() ([]models.DeviceReport, error) {
-	return bc.getDeviceReportsBy(func(encoded []byte) bool {
-		return true
-	})
-}
-
-func (bc *BoltClient) GetDeviceReportByName(name string) (models.DeviceReport, error) {
-	var dr models.DeviceReport
-	err := bc.getByName(&dr, db.DeviceReport, name)
-	return dr, err
-}
-
-func (bc *BoltClient) GetDeviceReportByDeviceName(n string) ([]models.DeviceReport, error) {
-	return bc.getDeviceReportsBy(func(encoded []byte) bool {
-		value := jsoniter.Get(encoded, "device").ToString()
-		if value == n {
-			return true
-		}
-		return false
-	})
-}
-
-func (bc *BoltClient) GetDeviceReportById(id string) (models.DeviceReport, error) {
-	var dr models.DeviceReport
-	err := bc.getById(&dr, db.DeviceReport, id)
-	return dr, err
-}
-
-func (bc *BoltClient) GetDeviceReportsByAction(n string) ([]models.DeviceReport, error) {
-	return bc.getDeviceReportsBy(func(encoded []byte) bool {
-		value := jsoniter.Get(encoded, "action").ToString()
-		if value == n {
-			return true
-		}
-		return false
-	})
-}
-
-func (bc *BoltClient) getDeviceReportsBy(fn func(encoded []byte) bool) ([]models.DeviceReport, error) {
-	dr := models.DeviceReport{}
-	drs := []models.DeviceReport{}
-	json := jsoniter.ConfigCompatibleWithStandardLibrary
-
-	err := bc.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(db.DeviceReport))
-		if b == nil {
-			return nil
-		}
-		err := b.ForEach(func(id, encoded []byte) error {
-			if fn(encoded) == true {
-				err := json.Unmarshal(encoded, &dr)
-				if err != nil {
-					return err
-				}
-				drs = append(drs, dr)
-			}
-			return nil
-		})
-		return err
-	})
-	return drs, err
-}
-
-func (bc *BoltClient) AddDeviceReport(dr models.DeviceReport) (string, error) {
-	// Check if the name exist
-	_, err := bc.GetDeviceReportByName(dr.Name)
-	if err == nil {
-		return "", db.ErrNotUnique
-	}
-
-	dr.Id = uuid.New().String()
-	dr.Created = db.MakeTimestamp()
-	dr.Modified = dr.Created
-
-	return dr.Id, bc.add(db.DeviceReport, dr, dr.Id)
-}
-
-func (bc *BoltClient) UpdateDeviceReport(dr models.DeviceReport) error {
-	dr.Modified = db.MakeTimestamp()
-	return bc.update(db.DeviceReport, dr, dr.Id)
-}
-
-func (bc *BoltClient) DeleteDeviceReportById(id string) error {
-	return bc.deleteById(id, db.DeviceReport)
-}
 
 /* ----------------------------- Device ---------------------------------- */
 func (bc *BoltClient) AddDevice(d models.Device) (string, error) {
@@ -789,10 +702,6 @@ func (bc *BoltClient) ScrubMetadata() error {
 		return err
 	}
 	err = bc.scrubAll(db.Command)
-	if err != nil {
-		return err
-	}
-	err = bc.scrubAll(db.DeviceReport)
 	if err != nil {
 		return err
 	}

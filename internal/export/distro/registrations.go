@@ -21,7 +21,7 @@ import (
 	"time"
 
 	"github.com/edgexfoundry/edgex-go/internal/pkg/correlation/models"
-	contract "github.com/edgexfoundry/go-mod-core-contracts/models"
+	contract "github.com/edgexfoundry/edgex-go/pkg/models"
 )
 
 const (
@@ -124,8 +124,6 @@ func (reg *registrationInfo) update(newReg contract.Registration) bool {
 		reg.sender = newHTTPDexmaSender(newReg.Addressable)
 	case contract.DestXMPP:
 		reg.sender = newXMPPSender(newReg.Addressable)
-	case contract.DestInfluxDB:
-		reg.sender = newInfluxDBSender(newReg.Addressable)
 
 	default:
 		LoggingClient.Warn(fmt.Sprintf("Destination not supported: %s", newReg.Destination))

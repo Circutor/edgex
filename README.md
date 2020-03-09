@@ -17,11 +17,6 @@ You can check the status of your running EdgeX services by going to http://local
 
 Now that you have EdgeX up and running, you can follow our [API Walkthrough](https://docs.edgexfoundry.org/Ch-Walkthrough.html) to learn how the different services work together to connect IoT devices to cloud services.
 
-# Other installation and deployment options
-## Snap Package
-EdgeX Foundry is also available as a snap package, for more details
-on the snap, including how to install it, please refer to [EdgeX snap](https://github.com/edgexfoundry/edgex-go/blob/master/snap/README.md)
-
 
 ## Native binaries
 

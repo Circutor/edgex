@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
-	"github.com/edgexfoundry/go-mod-core-contracts/models"
+	"github.com/edgexfoundry/edgex-go/pkg/models"
 
 	mgo "github.com/globalsign/mgo"
 	bson "github.com/globalsign/mgo/bson"

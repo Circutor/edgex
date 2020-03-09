@@ -17,7 +17,7 @@ package bolt
 import (
 	bolt "github.com/coreos/bbolt"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
-	contract "github.com/edgexfoundry/go-mod-core-contracts/models"
+	contract "github.com/edgexfoundry/edgex-go/pkg/models"
 	"github.com/google/uuid"
 	jsoniter "github.com/json-iterator/go"
 )
@@ -362,19 +362,6 @@ func (bc *BoltClient) ReadingsByValueDescriptor(name string, limit int) ([]contr
 	}, limit)
 }
 
-// Return a list of readings whose name is in the list of value descriptor names
-func (bc *BoltClient) ReadingsByValueDescriptorNames(names []string, limit int) ([]contract.Reading, error) {
-	return bc.getReadings(func(encoded []byte) bool {
-		value := jsoniter.Get(encoded, "name").ToString()
-		for _, name := range names {
-			if name == value {
-				return true
-			}
-		}
-		return false
-	}, limit)
-}
-
 // Return a list of readings whos creation time is in-between start and end
 // Limit by the limit parameter
 func (bc *BoltClient) ReadingsByCreationTime(start, end int64, limit int) ([]contract.Reading, error) {
@@ -439,159 +426,4 @@ func (bc *BoltClient) getReadings(fn func(encoded []byte) bool, limit int) ([]co
 		return err
 	})
 	return rs, err
-}
-
-// ************************* VALUE DESCRIPTORS *****************************
-
-// Add a value descriptor
-// 409 - Formatting is bad or it is not unique
-// 503 - Unexpected
-// TODO: Check for valid printf formatting
-func (bc *BoltClient) AddValueDescriptor(v contract.ValueDescriptor) (string, error) {
-	// Check if the name is unique
-	var dumy contract.ValueDescriptor
-	err := bc.getByName(&dumy, db.ValueDescriptorCollection, v.Name)
-	if err == nil {
-		return v.Id, db.ErrNotUnique
-	}
-
-	v.Id = uuid.New().String()
-	v.Created = db.MakeTimestamp()
-	v.Modified = v.Created
-
-	// Add the value descriptor
-	err = bc.add(db.ValueDescriptorCollection, v, v.Id)
-	return v.Id, err
-}
-
-// Return a list of all the value descriptors
-// 513 Service Unavailable - database problems
-func (bc *BoltClient) ValueDescriptors() ([]contract.ValueDescriptor, error) {
-	return bc.getValueDescriptors(func(encoded []byte) bool {
-		return true
-	})
-}
-
-// Update a value descriptor
-// First use the ID for identification, then the name
-// TODO: Check for the valid printf formatting
-// 404 not found if the value descriptor cannot be found by the identifiers
-func (bc *BoltClient) UpdateValueDescriptor(v contract.ValueDescriptor) error {
-	// Check if the name is unique if it changed
-	var vd contract.ValueDescriptor
-	err := bc.getByName(&vd, db.ValueDescriptorCollection, v.Name)
-	if err != db.ErrNotFound {
-		if err != nil {
-			return err
-		}
-		// IDs are different -> name not unique
-		if vd.Id != v.Id {
-			return db.ErrNotUnique
-		}
-	}
-	v.Modified = db.MakeTimestamp()
-
-	return bc.update(db.ValueDescriptorCollection, v, v.Id)
-}
-
-// Delete the value descriptor based on the id
-// Not found error if there isn't a value descriptor for the ID
-// ValueDescriptorStillInUse if the value descriptor is still referenced by readings
-func (bc *BoltClient) DeleteValueDescriptorById(id string) error {
-	return bc.deleteById(id, db.ValueDescriptorCollection)
-}
-
-// Return a value descriptor based on the name
-// Can return null if no value descriptor is found
-func (bc *BoltClient) ValueDescriptorByName(name string) (contract.ValueDescriptor, error) {
-	var vd contract.ValueDescriptor
-	err := bc.getByName(&vd, db.ValueDescriptorCollection, name)
-	return vd, err
-}
-
-// Return all of the value descriptors based on the names
-func (bc *BoltClient) ValueDescriptorsByName(names []string) ([]contract.ValueDescriptor, error) {
-	return bc.getValueDescriptors(func(encoded []byte) bool {
-		value := jsoniter.Get(encoded, "name").ToString()
-		for _, name := range names {
-			if name == value {
-				return true
-			}
-		}
-		return false
-	})
-}
-
-// Return a value descriptor based on the id
-// Return NotFoundError if there is no value descriptor for the id
-func (bc *BoltClient) ValueDescriptorById(id string) (contract.ValueDescriptor, error) {
-	var vd contract.ValueDescriptor
-	err := bc.getById(&vd, db.ValueDescriptorCollection, id)
-	return vd, err
-}
-
-// Return all the value descriptors that match the UOM label
-func (bc *BoltClient) ValueDescriptorsByUomLabel(uomLabel string) ([]contract.ValueDescriptor, error) {
-	return bc.getValueDescriptors(func(encoded []byte) bool {
-		value := jsoniter.Get(encoded, "uomLabel").ToString()
-		if value == uomLabel {
-			return true
-		}
-		return false
-	})
-}
-
-// Return value descriptors based on if it has the label
-func (bc *BoltClient) ValueDescriptorsByLabel(label string) ([]contract.ValueDescriptor, error) {
-	return bc.getValueDescriptors(func(encoded []byte) bool {
-		labels := jsoniter.Get(encoded, "labels").GetInterface().([]interface{})
-		for _, value := range labels {
-			if label == value.(string) {
-				return true
-			}
-		}
-		return false
-	})
-}
-
-// Return value descriptors based on the type
-func (bc *BoltClient) ValueDescriptorsByType(t string) ([]contract.ValueDescriptor, error) {
-	return bc.getValueDescriptors(func(encoded []byte) bool {
-		value := jsoniter.Get(encoded, "type").ToString()
-		if value == t {
-			return true
-		}
-		return false
-	})
-}
-
-// Delete all value descriptors
-func (bc *BoltClient) ScrubAllValueDescriptors() error {
-	return bc.scrubAll(db.ValueDescriptorCollection)
-}
-
-// Get value descriptors for the passed check
-func (bc *BoltClient) getValueDescriptors(fn func(encoded []byte) bool) ([]contract.ValueDescriptor, error) {
-	vd := contract.ValueDescriptor{}
-	vds := []contract.ValueDescriptor{}
-	json := jsoniter.ConfigCompatibleWithStandardLibrary
-
-	err := bc.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(db.ValueDescriptorCollection))
-		if b == nil {
-			return nil
-		}
-		err := b.ForEach(func(id, encoded []byte) error {
-			if fn(encoded) == true {
-				err := json.Unmarshal(encoded, &vd)
-				if err != nil {
-					return err
-				}
-				vds = append(vds, vd)
-			}
-			return nil
-		})
-		return err
-	})
-	return vds, err
 }

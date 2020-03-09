@@ -6,8 +6,6 @@ schemas:
     -
         deviceprofile: '{"type":"object","$schema":"http://json-schema.org/draft-03/schema#","description": "template describing devices and sensors of the same nature in reporting the same data and offering the same commands", "title":"deviceprofile","properties":{"id":{"type":"string","required":false,"title":"id"},"created":{"type":"integer","required":false,"title":"created"},"modified":{"type":"integer","required":false,"title":"modified"},"origin":{"type":"integer","required":false,"title":"origin"},"name":{"type":"string","required":false,"title":"name"},"manufacturer":{"type":"string","required":false,"title":"manufacturer"},"model":{"type":"string","required":false,"title":"model"},"labels":{"type":"array","required":false,"title":"labels","items":{"type":"string","title":"labels"},"uniqueItems":false},"description":{"type":"string","required":false,"title":"description"}, "resources":{"type":"array","required":false,"title":"resources","items":{"type":"string","title":"resources"},"uniqueItems":false}}}'
     -
-        devicereport: '{"type":"object","$schema":"http://json-schema.org/draft-03/schema#","description": "description of values (value descriptors) that should be collected per device on a interval action", "title":"devicereport","properties":{"id":{"type":"string","required":false,"title":"id"},"created":{"type":"integer","required":false,"title":"created"},"modified":{"type":"integer","required":false,"title":"modified"},"origin":{"type":"integer","required":false,"title":"origin"},"name":{"type":"string","required":false,"title":"name"},"device":{"type":"string","required":false,"title":"device"},"action":{"type":"string","required":false,"title":"action"},"expected":{"type":"array","required":false,"title":"expected","items":{"type":"string","title":"expected"},"uniqueItems":false}}}'
-    -
         deviceservice: '{"type":"object","$schema":"http://json-schema.org/draft-03/schema#","description":"manages devices and interfaces with core data","title":"deviceservice","properties":{"id":{"type":"string","required":false,"title":"id"},"created":{"type":"integer","required":false,"title":"created"},"modified":{"type":"integer","required":false,"title":"modified"},"origin":{"type":"integer","required":false,"title":"origin"},"name":{"type":"string","required":false,"title":"name"},"description":{"type":"string","required":false,"title":"description"},"lastConnected":{"type":"integer","required":false,"title":"lastConnected"},"lastReported":{"type":"integer","required":false,"title":"lastReported"},"labels":{"type":"array","required":false,"title":"labels","items":{"type":"string","title":"labels"},"uniqueItems":false},"adminState":{"type":"string","required":false,"title":"adminState"},"operatingState":{"type":"string","required":false,"title":"operatingState"},"addressable":{"type":"object","properties":{"id":{"type":"string","required":false,"title":"id"},"created":{"type":"integer","required":false,"title":"created"},"modified":{"type":"integer","required":false,"title":"modified"},"origin":{"type":"integer","required":false,"title":"origin"},"name":{"type":"string","required":false,"title":"name"},"protocol":{"type":"string","required":false,"title":"protocol"},"address":{"type":"string","required":false,"title":"address"},"port":{"type":"integer","required":false,"title":"port"},"path":{"type":"string","required":false,"title":"path"},"publisher":{"type":"string","required":false,"title":"publisher"},"user":{"type":"string","required":false,"title":"user"},"password":{"type":"string","required":false,"title":"password"},"topic":{"type":"string","required":false,"title":"topic"}}}}}'
     -
         device: '{"type":"object","$schema":"http://json-schema.org/draft-03/schema#","description":"device or sensor supplying data and taking actuation commands", "title":"device","properties":{"id":{"type":"string","required":false,"title":"id"},"created":{"type":"integer","required":false,"title":"created"},"modified":{"type":"integer","required":false,"title":"modified"},"origin":{"type":"integer","required":false,"title":"origin"},"name":{"type":"string","required":false,"title":"name"},"description":{"type":"string","required":false,"title":"description"},"lastConnected":{"type":"integer","required":false,"title":"lastConnected"},"lastReported":{"type":"integer","required":false,"title":"lastReported"},"labels":{"type":"array","required":false,"title":"labels","items":{"type":"string","title":"labels"},"uniqueItems":false},"adminState":{"type":"string","required":false,"title":"adminState"},"operatingState":{"type":"string","required":false,"title":"operatingState"},"addressable":{"type":"object","properties":{"id":{"type":"string","required":false,"title":"id"},"created":{"type":"integer","required":false,"title":"created"},"modified":{"type":"integer","required":false,"title":"modified"},"origin":{"type":"integer","required":false,"title":"origin"},"name":{"type":"string","required":false,"title":"name"},"protocol":{"type":"string","required":false,"title":"protocol"},"address":{"type":"string","required":false,"title":"address"},"port":{"type":"integer","required":false,"title":"port"},"path":{"type":"string","required":false,"title":"path"},"publisher":{"type":"string","required":false,"title":"publisher"},"user":{"type":"string","required":false,"title":"user"},"password":{"type":"string","required":false,"title":"password"},"topic":{"type":"string","required":false,"title":"topic"}}}}}'
@@ -653,7 +651,7 @@ schemas:
                 description: List of DeviceProfile matching on specified manufacturer and/or model.
                 body:
                     application/json:
-                        schema: devicereport
+                        schema: deviceprofile
                         example: '[{"id":"57bb718f555e5218873e5a27","created":1471902095821,"modified":1471902095821,"origin":1471806386919,"name":"thermostat profile","manufacturer":"Honeywell","model":"ABC123","labels":["bacnet","thermostat","Honeywell"],"description":"BACnet Honeywell thermostats","resources":[{"CurrentHumidity":{"get":[{"parameter":"CurrentHumidity","operation":"get","object":"AnalogValue_22"}]}}],"commands":[{"id":"57bb718f555e5218873e5a26","created":1471902095810,"modified":1471902095810,"origin":1471806386919,"name":"cooling point","get":{"path":"/cooling","responses":[{"code":"200","description":"ok","expectedValues":["temperature"]}]},"put":{"path":"/cooling","responses":[{"code":"200","description":"ok","expectedValues":["temperature"]}],"parameterNames":["coolingpoint"]}}]}]'
             "400":
                 description: for malformed or unparsable requests
@@ -900,170 +898,6 @@ schemas:
                         example: '[{"id":"57bb718f555e5218873e5a27","created":1471902095821,"modified":1471902095821,"origin":1471806386919,"name":"thermostat profile","manufacturer":"Honeywell","model":"ABC123","labels":["bacnet","thermostat","Honeywell"],"description":"BACnet Honeywell thermostats","resources":[{"CurrentHumidity":{"get":[{"parameter":"CurrentHumidity","operation":"get","object":"AnalogValue_22"}]}}],"commands":[{"id":"57bb718f555e5218873e5a26","created":1471902095810,"modified":1471902095810,"origin":1471806386919,"name":"cooling point","get":{"path":"/cooling","responses":[{"code":"200","description":"ok","expectedValues":["temperature"]}]},"put":{"path":"/cooling","responses":[{"code":"200","description":"ok","expectedValues":["temperature"]}],"parameterNames":["coolingpoint"]}}]}]'
             "413":
                 description: if the number returned exceeds the max limit
-            "500":
-                description: for unknown or unanticipated issues
-/devicereport/id/{id}:
-    displayName: DeviceReport Resource (by id)
-    description: Example - http://localhost:48081/api/v1/devicereport/id/57bb6491555e5218873e5a35
-    uriParameters:
-        id:
-            displayName: id
-            type: string
-            required: false
-            repeat: false
-    delete:
-        description: Remove the DevicReport designated by database generated id. Internal Service Error (HTTP 500) for unknown or unanticipated issues. NotFoundException (HTTP 404) if no DeviceReport is found with the provided id.
-        responses:
-            "200":
-                description: boolean indicating success of the remove operation
-            "404":
-                description: if no DeviceReport is found with the provided id
-            "500":
-                description: for unknown or unanticipated issues
-/devicereport/name/{name}:
-    displayName: DeviceReport Resource (by name)
-    description: Example - http://localhost:48081/api/v1/devicereport/name/livingroom collection report (where livingroom collection report is the name of a device report)
-    uriParameters:
-        name:
-            displayName: name
-            type: string
-            required: false
-            repeat: false
-    delete:
-        description: Remove the DevicReport designated by name. Internal Service Error (HTTP 500) for unknown or unanticipated issues. NotFoundException (HTTP 404) if no DeviceReport is found with the provided name.
-        responses:
-            "200":
-                description: boolean indicating success of the remove operation
-            "400":
-                description: for malformed or unparsable requests
-            "404":
-                description: if no DeviceReport is found with the provided name
-            "500":
-                description: for unknown or unanticipated issues
-    get:
-        description: Return DeviceReport matching given name (device report names should be unique). May be null if no report matches on the name provided. Returns Internal Service Error (HTTP 500) for unknown or unanticipated issues.  NotFoundException (HTTP 404) if no DeviceReport is found with the provided name.
-        responses:
-            "200":
-                description: device report matching on name
-                body:
-                    application/json:
-                        schema: devicereport
-                        example: '{"id":"57bc88d8555e5218873e5a34","created":1471973592027,"modified":1471973592027,"origin":1471806386919,"name":"livingroom collection report","device":"livingroomthermostat","event":"temperature collection","expected":["temperature"]}'
-            "400":
-                description: for malformed or unparsable requests
-            "404":
-                description: if no DeviceReport is found with the provided name
-            "500":
-                description: for unknown or unanticipated issues
-/devicereport/{id}:
-    displayName: DeviceReport Resource (by id)
-    description: Example - http://localhost:48081/api/v1/devicereport/57bb6491555e5218873e5a35
-    uriParameters:
-        id:
-            displayName: id
-            type: string
-            required: false
-            repeat: false
-    get:
-        description: Fetch a specific DeviceReport by database generated id. May return null if no report with the id is found. Returns Internal Service Error (HTTP 500) for unknown or unanticipated issues.  NotFoundException (HTTP 404) if no DeviceReport is found with the provided id.
-        responses:
-            "200":
-                description: device report matching on the id
-                body:
-                    application/json:
-                        schema: devicereport
-                        example: '{"id":"57bc88d8555e5218873e5a34","created":1471973592027,"modified":1471973592027,"origin":1471806386919,"name":"livingroom collection report","device":"livingroomthermostat","event":"temperature collection","expected":["temperature"]}'
-            "404":
-                description: if no DeviceReport is found with the provided id
-            "500":
-                description: for unknown or unanticipated issues
-/devicereport/devicename/{devicename}:
-    displayName: DeviceReport Resources (by device name)
-    description: Example - http://localhost:48081/api/v1/devicereport/devicename/livingroomthermostat  (where livingroomthermostat is the name of a device )
-    uriParameters:
-        devicename:
-            displayName: devicename
-            type: string
-            required: false
-            repeat: false
-    get:
-        description: Return DeviceReports with associated device matching given name (device names should be unique). May be an empty list if no device matches on the name provided. Returns Internal Service Error (HTTP 500) for unknown or unanticipated issues.
-        responses:
-            "200":
-                description: device reports matching on device name
-                body:
-                    application/json:
-                        schema: devicereport
-                        example: '[{"id":"57bc88d8555e5218873e5a34","created":1471973592027,"modified":1471973592027,"origin":1471806386919,"name":"livingroom collection report","device":"livingroomthermostat","event":"temperature collection","expected":["temperature"]}]'
-            "400":
-                description: for malformed or unparsable requests
-            "500":
-                description: for unknown or unanticipated issues
-/devicereport/valueDescriptorsFor/{devicename}:
-    displayName: Value Descriptor names (associated to device reports for given device name)
-    description: Example - http://localhost:48081/api/v1/devicereport/valueDescriptorsFor/livingroomthermostat  (where livingroomthermostat is the name of a device )
-    uriParameters:
-        devicename:
-            displayName: devicename
-            type: string
-            required: false
-            repeat: false
-    get:
-        description: Return list of value descriptor names associated to device reports associated to name of the device provided. May be an empty list if no device matches on the name provided. Returns Internal Service Error (HTTP 500) for unknown or unanticipated issues.
-        responses:
-            "200":
-                description: value descriptor names
-                body:
-                    application/json:
-                        example: '["temperature", "rpm"]'
-            "400":
-                description: for malformed or unparsable requests
-            "500":
-                description: for unknown or unanticipated issues
-/devicereport:
-    displayName: DeviceReport Resource
-    description: Example - http://localhost:48081/api/v1/devicereport
-    post:
-        description: Add a new DeviceReport - name must be unique. Referenced objects (device, interval action) are all referenced in the new DeviceReport by name and must already be persisted. Returns Internal Service Error (HTTP 500) for unknown or unanticipated issues. NotFoundException (HTTP 404) if any referenced object cannot be found by its provided name.
-        body:
-            application/json:
-                schema: devicereport
-                example: '{"origin":1471806386919,"name":"livingroom collection report","device":"livingroomthermostat","action":"temperature collection","expected":["temperature"]}'
-        responses:
-            "200":
-                description: database generated identifier for the new device report
-            "400":
-                description: for malformed or unparsable requests
-            "404":
-                description: if any referenced object cannot be found by its provided name
-            "500":
-                description: for unknown or unanticipated issues
-    put:
-        description: Update the DeviceReport identified by the id or name in the object provided. Id is used first, name is used second for identification purposes. Returns Internal Service Error (HTTP 500) for unknown or unanticipated issues. NotFoundException (HTTP 404) if any referenced object cannot be found by its provided name.
-        body:
-            application/json:
-                schema: devicereport
-                example: '{"id":"57bb6491555e5218873e5a35","expected":["hvactemp"]}'
-        responses:
-            "200":
-                description: boolean indicating success of the update
-            "400":
-                description: for malformed or unparsable requests
-            "404":
-                description: if any referenced object cannot be found by its provided name
-            "500":
-                description: for unknown or unanticipated issues
-    get:
-        description: Return all device reports sorted by id. Returns Internal Service Error (HTTP 500) for unknown or unanticipated issues. Returns LimitExceededException (HTTP 413) if the number returned exceeds the max limit.
-        responses:
-            "200":
-                description: list of device reports
-                body:
-                    application/json:
-                        schema: devicereport
-                        example: '[{"id":"57bc88d8555e5218873e5a34","created":1471973592027,"modified":1471973592027,"origin":1471806386919,"name":"livingroom collection report","device":"livingroomthermostat","action":"temperature collection","expected":["temperature"]}]'
-            "413":
-                description: if the number returned exceeds the max limit.
             "500":
                 description: for unknown or unanticipated issues
 /deviceservice/id/{id}:

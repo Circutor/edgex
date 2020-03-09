@@ -11,7 +11,7 @@ import (
 	dbMock "github.com/edgexfoundry/edgex-go/internal/core/data/interfaces/mocks"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
 
-	"github.com/edgexfoundry/go-mod-core-contracts/models"
+	"github.com/edgexfoundry/edgex-go/pkg/models"
 
 	"github.com/stretchr/testify/mock"
 )
@@ -366,36 +366,6 @@ func TestGetReadingsByValueDescriptorError(t *testing.T) {
 
 	if err == nil {
 		t.Errorf("Expected error in getting readings by value descriptor")
-	}
-}
-
-func TestGetReadingsByValueDescriptorNames(t *testing.T) {
-	reset()
-	myMock := &dbMock.DBClient{}
-
-	myMock.On("ReadingsByValueDescriptorNames", mock.Anything, mock.Anything).Return([]models.Reading{}, nil)
-
-	dbClient = myMock
-
-	_, err := getReadingsByValueDescriptorNames([]string{"valid"}, 0)
-
-	if err != nil {
-		t.Errorf("Unexpected error getting readings by value descriptor names")
-	}
-}
-
-func TestGetReadingsByValueDescriptorNamesError(t *testing.T) {
-	reset()
-	myMock := &dbMock.DBClient{}
-
-	myMock.On("ReadingsByValueDescriptorNames", mock.Anything, mock.Anything).Return([]models.Reading{}, fmt.Errorf("some error"))
-
-	dbClient = myMock
-
-	_, err := getReadingsByValueDescriptorNames([]string{"error"}, 0)
-
-	if err == nil {
-		t.Errorf("Expected error in getting readings by value descriptor names")
 	}
 }
 

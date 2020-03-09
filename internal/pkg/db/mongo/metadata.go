@@ -20,108 +20,10 @@ import (
 
 	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/db/mongo/models"
-	contract "github.com/edgexfoundry/go-mod-core-contracts/models"
+	contract "github.com/edgexfoundry/edgex-go/pkg/models"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 )
-
-/* ----------------------Device Report --------------------------*/
-
-func (mc MongoClient) GetAllDeviceReports() ([]contract.DeviceReport, error) {
-	return mc.getDeviceReports(bson.M{})
-}
-
-func (mc MongoClient) GetDeviceReportByName(n string) (contract.DeviceReport, error) {
-	return mc.getDeviceReport(bson.M{"name": n})
-}
-
-func (mc MongoClient) GetDeviceReportByDeviceName(n string) ([]contract.DeviceReport, error) {
-	return mc.getDeviceReports(bson.M{"device": n})
-}
-
-func (mc MongoClient) GetDeviceReportById(id string) (contract.DeviceReport, error) {
-	query, err := idToBsonM(id)
-	if err != nil {
-		return contract.DeviceReport{}, err
-	}
-	return mc.getDeviceReport(query)
-}
-
-func (mc MongoClient) GetDeviceReportsByAction(n string) ([]contract.DeviceReport, error) {
-	return mc.getDeviceReports(bson.M{"action": n})
-}
-
-func (mc MongoClient) getDeviceReports(q bson.M) ([]contract.DeviceReport, error) {
-	s := mc.session.Copy()
-	defer s.Close()
-
-	var drs []models.DeviceReport
-	err := s.DB(mc.database.Name).C(db.DeviceReport).Find(q).Sort("queryts").All(&drs)
-	if err != nil {
-		return []contract.DeviceReport{}, errorMap(err)
-	}
-
-	mapped := make([]contract.DeviceReport, 0)
-	for _, dr := range drs {
-		mapped = append(mapped, dr.ToContract())
-	}
-	return mapped, nil
-}
-
-func (mc MongoClient) getDeviceReport(q bson.M) (contract.DeviceReport, error) {
-	s := mc.session.Copy()
-	defer s.Close()
-
-	var d models.DeviceReport
-	err := s.DB(mc.database.Name).C(db.DeviceReport).Find(q).One(&d)
-	if err != nil {
-		return contract.DeviceReport{}, errorMap(err)
-	}
-	return d.ToContract(), nil
-}
-
-func (mc MongoClient) AddDeviceReport(d contract.DeviceReport) (string, error) {
-	s := mc.session.Copy()
-	defer s.Close()
-
-	col := s.DB(mc.database.Name).C(db.DeviceReport)
-	count, err := col.Find(bson.M{"name": d.Name}).Count()
-	if err != nil {
-		return "", errorMap(err)
-	}
-	if count > 0 {
-		return "", db.ErrNotUnique
-	}
-
-	var mapped models.DeviceReport
-	id, err := mapped.FromContract(d)
-	if err != nil {
-		return "", errors.New("FromContract failed")
-	}
-
-	mapped.TimestampForAdd()
-
-	if err = col.Insert(mapped); err != nil {
-		return "", errorMap(err)
-	}
-	return id, nil
-}
-
-func (mc MongoClient) UpdateDeviceReport(dr contract.DeviceReport) error {
-	var mapped models.DeviceReport
-	id, err := mapped.FromContract(dr)
-	if err != nil {
-		return errors.New("FromContract failed")
-	}
-
-	mapped.TimestampForUpdate()
-
-	return mc.updateId(db.DeviceReport, id, mapped)
-}
-
-func (mc MongoClient) DeleteDeviceReportById(id string) error {
-	return mc.deleteById(db.DeviceReport, id)
-}
 
 /* ----------------------------- Device ---------------------------------- */
 func (mc MongoClient) AddDevice(d contract.Device) (string, error) {
@@ -1052,10 +954,6 @@ func (mc MongoClient) ScrubMetadata() error {
 		return errorMap(err)
 	}
 	_, err = s.DB(mc.database.Name).C(db.DeviceProfile).RemoveAll(nil)
-	if err != nil {
-		return errorMap(err)
-	}
-	_, err = s.DB(mc.database.Name).C(db.DeviceReport).RemoveAll(nil)
 	if err != nil {
 		return errorMap(err)
 	}

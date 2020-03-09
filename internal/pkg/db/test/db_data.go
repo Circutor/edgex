@@ -13,7 +13,7 @@ import (
 
 	"github.com/edgexfoundry/edgex-go/internal/core/data/interfaces"
 	dbp "github.com/edgexfoundry/edgex-go/internal/pkg/db"
-	contract "github.com/edgexfoundry/go-mod-core-contracts/models"
+	contract "github.com/edgexfoundry/edgex-go/pkg/models"
 )
 
 func populateDbReadings(db interfaces.DBClient, count int) (string, error) {
@@ -26,25 +26,6 @@ func populateDbReadings(db interfaces.DBClient, count int) (string, error) {
 		r.Value = name
 		var err error
 		id, err = db.AddReading(r)
-		if err != nil {
-			return id, err
-		}
-	}
-	return id, nil
-}
-
-func populateDbValues(db interfaces.DBClient, count int) (string, error) {
-	var id string
-	for i := 0; i < count; i++ {
-		name := fmt.Sprintf("name%d", i)
-		v := contract.ValueDescriptor{}
-		v.Name = name
-		v.Description = name
-		v.Type = name
-		v.UomLabel = name
-		v.Labels = []string{name, "LABEL"}
-		var err error
-		id, err = db.AddValueDescriptor(v)
 		if err != nil {
 			return id, err
 		}
@@ -196,35 +177,6 @@ func testDBReadings(t *testing.T, db interfaces.DBClient) {
 	}
 	if len(readings) != 0 {
 		t.Fatalf("There should be 0 readings, not %d", len(readings))
-	}
-
-	readings, err = db.ReadingsByValueDescriptorNames([]string{"name1", "name2"}, 10)
-	if err != nil {
-		t.Fatalf("Error getting ReadingsByValueDescriptorNames: %v", err)
-	}
-	if len(readings) != 4 {
-		t.Fatalf("There should be 4 readings, not %d", len(readings))
-	}
-	readings, err = db.ReadingsByValueDescriptorNames([]string{"name1", "name2"}, 1)
-	if err != nil {
-		t.Fatalf("Error getting ReadingsByValueDescriptorNames: %v", err)
-	}
-	if len(readings) != 1 {
-		t.Fatalf("There should be 1 readings, not %d", len(readings))
-	}
-	readings, err = db.ReadingsByValueDescriptorNames([]string{"name", "noname"}, 10)
-	if err != nil {
-		t.Fatalf("Error getting ReadingsByValueDescriptorNames: %v", err)
-	}
-	if len(readings) != 0 {
-		t.Fatalf("There should be 0 readings, not %d", len(readings))
-	}
-	readings, err = db.ReadingsByValueDescriptorNames([]string{"name20"}, 10)
-	if err != nil {
-		t.Fatalf("Error getting ReadingsByValueDescriptorNames: %v", err)
-	}
-	if len(readings) != 1 {
-		t.Fatalf("There should be 1 readings, not %d", len(readings))
 	}
 
 	readings, err = db.ReadingsByCreationTime(beforeTime, afterTime, 200)
@@ -485,169 +437,9 @@ func testDBEvents(t *testing.T, db interfaces.DBClient) {
 	}
 }
 
-func testDBValueDescriptors(t *testing.T, db interfaces.DBClient) {
-	err := db.ScrubAllValueDescriptors()
-	if err != nil {
-		t.Fatalf("Error removing all value descriptors")
-	}
-
-	values, err := db.ValueDescriptors()
-	if err != nil {
-		t.Fatalf("Error getting events %v", err)
-	}
-	if len(values) != 0 {
-		t.Fatalf("There should be 0 values instead of %d", len(values))
-	}
-
-	id, err := populateDbValues(db, 110)
-	if err != nil {
-		t.Fatalf("Error populating db: %v\n", err)
-	}
-
-	_, err = populateDbValues(db, 110)
-	if err == nil {
-		t.Fatalf("Should be an error adding a new ValueDescriptor with the same name\n")
-	}
-
-	values, err = db.ValueDescriptors()
-	if err != nil {
-		t.Fatalf("Error getting Values %v", err)
-	}
-	if len(values) != 110 {
-		t.Fatalf("There should be 110 Values instead of %d", len(values))
-	}
-
-	v3, err := db.ValueDescriptorById(id)
-	if err != nil {
-		t.Fatalf("Error getting Value by id %v", err)
-	}
-	if v3.Id != id {
-		t.Fatalf("Id does not match %s - %s", v3.Id, id)
-	}
-	_, err = db.ValueDescriptorById("INVALID")
-	if err == nil {
-		t.Fatalf("Value should not be found")
-	}
-
-	v3, err = db.ValueDescriptorByName("name1")
-	if err != nil {
-		t.Fatalf("Error getting Value by id %v", err)
-	}
-	if v3.Name != "name1" {
-		t.Fatalf("Name does not match %s - name1", v3.Name)
-	}
-	_, err = db.ValueDescriptorByName("INVALID")
-	if err == nil {
-		t.Fatalf("Value should not be found")
-	}
-
-	values, err = db.ValueDescriptorsByName([]string{"name1", "name2"})
-	if err != nil {
-		t.Fatalf("Error getting ValueDescriptorsByName: %v", err)
-	}
-	if len(values) != 2 {
-		t.Fatalf("There should be 2 Values, not %d", len(values))
-	}
-	values, err = db.ValueDescriptorsByName([]string{"name1", "name"})
-	if err != nil {
-		t.Fatalf("Error getting ValueDescriptorsByName: %v", err)
-	}
-	if len(values) != 1 {
-		t.Fatalf("There should be 1 Values, not %d", len(values))
-	}
-	values, err = db.ValueDescriptorsByName([]string{"name", "INVALID"})
-	if err != nil {
-		t.Fatalf("Error getting ValueDescriptorsByName: %v", err)
-	}
-	if len(values) != 0 {
-		t.Fatalf("There should be 0 Values, not %d", len(values))
-	}
-
-	values, err = db.ValueDescriptorsByUomLabel("name1")
-	if err != nil {
-		t.Fatalf("Error getting ValueDescriptorsByUomLabel: %v", err)
-	}
-	if len(values) != 1 {
-		t.Fatalf("There should be 1 Values, not %d", len(values))
-	}
-	values, err = db.ValueDescriptorsByUomLabel("INVALID")
-	if err != nil {
-		t.Fatalf("Error getting ValueDescriptorsByLabel: %v", err)
-	}
-	if len(values) != 0 {
-		t.Fatalf("There should be 0 Values, not %d", len(values))
-	}
-
-	values, err = db.ValueDescriptorsByLabel("name1")
-	if err != nil {
-		t.Fatalf("Error getting ValueDescriptorsByLabel: %v", err)
-	}
-	if len(values) != 1 {
-		t.Fatalf("There should be 1 Values, not %d", len(values))
-	}
-	values, err = db.ValueDescriptorsByLabel("INVALID")
-	if err != nil {
-		t.Fatalf("Error getting ValueDescriptorsByLabel: %v", err)
-	}
-	if len(values) != 0 {
-		t.Fatalf("There should be 0 Values, not %d", len(values))
-	}
-
-	values, err = db.ValueDescriptorsByType("name1")
-	if err != nil {
-		t.Fatalf("Error getting ValueDescriptorsByType: %v", err)
-	}
-	if len(values) != 1 {
-		t.Fatalf("There should be 1 Values, not %d", len(values))
-	}
-	values, err = db.ValueDescriptorsByType("INVALID")
-	if err != nil {
-		t.Fatalf("Error getting ValueDescriptorsByType: %v", err)
-	}
-	if len(values) != 0 {
-		t.Fatalf("There should be 0 Values, not %d", len(values))
-	}
-
-	v := contract.ValueDescriptor{}
-	v.Id = id
-	v.Name = "name"
-	err = db.UpdateValueDescriptor(v)
-	if err != nil {
-		t.Fatalf("Error updating Value %v", err)
-	}
-	v2, err := db.ValueDescriptorById(v.Id)
-	if err != nil {
-		t.Fatalf("Error getting Value by id %v", err)
-	}
-	if v2.Name != v.Name {
-		t.Fatalf("Did not update Value correctly: %s %s", v.Name, v2.Name)
-	}
-
-	err = db.DeleteValueDescriptorById("INVALID")
-	if err == nil {
-		t.Fatalf("Value should not be deleted")
-	}
-
-	err = db.DeleteValueDescriptorById(id)
-	if err != nil {
-		t.Fatalf("Value should be deleted: %v", err)
-	}
-
-	err = db.UpdateValueDescriptor(v)
-	if err == nil {
-		t.Fatalf("Update should return error")
-	}
-
-	err = db.ScrubAllValueDescriptors()
-	if err != nil {
-		t.Fatalf("Error removing all value descriptors")
-	}
-}
-
 func TestDataDB(t *testing.T, db interfaces.DBClient) {
 	testDBReadings(t, db)
 	testDBEvents(t, db)
-	testDBValueDescriptors(t, db)
 
 	db.CloseSession()
 	// Calling CloseSession twice to test that there is no panic when closing an

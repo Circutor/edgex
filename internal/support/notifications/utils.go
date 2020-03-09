@@ -18,9 +18,6 @@ package notifications
 
 import (
 	"encoding/json"
-	"fmt"
-	"io"
-	"io/ioutil"
 	"net/http"
 )
 
@@ -50,19 +47,6 @@ func encodeWithUTF8(i interface{}, w http.ResponseWriter) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-}
-
-// Printing function purely for debugging purposes
-// Print the body of a request to the console
-func printBody(r io.ReadCloser) {
-	body, err := ioutil.ReadAll(r)
-	bodyString := string(body)
-
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	fmt.Println(bodyString)
 }
 
 // Test if the service is working

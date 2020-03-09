@@ -3,14 +3,12 @@ vendor
 *.exe
 glide.lock
 *.DS_Store
-docker/docker-compose.yml
 .project
 .vscode/
 go.sum
 *.db
 
 # binary files
-cmd/config-seed/config-seed
 cmd/core-command/core-command
 cmd/core-data/core-data
 cmd/core-metadata/core-metadata
@@ -20,19 +18,10 @@ cmd/support-logging/support-logging
 cmd/support-notifications/support-notifications
 cmd/sys-mgmt-agent/sys-mgmt-agent
 cmd/support-scheduler/support-scheduler
-cmd/sys-mgmt-executor/sys-mgmt-executor
 cmd/edgex/edgex
 docs/_build/
 
 # log dirs
 **/logs
 
-# snap files
-*.snap
-*.bz2
-*.pyc
-parts/*
-prime/*
-stage/*
-snap/.snapcraft/*
 go.sum

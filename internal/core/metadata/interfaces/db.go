@@ -14,21 +14,11 @@
 package interfaces
 
 import (
-	contract "github.com/edgexfoundry/go-mod-core-contracts/models"
+	contract "github.com/edgexfoundry/edgex-go/pkg/models"
 )
 
 type DBClient interface {
 	CloseSession()
-
-	// Device Report
-	GetAllDeviceReports() ([]contract.DeviceReport, error)
-	GetDeviceReportByDeviceName(n string) ([]contract.DeviceReport, error)
-	GetDeviceReportByName(n string) (contract.DeviceReport, error)
-	GetDeviceReportById(id string) (contract.DeviceReport, error)
-	AddDeviceReport(dr contract.DeviceReport) (string, error)
-	UpdateDeviceReport(dr contract.DeviceReport) error
-	GetDeviceReportsByAction(n string) ([]contract.DeviceReport, error)
-	DeleteDeviceReportById(id string) error
 
 	// Device
 	UpdateDevice(d contract.Device) error

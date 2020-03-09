@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/edgexfoundry/go-mod-core-contracts/clients/logging"
+	"github.com/edgexfoundry/edgex-go/pkg/clients/logger"
 )
 
 func TestProcessResponse(t *testing.T) {
@@ -97,7 +97,7 @@ func TestProcessResponse(t *testing.T) {
 /*func TestInvokeOperationStartKnownService(t *testing.T) {
 
 	action := "start"
-	services := []string{"edgex-config-seed", "edgex-support-logging", "edgex-core-metadata", "edgex-support-notifications", "edgex-core-data", "edgex-core-command", "edgex-export-client", "edgex-export-distro"}
+	services := []string{"edgex-support-logging", "edgex-core-metadata", "edgex-support-notifications", "edgex-core-data", "edgex-core-command", "edgex-export-client", "edgex-export-distro"}
 	params := []string{"graceful"}
 	LoggingClient = logger.NewMockClient()
 
@@ -111,7 +111,7 @@ func TestProcessResponse(t *testing.T) {
 func TestInvokeOperationRestart(t *testing.T) {
 
 	action := "restart"
-	services := []string{"edgex-config-seed", "edgex-support-logging", "edgex-core-metadata", "edgex-support-notifications", "edgex-core-data", "edgex-core-command", "edgex-export-client", "edgex-export-distro"}
+	services := []string{"edgex-support-logging", "edgex-core-metadata", "edgex-support-notifications", "edgex-core-data", "edgex-core-command", "edgex-export-client", "edgex-export-distro"}
 	params := []string{"graceful"}
 	LoggingClient = logger.NewMockClient()
 
@@ -125,7 +125,7 @@ func TestInvokeOperationRestart(t *testing.T) {
 func TestInvokeOperationStop(t *testing.T) {
 
 	action := "stop"
-	services := []string{"edgex-config-seed", "edgex-support-logging", "edgex-core-metadata", "edgex-support-notifications", "edgex-core-data", "edgex-core-command", "edgex-export-client", "edgex-export-distro"}
+	services := []string{"edgex-support-logging", "edgex-core-metadata", "edgex-support-notifications", "edgex-core-data", "edgex-core-command", "edgex-export-client", "edgex-export-distro"}
 	params := []string{"graceful"}
 	LoggingClient = logger.NewMockClient()
 
@@ -181,7 +181,7 @@ func TestInvokeOperationStopUnknownService(t *testing.T) {
 func TestGetConfig(t *testing.T) {
 
 	LoggingClient = logger.NewMockClient()
-	services := []string{"edgex-config-seed", "edgex-support-logging", "edgex-core-metadata", "edgex-support-notifications", "edgex-core-data", "edgex-core-command", "edgex-export-client", "edgex-export-distro"}
+	services := []string{"edgex-support-logging", "edgex-core-metadata", "edgex-support-notifications", "edgex-core-data", "edgex-core-command", "edgex-export-client", "edgex-export-distro"}
 	result, err := getConfig(services)
 	if err != nil {
 		t.Errorf("TestGetConfig() failed.")
@@ -193,7 +193,7 @@ func TestGetConfig(t *testing.T) {
 func TestGetMetric(t *testing.T) {
 
 	LoggingClient = logger.NewMockClient()
-	services := []string{"edgex-config-seed", "edgex-support-logging", "edgex-core-metadata", "edgex-support-notifications", "edgex-core-data", "edgex-core-command", "edgex-export-client", "edgex-export-distro"}
+	services := []string{"edgex-support-logging", "edgex-core-metadata", "edgex-support-notifications", "edgex-core-data", "edgex-core-command", "edgex-export-client", "edgex-export-distro"}
 
 	result, err := getMetrics(services)
 	if err != nil {

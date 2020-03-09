@@ -17,7 +17,7 @@ package bolt
 import (
 	bolt "github.com/coreos/bbolt"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
-	contract "github.com/edgexfoundry/go-mod-core-contracts/models"
+	contract "github.com/edgexfoundry/edgex-go/pkg/models"
 	"github.com/google/uuid"
 	jsoniter "github.com/json-iterator/go"
 )

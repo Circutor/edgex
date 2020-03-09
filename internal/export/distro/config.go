@@ -22,13 +22,12 @@ type ConfigurationStruct struct {
 	Logging        config.LoggingInfo
 	MessageQueue   config.MessageQueueInfo
 	AnalyticsQueue config.MessageQueueInfo
-	Registry       config.RegistryInfo
 	Service        config.ServiceInfo
 }
 
 type WritableInfo struct {
-	MarkPushed     bool
-	LogLevel       string
+	MarkPushed bool
+	LogLevel   string
 }
 
 type CertificateInfo struct {

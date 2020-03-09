@@ -21,7 +21,7 @@ import (
 
 	"github.com/edgexfoundry/edgex-go/internal/core/data/errors"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
-	contract "github.com/edgexfoundry/go-mod-core-contracts/models"
+	contract "github.com/edgexfoundry/edgex-go/pkg/models"
 )
 
 func getAllReadings() (readings []contract.Reading, err error) {
@@ -51,36 +51,7 @@ func decodeReading(reader io.Reader) (reading contract.Reading, err error) {
 		return contract.Reading{}, errors.NewErrJsonDecoding(reading.Name)
 	}
 
-	if Configuration.Writable.ValidateCheck {
-		err = validateReading(reading)
-
-		if err != nil {
-			return contract.Reading{}, err
-		}
-	}
-
 	return reading, nil
-}
-
-func validateReading(reading contract.Reading) error {
-	// Check the value descriptor
-	vd, err := dbClient.ValueDescriptorByName(reading.Name)
-	if err != nil {
-		LoggingClient.Error(err.Error())
-		if err == db.ErrNotFound {
-			return errors.NewErrDbNotFound()
-		} else {
-			return err
-		}
-	}
-
-	err = isValidValueDescriptor(vd, reading)
-	if err != nil {
-		LoggingClient.Error(err.Error())
-		return err
-	}
-
-	return nil
 }
 
 func addReading(reading contract.Reading) (id string, err error) {
@@ -168,18 +139,6 @@ func updateReading(reading contract.Reading) error {
 		to.Origin = reading.Origin
 	}
 
-	if reading.Value != "" || reading.Name != "" {
-		if Configuration.Writable.ValidateCheck {
-			fmt.Println(to)
-
-			err = validateReading(to)
-			if err != nil {
-				LoggingClient.Error("Error validating updated reading")
-				return err
-			}
-		}
-	}
-
 	err = dbClient.UpdateReading(reading)
 	if err != nil {
 		LoggingClient.Error(err.Error())
@@ -222,28 +181,10 @@ func getReadingsByValueDescriptor(name string, limit int) (readings []contract.R
 		return []contract.Reading{}, err
 	}
 
-	// Check for value descriptor
-	if Configuration.Writable.ValidateCheck {
-		_, err = getValueDescriptorByName(name)
-		if err != nil {
-			return []contract.Reading{}, err
-		}
-	}
-
 	readings, err = dbClient.ReadingsByValueDescriptor(name, limit)
 	if err != nil {
 		LoggingClient.Error(err.Error())
 		return []contract.Reading{}, err
-	}
-
-	return readings, nil
-}
-
-func getReadingsByValueDescriptorNames(listOfNames []string, limit int) (readings []contract.Reading, err error) {
-	readings, err = dbClient.ReadingsByValueDescriptorNames(listOfNames, limit)
-	if err != nil {
-		LoggingClient.Error(err.Error())
-		return nil, err
 	}
 
 	return readings, nil

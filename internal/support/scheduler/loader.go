@@ -14,7 +14,7 @@
 package scheduler
 
 import (
-	contract "github.com/edgexfoundry/go-mod-core-contracts/models"
+	contract "github.com/edgexfoundry/edgex-go/pkg/models"
 )
 
 // Utility function for adding configured locally intervals and scheduled events

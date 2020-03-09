@@ -13,7 +13,7 @@ import (
 	"crypto/sha1"
 	"encoding/base64"
 
-	"github.com/edgexfoundry/go-mod-core-contracts/models"
+	"github.com/edgexfoundry/edgex-go/pkg/models"
 )
 
 type aesEncryption struct {

@@ -25,25 +25,22 @@ import (
 	"github.com/edgexfoundry/edgex-go/internal/pkg/correlation/models"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/startup"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/usage"
-	"github.com/edgexfoundry/go-mod-core-contracts/clients/logging"
+	"github.com/edgexfoundry/edgex-go/pkg/clients/logger"
 )
 
 func main() {
-	var useRegistry bool
 	var useProfile string
 	start := time.Now()
 
-	flag.BoolVar(&useRegistry, "registry", false, "Indicates the service should use Registry.")
-	flag.BoolVar(&useRegistry, "r", false, "Indicates the service should use Registry.")
 	flag.StringVar(&useProfile, "profile", "", "Specify a profile other than default.")
 	flag.StringVar(&useProfile, "p", "", "Specify a profile other than default.")
 	flag.Usage = usage.HelpCallback
 	flag.Parse()
 
-	params := startup.BootParams{UseRegistry: useRegistry, UseProfile: useProfile, BootTimeout: internal.BootTimeoutDefault}
+	params := startup.BootParams{UseProfile: useProfile, BootTimeout: internal.BootTimeoutDefault}
 	startup.Bootstrap(params, distro.Retry, logBeforeInit)
 
-	if ok := distro.Init(useRegistry); !ok {
+	if ok := distro.Init(); !ok {
 		logBeforeInit(fmt.Errorf("%s: Service bootstrap failed", internal.ExportDistroServiceKey))
 		os.Exit(1)
 	}

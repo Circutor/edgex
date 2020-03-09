@@ -18,7 +18,7 @@ import (
 	"net/http"
 
 	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
-	"github.com/edgexfoundry/go-mod-core-contracts/models"
+	"github.com/edgexfoundry/edgex-go/pkg/models"
 	"github.com/gorilla/mux"
 )
 

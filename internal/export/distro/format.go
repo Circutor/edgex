@@ -16,7 +16,7 @@ import (
 	"strings"
 	"time"
 
-	contract "github.com/edgexfoundry/go-mod-core-contracts/models"
+	contract "github.com/edgexfoundry/edgex-go/pkg/models"
 	"github.com/google/uuid"
 )
 

@@ -16,27 +16,23 @@ import (
 	"github.com/edgexfoundry/edgex-go/internal/pkg/startup"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/usage"
 	"github.com/edgexfoundry/edgex-go/internal/support/scheduler"
-	"github.com/edgexfoundry/go-mod-core-contracts/clients/logging"
+	"github.com/edgexfoundry/edgex-go/pkg/clients/logger"
 	"github.com/gorilla/context"
 )
 
 func main() {
-
 	start := time.Now()
-	var useRegistry bool
 	var useProfile string
 
-	flag.BoolVar(&useRegistry, "registry", false, "Indicates the service should use Registry.")
-	flag.BoolVar(&useRegistry, "r", false, "Indicates the service should use Registry.")
 	flag.StringVar(&useProfile, "profile", "", "Specify a profile other than default.")
 	flag.StringVar(&useProfile, "p", "", "Specify a profile other than default.")
 	flag.Usage = usage.HelpCallback
 	flag.Parse()
 
-	params := startup.BootParams{UseRegistry: useRegistry, UseProfile: useProfile, BootTimeout: internal.BootTimeoutDefault}
+	params := startup.BootParams{UseProfile: useProfile, BootTimeout: internal.BootTimeoutDefault}
 	startup.Bootstrap(params, scheduler.Retry, logBeforeInit)
 
-	ok := scheduler.Init(useRegistry)
+	ok := scheduler.Init()
 	if !ok {
 		logBeforeInit(fmt.Errorf("%s: Service bootstrap failed!", internal.SupportSchedulerServiceKey))
 		os.Exit(1)

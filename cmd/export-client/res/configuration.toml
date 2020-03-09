@@ -3,19 +3,12 @@ LogLevel = 'INFO'
 
 [Service]
 BootTimeout = 30000
-ClientMonitor = 15000
-CheckInterval = '10s'
 Host = 'localhost'
 Port = 48071
 Protocol = 'http'
-ReadMaxLimit = 100
+ReadMaxLimit = 1000
 StartupMsg = 'This is the Export Client Microservice'
 Timeout = 5000
-
-[Registry]
-Host = 'localhost'
-Port = 8500
-Type = 'consul'
 
 [Logging]
 EnableRemote = true

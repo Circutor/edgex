@@ -15,12 +15,11 @@ package startup
 
 import "sync"
 
-type RetryFunc func(UseRegistry bool, useProfile string, timeout int, wait *sync.WaitGroup, ch chan error)
+type RetryFunc func(useProfile string, timeout int, wait *sync.WaitGroup, ch chan error)
 
 type LogFunc func(err error)
 
 type BootParams struct {
-	UseRegistry bool
 	UseProfile  string
 	BootTimeout int
 }
@@ -29,7 +28,7 @@ func Bootstrap(params BootParams, retry RetryFunc, log LogFunc) {
 	deps := make(chan error, 2)
 	wg := sync.WaitGroup{}
 	wg.Add(1)
-	go retry(params.UseRegistry, params.UseProfile, params.BootTimeout, &wg, deps)
+	go retry(params.UseProfile, params.BootTimeout, &wg, deps)
 	go func(ch chan error) {
 		for {
 			select {

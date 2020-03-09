@@ -12,7 +12,7 @@ import (
 
 	"github.com/edgexfoundry/edgex-go/internal/core/metadata/interfaces"
 	dataBase "github.com/edgexfoundry/edgex-go/internal/pkg/db"
-	"github.com/edgexfoundry/go-mod-core-contracts/models"
+	"github.com/edgexfoundry/edgex-go/pkg/models"
 	"github.com/google/uuid"
 )
 
@@ -23,7 +23,6 @@ func TestMetadataDB(t *testing.T, db interfaces.DBClient) {
 	testDBAddressables(t, db)
 	testDBCommand(t, db)
 	testDBDeviceService(t, db)
-	testDBDeviceReport(t, db)
 	testDBDeviceProfile(t, db)
 	testDBDevice(t, db)
 	testDBProvisionWatcher(t, db)
@@ -163,24 +162,6 @@ func populateDeviceService(db interfaces.DBClient, count int) (string, error) {
 	return id, nil
 }
 
-func populateDeviceReport(db interfaces.DBClient, count int) (string, error) {
-	var id string
-	for i := 0; i < count; i++ {
-		var err error
-		name := fmt.Sprintf("name%d", i)
-		dr := models.DeviceReport{}
-		dr.Name = name
-		dr.Device = name
-		dr.Action = name
-		dr.Expected = append(dr.Expected, name)
-		id, err = db.AddDeviceReport(dr)
-		if err != nil {
-			return id, err
-		}
-	}
-	return id, nil
-}
-
 func populateDevice(db interfaces.DBClient, count int) (string, error) {
 	var id string
 	for i := 0; i < count; i++ {
@@ -303,18 +284,6 @@ func clearDeviceServices(t *testing.T, db interfaces.DBClient) {
 	for _, ds := range dss {
 		if err = db.DeleteDeviceServiceById(ds.Id); err != nil {
 			t.Fatalf("Error removing deviceService %v: %v", ds, err)
-		}
-	}
-}
-
-func clearDeviceReports(t *testing.T, db interfaces.DBClient) {
-	drs, err := db.GetAllDeviceReports()
-	if err != nil {
-		t.Fatalf("Error getting deviceReports %v", err)
-	}
-	for _, ds := range drs {
-		if err = db.DeleteDeviceReportById(ds.Id); err != nil {
-			t.Fatalf("Error removing deviceReport %v: %v", ds, err)
 		}
 	}
 }
@@ -671,113 +640,6 @@ func testDBDeviceService(t *testing.T, db interfaces.DBClient) {
 	}
 
 	clearDeviceServices(t, db)
-}
-
-func testDBDeviceReport(t *testing.T, db interfaces.DBClient) {
-	var deviceReports []models.DeviceReport
-
-	clearDeviceReports(t, db)
-
-	id, err := populateDeviceReport(db, 100)
-	if err != nil {
-		t.Fatalf("Error populating db: %v\n", err)
-	}
-
-	e := models.DeviceReport{}
-	e.Name = "name1"
-	_, err = db.AddDeviceReport(e)
-	if err == nil {
-		t.Fatalf("Should be an error adding an existing name")
-	}
-
-	deviceReports, err = db.GetAllDeviceReports()
-	if err != nil {
-		t.Fatalf("Error getting deviceReports %v", err)
-	}
-	if len(deviceReports) != 100 {
-		t.Fatalf("There should be 100 deviceReports instead of %d", len(deviceReports))
-	}
-
-	e, err = db.GetDeviceReportById(id)
-	if err != nil {
-		t.Fatalf("Error getting deviceReport by id %v", err)
-	}
-	if e.Id != id {
-		t.Fatalf("Id does not match %s - %s", e.Id, id)
-	}
-	_, err = db.GetDeviceReportById("INVALID")
-	if err == nil {
-		t.Fatalf("DeviceReport should not be found")
-	}
-
-	e, err = db.GetDeviceReportByName("name1")
-	if err != nil {
-		t.Fatalf("Error getting deviceReport by id %v", err)
-	}
-	if e.Name != "name1" {
-		t.Fatalf("Id does not match %s - %s", e.Id, id)
-	}
-	_, err = db.GetDeviceReportByName("INVALID")
-	if err == nil {
-		t.Fatalf("DeviceReport should not be found")
-	}
-
-	deviceReports, err = db.GetDeviceReportByDeviceName("name1")
-	if err != nil {
-		t.Fatalf("Error getting deviceReports %v", err)
-	}
-	if len(deviceReports) != 1 {
-		t.Fatalf("There should be 1 deviceReports instead of %d", len(deviceReports))
-	}
-
-	deviceReports, err = db.GetDeviceReportByDeviceName("name")
-	if err != nil {
-		t.Fatalf("Error getting deviceReports %v", err)
-	}
-	if len(deviceReports) != 0 {
-		t.Fatalf("There should be 0 deviceReports instead of %d", len(deviceReports))
-	}
-
-	deviceReports, err = db.GetDeviceReportsByAction("name1")
-	if err != nil {
-		t.Fatalf("Error getting deviceReports %v", err)
-	}
-	if len(deviceReports) != 1 {
-		t.Fatalf("There should be 1 deviceReports instead of %d", len(deviceReports))
-	}
-
-	deviceReports, err = db.GetDeviceReportsByAction("name")
-	if err != nil {
-		t.Fatalf("Error getting deviceReports %v", err)
-	}
-	if len(deviceReports) != 0 {
-		t.Fatalf("There should be 0 deviceReports instead of %d", len(deviceReports))
-	}
-
-	e2 := models.DeviceReport{}
-	e2.Id = id
-	e2.Name = "name"
-	err = db.UpdateDeviceReport(e2)
-	if err != nil {
-		t.Fatalf("Error updating DeviceReport %v", err)
-	}
-
-	e2.Id = "INVALID"
-	err = db.UpdateDeviceReport(e2)
-	if err == nil {
-		t.Fatalf("Should return error")
-	}
-
-	err = db.DeleteDeviceReportById(e2.Id)
-	if err == nil {
-		t.Fatalf("DeviceReport should not be deleted")
-	}
-
-	e2.Id = id
-	err = db.DeleteDeviceReportById(e2.Id)
-	if err != nil {
-		t.Fatalf("DeviceReport should be deleted: %v", err)
-	}
 }
 
 func testDBDeviceProfile(t *testing.T, db interfaces.DBClient) {

@@ -21,7 +21,7 @@ import (
 	"github.com/edgexfoundry/edgex-go/internal/pkg/correlation"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/correlation/models"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
-	contract "github.com/edgexfoundry/go-mod-core-contracts/models"
+	contract "github.com/edgexfoundry/edgex-go/pkg/models"
 )
 
 func countEvents() (int, error) {
@@ -81,26 +81,6 @@ func addNewEvent(e contract.Event, ctx context.Context) (string, error) {
 	err := checkDevice(e.Device, ctx)
 	if err != nil {
 		return "", err
-	}
-
-	if Configuration.Writable.ValidateCheck {
-		LoggingClient.Debug("Validation enabled, parsing events")
-		for reading := range e.Readings {
-			// Check value descriptor
-			name := e.Readings[reading].Name
-			vd, err := dbClient.ValueDescriptorByName(name)
-			if err != nil {
-				if err == db.ErrNotFound {
-					return "", errors.NewErrValueDescriptorNotFound(name)
-				} else {
-					return "", err
-				}
-			}
-			err = isValidValueDescriptor(vd, e.Readings[reading])
-			if err != nil {
-				return "", err
-			}
-		}
 	}
 
 	// Add the event and readings to the database

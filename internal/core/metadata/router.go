@@ -17,7 +17,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/edgexfoundry/go-mod-core-contracts/clients"
+	"github.com/edgexfoundry/edgex-go/pkg/clients"
 	"github.com/gorilla/mux"
 
 	"github.com/edgexfoundry/edgex-go/internal/pkg/correlation"
@@ -40,7 +40,6 @@ func LoadRestRoutes() *mux.Router {
 
 	loadDeviceRoutes(b)
 	loadDeviceProfileRoutes(b)
-	loadDeviceReportRoutes(b)
 	loadDeviceServiceRoutes(b)
 	loadProvisionWatcherRoutes(b)
 	loadAddressableRoutes(b)
@@ -119,26 +118,7 @@ func loadDeviceProfileRoutes(b *mux.Router) {
 	dpy.HandleFunc("/"+NAME+"/{"+NAME+"}", restGetYamlProfileByName).Methods(http.MethodGet)
 	dpy.HandleFunc("/{"+ID+"}", restGetYamlProfileById).Methods(http.MethodGet)
 }
-func loadDeviceReportRoutes(b *mux.Router) {
-	// /api/v1/devicereport
-	b.HandleFunc("/"+DEVICEREPORT, restGetAllDeviceReports).Methods(http.MethodGet)
-	b.HandleFunc("/"+DEVICEREPORT, restAddDeviceReport).Methods(http.MethodPost)
-	b.HandleFunc("/"+DEVICEREPORT, restUpdateDeviceReport).Methods(http.MethodPut)
 
-	dr := b.PathPrefix("/" + DEVICEREPORT).Subrouter()
-	dr.HandleFunc("/{"+ID+"}", restGetReportById).Methods(http.MethodGet)
-	dr.HandleFunc("/"+ID+"/{"+ID+"}", restDeleteReportById).Methods(http.MethodDelete)
-	dr.HandleFunc("/"+DEVICENAME+"/{"+DEVICENAME+"}", restGetDeviceReportByDeviceName).Methods(http.MethodGet)
-
-	// /api/v1/devicereport/" + NAME + "
-	drn := dr.PathPrefix("/" + NAME).Subrouter()
-	drn.HandleFunc("/{"+NAME+"}", restGetReportByName).Methods(http.MethodGet)
-	drn.HandleFunc("/{"+NAME+"}", restDeleteReportByName).Methods(http.MethodDelete)
-
-	// /api/v1/devicereport/valueDescriptorsFor/devicename
-	drvd := dr.PathPrefix("/" + VALUEDESCRIPTORSFOR).Subrouter()
-	drvd.HandleFunc("/{"+DEVICENAME+"}", restGetValueDescriptorsForDeviceName).Methods(http.MethodGet)
-}
 func loadDeviceServiceRoutes(b *mux.Router) {
 	// /api/v1/deviceservice
 	b.HandleFunc("/"+DEVICESERVICE, restGetAllDeviceServices).Methods(http.MethodGet)

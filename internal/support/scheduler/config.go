@@ -21,13 +21,12 @@ type ConfigurationStruct struct {
 	Clients         map[string]config.ClientInfo
 	Databases       map[string]config.DatabaseInfo
 	Logging         config.LoggingInfo
-	Registry        config.RegistryInfo
 	Service         config.ServiceInfo
 	Intervals       map[string]config.IntervalInfo
 	IntervalActions map[string]config.IntervalActionInfo
 }
 
 type WritableInfo struct {
-	ScheduleIntervalTime    int
-	LogLevel                string
+	ScheduleIntervalTime int
+	LogLevel             string
 }

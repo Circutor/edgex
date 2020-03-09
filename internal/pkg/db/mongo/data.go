@@ -16,7 +16,7 @@ package mongo
 import (
 	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
 	"github.com/edgexfoundry/edgex-go/internal/pkg/db/mongo/models"
-	contract "github.com/edgexfoundry/go-mod-core-contracts/models"
+	contract "github.com/edgexfoundry/edgex-go/pkg/models"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 )
@@ -361,11 +361,6 @@ func (mc MongoClient) ReadingsByValueDescriptor(name string, limit int) ([]contr
 	return mapReadings(mc.getReadingsLimit(bson.M{"name": name}, limit))
 }
 
-// Return a list of readings whose name is in the list of value descriptor names
-func (mc MongoClient) ReadingsByValueDescriptorNames(names []string, limit int) ([]contract.Reading, error) {
-	return mapReadings(mc.getReadingsLimit(bson.M{"name": bson.M{"$in": names}}, limit))
-}
-
 // Return a list of readings whose creation time is in-between start and end
 // Limit by the limit parameter
 func (mc MongoClient) ReadingsByCreationTime(start, end int64, limit int) ([]contract.Reading, error) {
@@ -420,186 +415,6 @@ func (mc MongoClient) getReading(q bson.M) (models.Reading, error) {
 	return res, nil
 }
 
-// ************************* VALUE DESCRIPTORS *****************************
-
-// Add a value descriptor
-// 409 - Formatting is bad or it is not unique
-// 503 - Unexpected
-// TODO: Check for valid printf formatting
-func (mc MongoClient) AddValueDescriptor(v contract.ValueDescriptor) (string, error) {
-	s := mc.getSessionCopy()
-	defer s.Close()
-
-	var mapped models.ValueDescriptor
-	id, err := mapped.FromContract(v)
-	if err != nil {
-		return "", err
-	}
-
-	// See if the name is unique and add the value descriptors
-	found, err := s.DB(mc.database.Name).C(db.ValueDescriptorCollection).Find(bson.M{"name": mapped.Name}).Count()
-	if err != nil {
-		return "", errorMap(err)
-	}
-	// Duplicate name
-	if found > 0 {
-		return "", db.ErrNotUnique
-	}
-
-	mapped.Modified = db.MakeTimestamp()
-	mapped.Created = mapped.Modified
-
-	if err = s.DB(mc.database.Name).C(db.ValueDescriptorCollection).Insert(mapped); err != nil {
-		return "", errorMap(err)
-	}
-	return id, nil
-}
-
-// Return a list of all the value descriptors
-// 513 Service Unavailable - database problems
-func (mc MongoClient) ValueDescriptors() ([]contract.ValueDescriptor, error) {
-	return mapValueDescriptors(mc.getValueDescriptors(nil))
-}
-
-// Update a value descriptor
-// First use the ID for identification, then the name
-// TODO: Check for the valid printf formatting
-// 404 not found if the value descriptor cannot be found by the identifiers
-func (mc MongoClient) UpdateValueDescriptor(cvd contract.ValueDescriptor) error {
-	// See if the name is unique if it changed
-	chk, err := mc.getValueDescriptor(bson.M{"name": cvd.Name})
-	if err != db.ErrNotFound {
-		if err != nil {
-			return err
-		}
-
-		// IDs are different -> name not unique
-		if chk.Id.Hex() != cvd.Id && cvd.Id != chk.Uuid {
-			return db.ErrNotUnique
-		}
-	}
-
-	var mapped models.ValueDescriptor
-	id, err := mapped.FromContract(cvd)
-	if err != nil {
-		return err
-	}
-
-	mapped.Modified = db.MakeTimestamp()
-
-	return mc.updateId(db.ValueDescriptorCollection, id, mapped)
-}
-
-// Delete the value descriptor based on the id
-// Not found error if there isn't a value descriptor for the ID
-// ValueDescriptorStillInUse if the value descriptor is still referenced by readings
-func (mc MongoClient) DeleteValueDescriptorById(id string) error {
-	return mc.deleteById(db.ValueDescriptorCollection, id)
-}
-
-// Return a value descriptor based on the name
-// Can return null if no value descriptor is found
-func (mc MongoClient) ValueDescriptorByName(name string) (contract.ValueDescriptor, error) {
-	mvd, err := mc.getValueDescriptor(bson.M{"name": name})
-	if err != nil {
-		return contract.ValueDescriptor{}, err
-	}
-	return mvd.ToContract(), nil
-}
-
-// Return all of the value descriptors based on the names
-func (mc MongoClient) ValueDescriptorsByName(names []string) ([]contract.ValueDescriptor, error) {
-	vList := make([]contract.ValueDescriptor, 0)
-	for _, name := range names {
-		v, err := mc.ValueDescriptorByName(name)
-		if err != nil && err != db.ErrNotFound {
-			return []contract.ValueDescriptor{}, err
-		}
-		if err == nil {
-			vList = append(vList, v)
-		}
-	}
-
-	return vList, nil
-}
-
-// Return a value descriptor based on the id
-// Return NotFoundError if there is no value descriptor for the id
-func (mc MongoClient) ValueDescriptorById(id string) (contract.ValueDescriptor, error) {
-	query, err := idToBsonM(id)
-	if err != nil {
-		return contract.ValueDescriptor{}, err
-	}
-
-	mvd, err := mc.getValueDescriptor(query)
-	if err != nil {
-		return contract.ValueDescriptor{}, err
-	}
-	return mvd.ToContract(), nil
-}
-
-// Return all the value descriptors that match the UOM label
-func (mc MongoClient) ValueDescriptorsByUomLabel(uomLabel string) ([]contract.ValueDescriptor, error) {
-	return mapValueDescriptors(mc.getValueDescriptors(bson.M{"uomLabel": uomLabel}))
-}
-
-// Return value descriptors based on if it has the label
-func (mc MongoClient) ValueDescriptorsByLabel(label string) ([]contract.ValueDescriptor, error) {
-	return mapValueDescriptors(mc.getValueDescriptors(bson.M{"labels": label}))
-}
-
-// Return value descriptors based on the type
-func (mc MongoClient) ValueDescriptorsByType(t string) ([]contract.ValueDescriptor, error) {
-	return mapValueDescriptors(mc.getValueDescriptors(bson.M{"type": t}))
-}
-
-// Delete all of the value descriptors
-func (mc MongoClient) ScrubAllValueDescriptors() error {
-	s := mc.getSessionCopy()
-	defer s.Close()
-
-	if _, err := s.DB(mc.database.Name).C(db.ValueDescriptorCollection).RemoveAll(nil); err != nil {
-		return errorMap(err)
-	}
-	return nil
-}
-
-// Get value descriptors based on the query
-func (mc MongoClient) getValueDescriptors(q bson.M) ([]models.ValueDescriptor, error) {
-	s := mc.getSessionCopy()
-	defer s.Close()
-
-	var v []models.ValueDescriptor
-	if err := s.DB(mc.database.Name).C(db.ValueDescriptorCollection).Find(q).All(&v); err != nil {
-		return []models.ValueDescriptor{}, errorMap(err)
-	}
-	return v, nil
-}
-
-// Get value descriptors with a limit based on the query
-func (mc MongoClient) getValueDescriptorsLimit(q bson.M, limit int) ([]models.ValueDescriptor, error) {
-	s := mc.getSessionCopy()
-	defer s.Close()
-
-	var v []models.ValueDescriptor
-	if err := s.DB(mc.database.Name).C(db.ValueDescriptorCollection).Find(q).Limit(limit).All(&v); err != nil {
-		return []models.ValueDescriptor{}, errorMap(err)
-	}
-	return v, nil
-}
-
-// Get a value descriptor based on the query
-func (mc MongoClient) getValueDescriptor(q bson.M) (models.ValueDescriptor, error) {
-	s := mc.getSessionCopy()
-	defer s.Close()
-
-	var m models.ValueDescriptor
-	if err := s.DB(mc.database.Name).C(db.ValueDescriptorCollection).Find(q).One(&m); err != nil {
-		return models.ValueDescriptor{}, errorMap(err)
-	}
-	return m, nil
-}
-
 func (mc MongoClient) mapEvents(events []models.Event, errIn error) (ce []contract.Event, err error) {
 	if errIn != nil {
 		return []contract.Event{}, errIn
@@ -625,18 +440,6 @@ func mapReadings(readings []models.Reading, err error) ([]contract.Reading, erro
 	mapped := make([]contract.Reading, 0)
 	for _, r := range readings {
 		mapped = append(mapped, r.ToContract())
-	}
-	return mapped, nil
-}
-
-func mapValueDescriptors(descriptors []models.ValueDescriptor, err error) ([]contract.ValueDescriptor, error) {
-	if err != nil {
-		return []contract.ValueDescriptor{}, err
-	}
-
-	mapped := make([]contract.ValueDescriptor, 0)
-	for _, v := range descriptors {
-		mapped = append(mapped, v.ToContract())
 	}
 	return mapped, nil
 }

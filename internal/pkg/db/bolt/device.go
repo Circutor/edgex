@@ -14,7 +14,7 @@
 package bolt
 
 import (
-	"github.com/edgexfoundry/go-mod-core-contracts/models"
+	"github.com/edgexfoundry/edgex-go/pkg/models"
 	jsoniter "github.com/json-iterator/go"
 )
 

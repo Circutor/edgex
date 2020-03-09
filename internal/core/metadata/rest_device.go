@@ -23,8 +23,8 @@ import (
 	"strconv"
 
 	"github.com/edgexfoundry/edgex-go/internal/pkg/db"
-	"github.com/edgexfoundry/go-mod-core-contracts/clients/notifications"
-	"github.com/edgexfoundry/go-mod-core-contracts/models"
+	"github.com/edgexfoundry/edgex-go/pkg/clients/notifications"
+	"github.com/edgexfoundry/edgex-go/pkg/models"
 	"github.com/gorilla/mux"
 )
 
@@ -693,11 +693,6 @@ func restDeleteDeviceByName(w http.ResponseWriter, r *http.Request) {
 
 // Delete the device
 func deleteDevice(d models.Device, w http.ResponseWriter, ctx context.Context) error {
-	if err := deleteAssociatedReportsForDevice(d, w); err != nil {
-		http.Error(w, err.Error(), http.StatusServiceUnavailable)
-		return err
-	}
-
 	if err := dbClient.DeleteDeviceById(d.Id); err != nil {
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
 		return err
@@ -707,28 +702,6 @@ func deleteDevice(d models.Device, w http.ResponseWriter, ctx context.Context) e
 	if err := notifyDeviceAssociates(d, http.MethodDelete, ctx); err != nil {
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
 		return err
-	}
-
-	return nil
-}
-
-// Delete the associated device reports for the device
-func deleteAssociatedReportsForDevice(d models.Device, w http.ResponseWriter) error {
-	reports, err := dbClient.GetDeviceReportByDeviceName(d.Name)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusServiceUnavailable)
-		LoggingClient.Error(err.Error())
-		return err
-	}
-
-	// Delete the associated reports
-	for _, report := range reports {
-		if err := dbClient.DeleteDeviceReportById(report.Id); err != nil {
-			http.Error(w, err.Error(), http.StatusServiceUnavailable)
-			LoggingClient.Error(err.Error())
-			return err
-		}
-		notifyDeviceReportAssociates(report, http.MethodDelete)
 	}
 
 	return nil

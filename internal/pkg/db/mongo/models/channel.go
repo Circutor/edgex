@@ -14,7 +14,7 @@
  *******************************************************************************/
 package models
 
-import contract "github.com/edgexfoundry/go-mod-core-contracts/models"
+import contract "github.com/edgexfoundry/edgex-go/pkg/models"
 
 type Channel struct {
 	Type          contract.ChannelType `bson:"type,omitempty"`

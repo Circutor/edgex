@@ -14,7 +14,7 @@
 package interfaces
 
 import (
-	contract "github.com/edgexfoundry/go-mod-core-contracts/models"
+	contract "github.com/edgexfoundry/edgex-go/pkg/models"
 )
 
 type DBClient interface {
@@ -31,7 +31,6 @@ type DBClient interface {
 
 	// Add a new event
 	// UnexpectedError - failed to add to database
-	// NoValueDescriptor - no existing value descriptor for a reading in the event
 	AddEvent(e contract.Event) (string, error)
 
 	// Update an event - do NOT update readings
@@ -97,7 +96,6 @@ type DBClient interface {
 	Readings() ([]contract.Reading, error)
 
 	// Post a new reading
-	// Check if valuedescriptor exists in the database
 	AddReading(r contract.Reading) (string, error)
 
 	// Update a reading
@@ -125,63 +123,6 @@ type DBClient interface {
 	// 413 - the number exceeds the current max limit
 	ReadingsByValueDescriptor(name string, limit int) ([]contract.Reading, error)
 
-	// Return a list of readings whose name is in the list of value descriptor names
-	ReadingsByValueDescriptorNames(names []string, limit int) ([]contract.Reading, error)
-
-	// Return a list of readings specified by the UOM label
-	//ReadingsByUomLabel(uomLabel string, limit int)([]contract.Reading, error)
-
-	// Return a list of readings based on the label (value descriptor)
-	// 413 - limit exceeded
-	//ReadingsByLabel(label string, limit int) ([]contract.Reading, error)
-
-	// Return a list of readings who's value descriptor has the type
-	//ReadingsByType(typeString string, limit int) ([]contract.Reading, error)
-
 	// Return a list of readings whos created time is between the start and end times
 	ReadingsByCreationTime(start, end int64, limit int) ([]contract.Reading, error)
-
-	// ************************** VALUE DESCRIPTOR FUNCTIONS ***************************
-	// Add a value descriptor
-	// 409 - Formatting is bad or it is not unique
-	// 503 - Unexpected
-	// TODO: Check for valid printf formatting
-	AddValueDescriptor(v contract.ValueDescriptor) (string, error)
-
-	// Return a list of all the value descriptors
-	// 513 Service Unavailable - database problems
-	ValueDescriptors() ([]contract.ValueDescriptor, error)
-
-	// Update a value descriptor
-	// First use the ID for identification, then the name
-	// TODO: Check for the valid printf formatting
-	// 404 not found if the value descriptor cannot be found by the identifiers
-	UpdateValueDescriptor(v contract.ValueDescriptor) error
-
-	// Delete a value descriptor based on the ID
-	DeleteValueDescriptorById(id string) error
-
-	// Return a value descriptor based on the name
-	ValueDescriptorByName(name string) (contract.ValueDescriptor, error)
-
-	// Return value descriptors based on the names
-	ValueDescriptorsByName(names []string) ([]contract.ValueDescriptor, error)
-
-	// Delete a valuedescriptor based on the name
-	//DeleteValueDescriptorByName(name string) error
-
-	// Return a value descriptor based on the id
-	ValueDescriptorById(id string) (contract.ValueDescriptor, error)
-
-	// Return value descriptors based on the unit of measure label
-	ValueDescriptorsByUomLabel(uomLabel string) ([]contract.ValueDescriptor, error)
-
-	// Return value descriptors based on the label
-	ValueDescriptorsByLabel(label string) ([]contract.ValueDescriptor, error)
-
-	// Return a list of value descriptors based on their type
-	ValueDescriptorsByType(t string) ([]contract.ValueDescriptor, error)
-
-	// Delete all value descriptors
-	ScrubAllValueDescriptors() error
 }

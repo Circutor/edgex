@@ -44,18 +44,6 @@ func NewErrValueDescriptorInvalid(name string, err error) error {
 	return &ErrValueDescriptorInvalid{name: name, err: err}
 }
 
-type ErrValueDescriptorNotFound struct {
-	id string
-}
-
-func (e ErrValueDescriptorNotFound) Error() string {
-	return fmt.Sprintf("no value descriptor for reading '%s'", e.id)
-}
-
-func NewErrValueDescriptorNotFound(id string) error {
-	return &ErrValueDescriptorNotFound{id: id}
-}
-
 type ErrUnsupportedDatabase struct {
 	dbType string
 }
@@ -78,30 +66,6 @@ func (e ErrUnsupportedPublisher) Error() string {
 
 func NewErrUnsupportedPublisher(pubType string) error {
 	return &ErrUnsupportedPublisher{pubType: pubType}
-}
-
-type ErrValueDescriptorInUse struct {
-	name string
-}
-
-func (e ErrValueDescriptorInUse) Error() string {
-	return fmt.Sprintf("value descriptor '%s' still referenced by readings", e.name)
-}
-
-func NewErrValueDescriptorInUse(name string) error {
-	return &ErrValueDescriptorInUse{name: name}
-}
-
-type ErrDuplicateValueDescriptorName struct {
-	name string
-}
-
-func (e ErrDuplicateValueDescriptorName) Error() string {
-	return fmt.Sprintf("duplicate name for value descriptor: %s", e.name)
-}
-
-func NewErrDuplicateValueDescriptorName(name string) error {
-	return &ErrDuplicateValueDescriptorName{name: name}
 }
 
 type ErrLimitExceeded struct {
