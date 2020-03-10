@@ -5,7 +5,7 @@
 #
 
 
-.PHONY: build clean test run
+.PHONY: build arm clean test run
 
 
 GO=CGO_ENABLED=0 go
@@ -52,6 +52,9 @@ cmd/support-scheduler/support-scheduler:
 
 cmd/edgex/edgex:
 	$(GO) build $(GOFLAGS) -o $@ ./cmd/edgex
+
+arm:
+	GOOS=linux GOARCH=arm $(GO) build $(GOFLAGS) -o cmd/edgex/edgex ./cmd/edgex
 
 clean:
 	rm -f $(MICROSERVICES)
