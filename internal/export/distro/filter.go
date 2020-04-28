@@ -9,7 +9,7 @@ package distro
 import (
 	"fmt"
 
-	contract "github.com/Circutor/edgex/pkg/models"
+	contract "gitlab.circutor.com/EDS/edgex-go/pkg/models"
 )
 
 type devIdFilterDetails struct {

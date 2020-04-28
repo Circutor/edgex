@@ -10,8 +10,8 @@ package main
 import (
 	"testing"
 
-	"github.com/Circutor/edgex/internal/export/distro"
-	"github.com/Circutor/edgex/internal/pkg/config"
+	"gitlab.circutor.com/EDS/edgex-go/internal/export/distro"
+	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/config"
 )
 
 func TestToml(t *testing.T) {

@@ -13,7 +13,7 @@
  *******************************************************************************/
 package data
 
-import "github.com/Circutor/edgex/internal/pkg/config"
+import "gitlab.circutor.com/EDS/edgex-go/internal/pkg/config"
 
 type ConfigurationStruct struct {
 	Writable     WritableInfo

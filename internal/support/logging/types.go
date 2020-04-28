@@ -9,11 +9,11 @@ package logging
 import (
 	"os"
 
-	"github.com/Circutor/edgex/internal"
-	"github.com/Circutor/edgex/internal/pkg/db"
-	"github.com/Circutor/edgex/pkg/clients/logger"
-	"github.com/Circutor/edgex/pkg/clients/types"
-	"github.com/Circutor/edgex/pkg/models"
+	"gitlab.circutor.com/EDS/edgex-go/internal"
+	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db"
+	"gitlab.circutor.com/EDS/edgex-go/pkg/clients/logger"
+	"gitlab.circutor.com/EDS/edgex-go/pkg/clients/types"
+	"gitlab.circutor.com/EDS/edgex-go/pkg/models"
 	"github.com/go-kit/kit/log"
 )
 

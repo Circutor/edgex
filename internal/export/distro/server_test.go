@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Circutor/edgex/pkg/clients"
+	"gitlab.circutor.com/EDS/edgex-go/pkg/clients"
 )
 
 func TestPing(t *testing.T) {

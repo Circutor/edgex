@@ -11,14 +11,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Circutor/edgex/internal/core/data/messaging"
-	"github.com/Circutor/edgex/internal/pkg/correlation/models"
-	"github.com/Circutor/edgex/internal/pkg/db"
+	"gitlab.circutor.com/EDS/edgex-go/internal/core/data/messaging"
+	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/correlation/models"
+	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db"
 
-	"github.com/Circutor/edgex/pkg/clients/logger"
-	"github.com/Circutor/edgex/pkg/clients/metadata/mocks"
-	"github.com/Circutor/edgex/pkg/clients/types"
-	contract "github.com/Circutor/edgex/pkg/models"
+	"gitlab.circutor.com/EDS/edgex-go/pkg/clients/logger"
+	"gitlab.circutor.com/EDS/edgex-go/pkg/clients/metadata/mocks"
+	"gitlab.circutor.com/EDS/edgex-go/pkg/clients/types"
+	contract "gitlab.circutor.com/EDS/edgex-go/pkg/models"
 
 	"github.com/globalsign/mgo/bson"
 	"github.com/gorilla/mux"

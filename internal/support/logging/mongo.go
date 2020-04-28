@@ -11,8 +11,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Circutor/edgex/internal/pkg/db"
-	"github.com/Circutor/edgex/pkg/models"
+	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db"
+	"gitlab.circutor.com/EDS/edgex-go/pkg/models"
 
 	mgo "github.com/globalsign/mgo"
 	bson "github.com/globalsign/mgo/bson"

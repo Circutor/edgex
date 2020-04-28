@@ -12,8 +12,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/Circutor/edgex/pkg/clients"
-	contract "github.com/Circutor/edgex/pkg/models"
+	"gitlab.circutor.com/EDS/edgex-go/pkg/clients"
+	contract "gitlab.circutor.com/EDS/edgex-go/pkg/models"
 )
 
 //TODO: Since this is a service-to-service client, it should be in /pkg/clients/export

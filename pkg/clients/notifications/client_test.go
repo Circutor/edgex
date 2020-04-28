@@ -14,7 +14,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/Circutor/edgex/pkg/clients"
+	"gitlab.circutor.com/EDS/edgex-go/pkg/clients"
 )
 
 // Test common const

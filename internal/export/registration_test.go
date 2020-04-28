@@ -7,7 +7,7 @@
 package export
 
 import (
-	"github.com/Circutor/edgex/pkg/models"
+	"gitlab.circutor.com/EDS/edgex-go/pkg/models"
 	"testing"
 )
 

@@ -17,7 +17,7 @@ package models
 import (
 	"encoding/json"
 
-	contract "github.com/Circutor/edgex/pkg/models"
+	contract "gitlab.circutor.com/EDS/edgex-go/pkg/models"
 )
 
 type Event struct {

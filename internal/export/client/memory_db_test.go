@@ -9,7 +9,7 @@ package client
 import (
 	"testing"
 
-	"github.com/Circutor/edgex/internal/pkg/db/test"
+	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db/test"
 )
 
 func TestMemoryDB(t *testing.T) {

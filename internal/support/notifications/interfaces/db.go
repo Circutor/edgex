@@ -17,7 +17,7 @@ package interfaces
 
 import (
 	"errors"
-	contract "github.com/Circutor/edgex/pkg/models"
+	contract "gitlab.circutor.com/EDS/edgex-go/pkg/models"
 )
 
 type DatabaseType int8 // Database type enum

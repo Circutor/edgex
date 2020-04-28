@@ -14,7 +14,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Circutor/edgex/pkg/clients/logger"
+	"gitlab.circutor.com/EDS/edgex-go/pkg/clients/logger"
 )
 
 const (

@@ -11,13 +11,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Circutor/edgex/pkg/clients"
-	"github.com/Circutor/edgex/pkg/clients/coredata"
-	"github.com/Circutor/edgex/pkg/clients/logger"
+	"gitlab.circutor.com/EDS/edgex-go/pkg/clients"
+	"gitlab.circutor.com/EDS/edgex-go/pkg/clients/coredata"
+	"gitlab.circutor.com/EDS/edgex-go/pkg/clients/logger"
 
-	"github.com/Circutor/edgex/internal"
-	"github.com/Circutor/edgex/internal/pkg/config"
-	"github.com/Circutor/edgex/internal/pkg/telemetry"
+	"gitlab.circutor.com/EDS/edgex-go/internal"
+	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/config"
+	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/telemetry"
 )
 
 var LoggingClient logger.LoggingClient

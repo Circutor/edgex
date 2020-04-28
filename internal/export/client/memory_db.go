@@ -18,8 +18,8 @@ package client
 import (
 	"time"
 
-	"github.com/Circutor/edgex/internal/pkg/db"
-	contract "github.com/Circutor/edgex/pkg/models"
+	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db"
+	contract "gitlab.circutor.com/EDS/edgex-go/pkg/models"
 	"github.com/google/uuid"
 )
 

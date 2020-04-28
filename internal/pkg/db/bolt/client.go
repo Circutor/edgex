@@ -17,9 +17,9 @@ package bolt
 import (
 	"errors"
 
-	bolt "github.com/coreos/bbolt"
-	"github.com/Circutor/edgex/internal/pkg/db"
 	jsoniter "github.com/json-iterator/go"
+	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db"
+	bolt "go.etcd.io/bbolt"
 )
 
 var currentBoltClient *BoltClient

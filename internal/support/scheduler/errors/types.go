@@ -15,7 +15,7 @@ package errors
 
 import (
 	"fmt"
-	"github.com/Circutor/edgex/internal/pkg/db"
+	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db"
 )
 
 // Interval

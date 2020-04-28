@@ -15,7 +15,7 @@
 package bolt
 
 import (
-	"github.com/Circutor/edgex/pkg/models"
+	"gitlab.circutor.com/EDS/edgex-go/pkg/models"
 	jsoniter "github.com/json-iterator/go"
 )
 

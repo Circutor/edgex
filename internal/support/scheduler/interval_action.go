@@ -14,9 +14,9 @@
 package scheduler
 
 import (
-	"github.com/Circutor/edgex/internal/pkg/db"
-	"github.com/Circutor/edgex/internal/support/scheduler/errors"
-	contract "github.com/Circutor/edgex/pkg/models"
+	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db"
+	"gitlab.circutor.com/EDS/edgex-go/internal/support/scheduler/errors"
+	contract "gitlab.circutor.com/EDS/edgex-go/pkg/models"
 )
 
 func addNewIntervalAction(intervalAction contract.IntervalAction) (string, error) {

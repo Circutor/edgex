@@ -25,13 +25,13 @@ import (
 
 	"github.com/gorilla/context"
 
-	"github.com/Circutor/edgex"
-	"github.com/Circutor/edgex/internal"
-	"github.com/Circutor/edgex/internal/pkg/correlation"
-	"github.com/Circutor/edgex/internal/pkg/startup"
-	"github.com/Circutor/edgex/internal/pkg/usage"
-	"github.com/Circutor/edgex/internal/system/agent"
-	"github.com/Circutor/edgex/pkg/clients/logger"
+	"gitlab.circutor.com/EDS/edgex-go"
+	"gitlab.circutor.com/EDS/edgex-go/internal"
+	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/correlation"
+	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/startup"
+	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/usage"
+	"gitlab.circutor.com/EDS/edgex-go/internal/system/agent"
+	"gitlab.circutor.com/EDS/edgex-go/pkg/clients/logger"
 )
 
 func main() {

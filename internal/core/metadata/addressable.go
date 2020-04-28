@@ -14,9 +14,9 @@
 package metadata
 
 import (
-	"github.com/Circutor/edgex/internal/core/metadata/errors"
-	"github.com/Circutor/edgex/internal/pkg/db"
-	contract "github.com/Circutor/edgex/pkg/models"
+	"gitlab.circutor.com/EDS/edgex-go/internal/core/metadata/errors"
+	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db"
+	contract "gitlab.circutor.com/EDS/edgex-go/pkg/models"
 )
 
 func getAllAddressables() ([]contract.Addressable, error) {

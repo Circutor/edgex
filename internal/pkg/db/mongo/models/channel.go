@@ -14,7 +14,7 @@
  *******************************************************************************/
 package models
 
-import contract "github.com/Circutor/edgex/pkg/models"
+import contract "gitlab.circutor.com/EDS/edgex-go/pkg/models"
 
 type Channel struct {
 	Type          contract.ChannelType `bson:"type,omitempty"`

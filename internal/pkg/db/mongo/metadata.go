@@ -18,9 +18,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/Circutor/edgex/internal/pkg/db"
-	"github.com/Circutor/edgex/internal/pkg/db/mongo/models"
-	contract "github.com/Circutor/edgex/pkg/models"
+	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db"
+	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db/mongo/models"
+	contract "gitlab.circutor.com/EDS/edgex-go/pkg/models"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 )

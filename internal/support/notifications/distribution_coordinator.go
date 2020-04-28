@@ -16,7 +16,7 @@
 package notifications
 
 import (
-	"github.com/Circutor/edgex/pkg/models"
+	"gitlab.circutor.com/EDS/edgex-go/pkg/models"
 )
 
 func distribute(n models.Notification) error {

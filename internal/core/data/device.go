@@ -15,8 +15,8 @@ package data
 
 import (
 	"context"
-	"github.com/Circutor/edgex/internal/core/data/errors"
-	"github.com/Circutor/edgex/internal/pkg/db"
+	"gitlab.circutor.com/EDS/edgex-go/internal/core/data/errors"
+	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db"
 )
 
 // Update when the device was last reported connected

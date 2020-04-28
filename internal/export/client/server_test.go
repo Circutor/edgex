@@ -18,10 +18,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Circutor/edgex/internal"
-	"github.com/Circutor/edgex/pkg/clients"
-	"github.com/Circutor/edgex/pkg/clients/logger"
-	"github.com/Circutor/edgex/pkg/models"
+	"gitlab.circutor.com/EDS/edgex-go/internal"
+	"gitlab.circutor.com/EDS/edgex-go/pkg/clients"
+	"gitlab.circutor.com/EDS/edgex-go/pkg/clients/logger"
+	"gitlab.circutor.com/EDS/edgex-go/pkg/models"
 )
 
 const regJson = `{"origin":1471806386919,"name":"OSIClient","addressable":{"origin":1471806386919,"name":"OSIMQTTBroker","protocol":"TCP","address":"m10.cloudmqtt.com","port":15421,"publisher":"EdgeXExportPublisher","user":"hukfgtoh","password":"uP6hJLYW6Ji4","topic":"EdgeXDataTopic"},"format":"JSON","filter":{"deviceIdentifiers":["livingroomthermosat", "hallwaythermostat"],"valueDescriptorIdentifiers":["temperature", "humidity"]},"encryption":{"encryptionAlgorithm":"AES","encryptionKey":"123","initializingVector":"123"},"compression":"GZIP","enable":true, "destination": "REST_ENDPOINT"}`

@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Circutor/edgex/pkg/models"
+	"gitlab.circutor.com/EDS/edgex-go/pkg/models"
 )
 
 // Test common const

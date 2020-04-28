@@ -17,13 +17,13 @@ package config
 import (
 	"flag"
 	"fmt"
-	"github.com/Circutor/edgex/internal"
+	"gitlab.circutor.com/EDS/edgex-go/internal"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 
 	"github.com/BurntSushi/toml"
-	"github.com/Circutor/edgex/pkg/clients/logger"
+	"gitlab.circutor.com/EDS/edgex-go/pkg/clients/logger"
 	"github.com/pkg/errors"
 )
 

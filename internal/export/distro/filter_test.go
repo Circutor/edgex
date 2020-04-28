@@ -9,7 +9,7 @@ package distro
 import (
 	"testing"
 
-	contract "github.com/Circutor/edgex/pkg/models"
+	contract "gitlab.circutor.com/EDS/edgex-go/pkg/models"
 )
 
 const (

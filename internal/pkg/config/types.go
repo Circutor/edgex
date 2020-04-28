@@ -16,7 +16,7 @@ package config
 import (
 	"fmt"
 
-	"github.com/Circutor/edgex/pkg/clients"
+	"gitlab.circutor.com/EDS/edgex-go/pkg/clients"
 )
 
 // ServiceInfo contains configuration settings necessary for the basic operation of any EdgeX service.

@@ -4,7 +4,7 @@ This package contains the metadata client written in the Go programming language
 ### How To Use ###
 To use the core-metadata client package you first need to import the library into your project:
 ```
-import "github.com/Circutor/edgex/pkg/clients/metadata"
+import "gitlab.circutor.com/EDS/edgex-go/pkg/clients/metadata"
 ```
 As an example of use, to find a device using the Metadata client, first create a new device client (see core-data init.go)
 ```

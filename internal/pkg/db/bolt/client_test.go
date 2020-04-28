@@ -15,8 +15,8 @@ package bolt
 import (
 	"testing"
 
-	"github.com/Circutor/edgex/internal/pkg/db"
-	"github.com/Circutor/edgex/internal/pkg/db/test"
+	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db"
+	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db/test"
 )
 
 func TestBoltDB(t *testing.T) {

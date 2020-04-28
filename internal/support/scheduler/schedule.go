@@ -9,7 +9,7 @@ package scheduler
 import (
 	"errors"
 	"fmt"
-	contract "github.com/Circutor/edgex/pkg/models"
+	contract "gitlab.circutor.com/EDS/edgex-go/pkg/models"
 	queueV1 "gopkg.in/eapache/queue.v1"
 	"io/ioutil"
 	"net/http"

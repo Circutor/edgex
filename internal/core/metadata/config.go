@@ -14,7 +14,7 @@
 package metadata
 
 import (
-	"github.com/Circutor/edgex/internal/pkg/config"
+	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/config"
 )
 
 // Struct used to parse the JSON configuration file

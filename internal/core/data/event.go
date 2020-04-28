@@ -17,11 +17,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Circutor/edgex/internal/core/data/errors"
-	"github.com/Circutor/edgex/internal/pkg/correlation"
-	"github.com/Circutor/edgex/internal/pkg/correlation/models"
-	"github.com/Circutor/edgex/internal/pkg/db"
-	contract "github.com/Circutor/edgex/pkg/models"
+	"gitlab.circutor.com/EDS/edgex-go/internal/core/data/errors"
+	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/correlation"
+	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/correlation/models"
+	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db"
+	contract "gitlab.circutor.com/EDS/edgex-go/pkg/models"
 )
 
 func countEvents() (int, error) {

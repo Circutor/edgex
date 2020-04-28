@@ -13,7 +13,7 @@
  *******************************************************************************/
 package interfaces
 
-import(contract "github.com/Circutor/edgex/pkg/models")
+import(contract "gitlab.circutor.com/EDS/edgex-go/pkg/models")
 
 type SchedulerQueueClient interface {
 

@@ -13,7 +13,7 @@ import (
 	"crypto/sha1"
 	"encoding/base64"
 
-	"github.com/Circutor/edgex/pkg/models"
+	"gitlab.circutor.com/EDS/edgex-go/pkg/models"
 )
 
 type aesEncryption struct {

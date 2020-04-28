@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	models "github.com/Circutor/edgex/pkg/models"
+	models "gitlab.circutor.com/EDS/edgex-go/pkg/models"
 	mock "github.com/stretchr/testify/mock"
 )
 

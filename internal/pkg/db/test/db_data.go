@@ -11,9 +11,9 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/Circutor/edgex/internal/core/data/interfaces"
-	dbp "github.com/Circutor/edgex/internal/pkg/db"
-	contract "github.com/Circutor/edgex/pkg/models"
+	"gitlab.circutor.com/EDS/edgex-go/internal/core/data/interfaces"
+	dbp "gitlab.circutor.com/EDS/edgex-go/internal/pkg/db"
+	contract "gitlab.circutor.com/EDS/edgex-go/pkg/models"
 )
 
 func populateDbReadings(db interfaces.DBClient, count int) (string, error) {
