@@ -5,6 +5,7 @@ linters:
     - gochecknoinits
     - gofmt
     - goimports
+    - ineffassign
     - interfacer
     - staticcheck
   disable:
@@ -21,7 +22,6 @@ linters:
     - golint
     - gosec
     - gosimple
-    - ineffassign
     - lll
     - maligned
     - misspell
