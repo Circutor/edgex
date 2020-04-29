@@ -14,10 +14,10 @@
 package scheduler
 
 import (
-	dbMock "gitlab.circutor.com/EDS/edgex-go/internal/support/scheduler/interfaces/mocks"
-	"gitlab.circutor.com/EDS/edgex-go/pkg/models"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
+	dbMock "gitlab.circutor.com/EDS/edgex-go/internal/support/scheduler/interfaces/mocks"
+	"gitlab.circutor.com/EDS/edgex-go/pkg/models"
 	"testing"
 )
 

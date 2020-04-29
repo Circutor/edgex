@@ -16,9 +16,9 @@
 package mongo
 
 import (
-	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db"
 	"github.com/globalsign/mgo/bson"
 	"github.com/google/uuid"
+	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db"
 )
 
 func idToQueryParameters(id string) (name string, value interface{}, err error) {

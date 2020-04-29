@@ -15,8 +15,8 @@
 package models
 
 import (
-	contract "gitlab.circutor.com/EDS/edgex-go/pkg/models"
 	"github.com/globalsign/mgo"
+	contract "gitlab.circutor.com/EDS/edgex-go/pkg/models"
 )
 
 type deviceServiceTransform interface {

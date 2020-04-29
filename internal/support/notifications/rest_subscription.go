@@ -20,9 +20,9 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gorilla/mux"
 	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db"
 	"gitlab.circutor.com/EDS/edgex-go/pkg/models"
-	"github.com/gorilla/mux"
 )
 
 const (

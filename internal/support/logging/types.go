@@ -9,12 +9,12 @@ package logging
 import (
 	"os"
 
+	"github.com/go-kit/kit/log"
 	"gitlab.circutor.com/EDS/edgex-go/internal"
 	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db"
 	"gitlab.circutor.com/EDS/edgex-go/pkg/clients/logger"
 	"gitlab.circutor.com/EDS/edgex-go/pkg/clients/types"
 	"gitlab.circutor.com/EDS/edgex-go/pkg/models"
-	"github.com/go-kit/kit/log"
 )
 
 const (

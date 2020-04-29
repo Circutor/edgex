@@ -3,6 +3,7 @@ linters:
     - depguard
     - dogsled
     - gochecknoinits
+    - gofmt
     - interfacer
   disable:
     - bodyclose
@@ -15,7 +16,6 @@ linters:
     - gocritic
     - gocyclo
     - godox
-    - gofmt
     - goimports
     - golint
     - gosec

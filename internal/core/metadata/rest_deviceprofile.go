@@ -20,9 +20,9 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/gorilla/mux"
 	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db"
 	"gitlab.circutor.com/EDS/edgex-go/pkg/models"
-	"github.com/gorilla/mux"
 	yaml "gopkg.in/yaml.v2"
 )
 

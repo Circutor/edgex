@@ -17,11 +17,10 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"gitlab.circutor.com/EDS/edgex-go/pkg/clients"
 	"github.com/gorilla/mux"
-
 	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/correlation"
 	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/telemetry"
+	"gitlab.circutor.com/EDS/edgex-go/pkg/clients"
 )
 
 func LoadRestRoutes() http.Handler {

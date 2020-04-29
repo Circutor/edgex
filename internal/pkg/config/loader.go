@@ -23,8 +23,8 @@ import (
 	"path/filepath"
 
 	"github.com/BurntSushi/toml"
-	"gitlab.circutor.com/EDS/edgex-go/pkg/clients/logger"
 	"github.com/pkg/errors"
+	"gitlab.circutor.com/EDS/edgex-go/pkg/clients/logger"
 )
 
 const (

@@ -20,9 +20,9 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/gorilla/mux"
 	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db"
 	"gitlab.circutor.com/EDS/edgex-go/pkg/models"
-	"github.com/gorilla/mux"
 )
 
 func transmissionHandler(w http.ResponseWriter, r *http.Request) {

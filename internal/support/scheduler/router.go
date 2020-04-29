@@ -20,10 +20,10 @@ import (
 	"net/url"
 	"strconv"
 
+	"github.com/gorilla/mux"
 	"gitlab.circutor.com/EDS/edgex-go/pkg/clients"
 	"gitlab.circutor.com/EDS/edgex-go/pkg/clients/types"
 	"gitlab.circutor.com/EDS/edgex-go/pkg/models"
-	"github.com/gorilla/mux"
 
 	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/correlation"
 	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/telemetry"

@@ -14,8 +14,8 @@
 package bolt
 
 import (
-	"gitlab.circutor.com/EDS/edgex-go/pkg/models"
 	jsoniter "github.com/json-iterator/go"
+	"gitlab.circutor.com/EDS/edgex-go/pkg/models"
 )
 
 // Internal version of the device service struct

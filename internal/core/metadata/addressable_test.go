@@ -19,14 +19,14 @@ import (
 	"os"
 	"testing"
 
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/mock"
 	metadataErrors "gitlab.circutor.com/EDS/edgex-go/internal/core/metadata/errors"
 	"gitlab.circutor.com/EDS/edgex-go/internal/core/metadata/interfaces"
 	dbMock "gitlab.circutor.com/EDS/edgex-go/internal/core/metadata/interfaces/mocks"
 	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db"
 	"gitlab.circutor.com/EDS/edgex-go/pkg/clients/logger"
 	"gitlab.circutor.com/EDS/edgex-go/pkg/models"
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/mock"
 )
 
 func TestGetAllAddressables(t *testing.T) {

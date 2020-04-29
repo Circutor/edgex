@@ -19,9 +19,9 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/gorilla/mux"
 	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db"
 	contract "gitlab.circutor.com/EDS/edgex-go/pkg/models"
-	"github.com/gorilla/mux"
 )
 
 func restGetAllCommands(w http.ResponseWriter, _ *http.Request) {

@@ -23,6 +23,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gorilla/context"
 	"gitlab.circutor.com/EDS/edgex-go"
 	"gitlab.circutor.com/EDS/edgex-go/internal"
 	"gitlab.circutor.com/EDS/edgex-go/internal/core/command"
@@ -30,7 +31,6 @@ import (
 	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/startup"
 	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/usage"
 	"gitlab.circutor.com/EDS/edgex-go/pkg/clients/logger"
-	"github.com/gorilla/context"
 )
 
 func main() {

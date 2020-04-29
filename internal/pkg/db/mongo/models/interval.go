@@ -15,9 +15,9 @@
 package models
 
 import (
+	"github.com/globalsign/mgo/bson"
 	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db"
 	contract "gitlab.circutor.com/EDS/edgex-go/pkg/models"
-	"github.com/globalsign/mgo/bson"
 )
 
 type Interval struct {

@@ -9,8 +9,8 @@ package test
 import (
 	"testing"
 
-	"gitlab.circutor.com/EDS/edgex-go/pkg/models"
 	"gitlab.circutor.com/EDS/edgex-go/internal/export"
+	"gitlab.circutor.com/EDS/edgex-go/pkg/models"
 )
 
 func TestExportDB(t *testing.T, db export.DBClient) {

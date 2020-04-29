@@ -14,10 +14,10 @@
 package scheduler
 
 import (
+	"github.com/robfig/cron"
 	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db"
 	"gitlab.circutor.com/EDS/edgex-go/internal/support/scheduler/errors"
 	contract "gitlab.circutor.com/EDS/edgex-go/pkg/models"
-	"github.com/robfig/cron"
 )
 
 func getIntervals(limit int) ([]contract.Interval, error) {

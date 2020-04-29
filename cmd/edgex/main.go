@@ -22,6 +22,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gorilla/context"
 	edgex "gitlab.circutor.com/EDS/edgex-go"
 	"gitlab.circutor.com/EDS/edgex-go/internal"
 	"gitlab.circutor.com/EDS/edgex-go/internal/core/command"
@@ -34,7 +35,6 @@ import (
 	"gitlab.circutor.com/EDS/edgex-go/internal/support/logging"
 	"gitlab.circutor.com/EDS/edgex-go/internal/support/scheduler"
 	"gitlab.circutor.com/EDS/edgex-go/pkg/clients/logger"
-	"github.com/gorilla/context"
 )
 
 var loggingRemoteURL = "http://localhost:48061/api/v1/logs"

@@ -20,10 +20,10 @@ import (
 	"net/url"
 	"strconv"
 
+	"github.com/gorilla/mux"
 	types "gitlab.circutor.com/EDS/edgex-go/internal/core/metadata/errors"
 	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db"
 	"gitlab.circutor.com/EDS/edgex-go/pkg/models"
-	"github.com/gorilla/mux"
 )
 
 func restGetAllAddressables(w http.ResponseWriter, _ *http.Request) {
