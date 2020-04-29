@@ -89,17 +89,3 @@ func (c *Command) UnmarshalJSON(b []byte) error {
 	}
 	return nil
 }
-
-// Append all the associated value descriptors to the list
-// Associated by PUT command parameters and PUT/GET command return values
-func (c *Command) AllAssociatedValueDescriptors(vdNames *map[string]string) {
-	// Check and add Get value descriptors
-	if &(c.Get) != nil {
-		c.Get.AllAssociatedValueDescriptors(vdNames)
-	}
-
-	// Check and add Put value descriptors
-	if &(c.Put) != nil {
-		c.Put.AllAssociatedValueDescriptors(vdNames)
-	}
-}

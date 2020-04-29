@@ -95,17 +95,3 @@ func (d Device) String() string {
 	}
 	return string(out)
 }
-
-// Return all the associated value descriptors through Put command parameters and Put/Get command return values
-func (d *Device) AllAssociatedValueDescriptors(vdNames *[]string) {
-	// Get the value descriptors with a map (set) where the keys are the value descriptor names
-	vdNamesMap := map[string]string{}
-	for _, c := range d.Profile.Commands {
-		c.AllAssociatedValueDescriptors(&vdNamesMap)
-	}
-
-	// Add the map keys (value descriptor names) to the list
-	for vd := range vdNamesMap {
-		*vdNames = append(*vdNames, vd)
-	}
-}

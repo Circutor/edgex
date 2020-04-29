@@ -31,15 +31,15 @@ type Addressable struct {
 	BaseObject
 	Id         string `json:"id"`
 	Name       string `json:"name"`
-	Protocol   string `json:"protocol"`    // Protocol for the address (HTTP/TCP)
-	HTTPMethod string `json:"method"`      // Method for connecting (i.e. POST)
-	Address    string `json:"address"`     // Address of the addressable
-	Port       int    `json:"port,Number"` // Port for the address
-	Path       string `json:"path"`        // Path for callbacks
-	Publisher  string `json:"publisher"`   // For message bus protocols
-	User       string `json:"user"`        // User id for authentication
-	Password   string `json:"password"`    // Password of the user for authentication for the addressable
-	Topic      string `json:"topic"`       // Topic for message bus addressables
+	Protocol   string `json:"protocol"`  // Protocol for the address (HTTP/TCP)
+	HTTPMethod string `json:"method"`    // Method for connecting (i.e. POST)
+	Address    string `json:"address"`   // Address of the addressable
+	Port       int    `json:"port"`      // Port for the address
+	Path       string `json:"path"`      // Path for callbacks
+	Publisher  string `json:"publisher"` // For message bus protocols
+	User       string `json:"user"`      // User id for authentication
+	Password   string `json:"password"`  // Password of the user for authentication for the addressable
+	Topic      string `json:"topic"`     // Topic for message bus addressables
 }
 
 // Custom marshaling for JSON
@@ -50,15 +50,15 @@ func (a Addressable) MarshalJSON() ([]byte, error) {
 		BaseObject
 		Id         *string `json:"id,omitempty"`
 		Name       *string `json:"name,omitempty"`
-		Protocol   *string `json:"protocol,omitempty"`    // Protocol for the address (HTTP/TCP)
-		HTTPMethod *string `json:"method,omitempty"`      // Method for connecting (i.e. POST)
-		Address    *string `json:"address,omitempty"`     // Address of the addressable
-		Port       int     `json:"port,Number,omitempty"` // Port for the address
-		Path       *string `json:"path,omitempty"`        // Path for callbacks
-		Publisher  *string `json:"publisher,omitempty"`   // For message bus protocols
-		User       *string `json:"user,omitempty"`        // User id for authentication
-		Password   *string `json:"password,omitempty"`    // Password of the user for authentication for the addressable
-		Topic      *string `json:"topic,omitempty"`       // Topic for message bus addressables
+		Protocol   *string `json:"protocol,omitempty"`  // Protocol for the address (HTTP/TCP)
+		HTTPMethod *string `json:"method,omitempty"`    // Method for connecting (i.e. POST)
+		Address    *string `json:"address,omitempty"`   // Address of the addressable
+		Port       int     `json:"port,omitempty"`      // Port for the address
+		Path       *string `json:"path,omitempty"`      // Path for callbacks
+		Publisher  *string `json:"publisher,omitempty"` // For message bus protocols
+		User       *string `json:"user,omitempty"`      // User id for authentication
+		Password   *string `json:"password,omitempty"`  // Password of the user for authentication for the addressable
+		Topic      *string `json:"topic,omitempty"`     // Topic for message bus addressables
 		BaseURL    *string `json:"baseURL,omitempty"`
 		URL        *string `json:"url,omitempty"`
 	}{

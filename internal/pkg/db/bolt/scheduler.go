@@ -283,12 +283,12 @@ func (bc *BoltClient) ScrubAllIntervalActions() (int, error) {
 // UnexpectedError - failed to remove all of the Interval and IntervalActions from the database
 func (bc *BoltClient) ScrubAllIntervals() (int, error) {
 	// Ensure we have removed interval actions first
-	count, err := bc.ScrubAllIntervalActions()
+	_, err := bc.ScrubAllIntervalActions()
 	if err != nil {
 		return 0, err
 	}
 
-	count, err = bc.count(db.Interval)
+	count, err := bc.count(db.Interval)
 	if err != nil {
 		return 0, err
 	}

@@ -79,10 +79,6 @@ func updateDeviceServiceLastReportedConnected(device string) {
 
 	// Get the device service
 	s := d.Service
-	if &s == nil {
-		LoggingClient.Error("Error updating device service connected/reported times.  Unknown device service in device:  " + d.Name)
-		return
-	}
 
 	//Use of context.Background because this function is invoked asynchronously from a channel
 	msc.UpdateLastConnected(s.Service.Id, t, context.Background())

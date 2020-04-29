@@ -237,7 +237,7 @@ func restGetServiceByAddressableName(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res := make([]models.DeviceService, 0)
+	var res []models.DeviceService
 	if res, err = dbClient.GetDeviceServicesByAddressableId(a.Id); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		LoggingClient.Error(err.Error())
@@ -264,7 +264,7 @@ func restGetServiceByAddressableId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res := make([]models.DeviceService, 0)
+	var res []models.DeviceService
 	if res, err = dbClient.GetDeviceServicesByAddressableId(sid); err != nil {
 		LoggingClient.Error(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -284,7 +284,7 @@ func restGetServiceWithLabel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res := make([]models.DeviceService, 0)
+	var res []models.DeviceService
 	if res, err = dbClient.GetDeviceServicesWithLabel(l); err != nil {
 		LoggingClient.Error(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)

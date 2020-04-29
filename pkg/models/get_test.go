@@ -61,25 +61,3 @@ func TestGet_String(t *testing.T) {
 		})
 	}
 }
-
-func TestGet_AllAssociatedValueDescriptors(t *testing.T) {
-	var testMap = make(map[string]string)
-	type args struct {
-		vdNames *map[string]string
-	}
-	tests := []struct {
-		name string
-		g    *Get
-		args args
-	}{
-		{"get assoc val descs", &TestGet, args{vdNames: &testMap}},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tt.g.AllAssociatedValueDescriptors(tt.args.vdNames)
-			if len(*tt.args.vdNames) != 2 {
-				t.Error("Associated value descriptor size > than expected")
-			}
-		})
-	}
-}

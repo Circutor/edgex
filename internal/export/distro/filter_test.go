@@ -78,12 +78,12 @@ func TestFilterValue(t *testing.T) {
 	event12.Readings = append(event12.Readings, contract.Reading{Name: descriptor1})
 	event12.Readings = append(event12.Readings, contract.Reading{Name: descriptor2})
 
-	accepted, res := filter1.Filter(nil)
+	accepted, _ := filter1.Filter(nil)
 	if accepted {
 		t.Fatal("Event should be filtered out")
 	}
 
-	accepted, res = filter1.Filter(&event1)
+	accepted, res := filter1.Filter(&event1)
 	if !accepted {
 		t.Fatal("Event should be accepted")
 	}
@@ -99,7 +99,7 @@ func TestFilterValue(t *testing.T) {
 		t.Fatal("Event should be one reading, there are ", len(res.Readings))
 	}
 
-	accepted, res = filter1.Filter(&event2)
+	accepted, _ = filter1.Filter(&event2)
 	if accepted {
 		t.Fatal("Event should be filtered out")
 	}

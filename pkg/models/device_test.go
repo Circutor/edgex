@@ -92,28 +92,6 @@ func TestDevice_String(t *testing.T) {
 	}
 }
 
-func TestDevice_AllAssociatedValueDescriptors(t *testing.T) {
-	var assocVD []string
-	type args struct {
-		vdNames *[]string
-	}
-	tests := []struct {
-		name string
-		d    *Device
-		args args
-	}{
-		{"get associated value descriptors", &TestDevice, args{vdNames: &assocVD}},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tt.d.AllAssociatedValueDescriptors(tt.args.vdNames)
-			if len(*tt.args.vdNames) != 2 {
-				t.Error("Associated value descriptor size > than expected")
-			}
-		})
-	}
-}
-
 func newTestProtocols() map[string]ProtocolProperties {
 	p1 := make(ProtocolProperties)
 	p1["host"] = "localhost"

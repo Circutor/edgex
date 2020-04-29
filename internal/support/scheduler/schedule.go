@@ -480,7 +480,7 @@ func execute(context *IntervalContext, wg *sync.WaitGroup) error {
 		client := &http.Client{
 			Timeout: time.Duration(Configuration.Service.Timeout) * time.Millisecond,
 		}
-		responseBytes, statusCode, err := sendRequestAndGetResponse(client, req)
+		responseBytes, statusCode, _ := sendRequestAndGetResponse(client, req)
 		responseStr := string(responseBytes)
 
 		LoggingClient.Debug(fmt.Sprintf("execution returns status code : %d", statusCode))

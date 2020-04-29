@@ -53,7 +53,7 @@ func subscriptionHandler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPut:
 		var s models.Subscription
 		dec := json.NewDecoder(r.Body)
-		err := dec.Decode(&s)
+		dec.Decode(&s)
 
 		// Check if the subscription exists
 		s2, err := dbClient.GetSubscriptionBySlug(s.Slug)

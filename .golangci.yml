@@ -6,6 +6,7 @@ linters:
     - gofmt
     - goimports
     - interfacer
+    - staticcheck
   disable:
     - bodyclose
     - dupl
@@ -27,8 +28,14 @@ linters:
     - nakedret
     - prealloc
     - scopelint
-    - staticcheck
     - stylecheck
     - unparam
     - wsl
     - whitespace
+
+issues:
+  # Excluding configuration per-path, per-linter, per-text and per-source
+  exclude-rules:
+    - linters:
+        - staticcheck
+      text: "SA1029:"

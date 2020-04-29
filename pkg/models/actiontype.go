@@ -17,13 +17,13 @@ package models
 type ActionType string
 
 const (
-	PROFILE          ActionType = "PROFILE"
-	DEVICE                      = "DEVICE"
-	SERVICE                     = "SERVICE"
-	SCHEDULE                    = "SCHEDULE"
-	SCHEDULEEVENT               = "SCHEDULEEVENT"
-	ADDRESSABLE                 = "ADDRESSABLE"
-	VALUEDESCRIPTOR             = "VALUEDESCRIPTOR"
-	PROVISIONWATCHER            = "PROVISIONWATCHER"
-	REPORT                      = "REPORT"
+	PROFILE          = "PROFILE"
+	DEVICE           = "DEVICE"
+	SERVICE          = "SERVICE"
+	SCHEDULE         = "SCHEDULE"
+	SCHEDULEEVENT    = "SCHEDULEEVENT"
+	ADDRESSABLE      = "ADDRESSABLE"
+	VALUEDESCRIPTOR  = "VALUEDESCRIPTOR"
+	PROVISIONWATCHER = "PROVISIONWATCHER"
+	REPORT           = "REPORT"
 )

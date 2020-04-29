@@ -128,7 +128,7 @@ func testPersistenceRemove(t *testing.T, persistence persistence) {
 			}
 			// we add a new log
 			persistence.add(le)
-			logs, err := persistence.find(matchCriteria{})
+			logs, _ := persistence.find(matchCriteria{})
 			if len(logs) != 5-tt.result+1 {
 				t.Errorf("Should return %d log entries, returned %d",
 					6-tt.result+1, len(logs))

@@ -38,7 +38,7 @@ func newMqttSender(addr contract.Addressable, cert string, key string) sender {
 	opts.SetAutoReconnect(false)
 
 	if protocol == "tcps" || protocol == "ssl" || protocol == "tls" {
-		tlsConfig := &tls.Config{}
+		var tlsConfig *tls.Config
 		if cert == "" || key == "" {
 			tlsConfig = &tls.Config{
 				ClientCAs:          nil,

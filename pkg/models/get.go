@@ -51,15 +51,3 @@ func (g Get) String() string {
 	}
 	return string(out)
 }
-
-// Append the associated value descriptors to the list
-func (g *Get) AllAssociatedValueDescriptors(vdNames *map[string]string) {
-	for _, r := range g.Action.Responses {
-		for _, ev := range r.ExpectedValues {
-			// Only add to the map if the value is not there
-			if _, ok := (*vdNames)[ev]; !ok {
-				(*vdNames)[ev] = ev
-			}
-		}
-	}
-}

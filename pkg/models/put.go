@@ -61,13 +61,3 @@ func (p Put) String() string {
 	}
 	return string(out)
 }
-
-// Append the associated value descriptors to the list
-func (p *Put) AllAssociatedValueDescriptors(vdNames *map[string]string) {
-	for _, pn := range p.ParameterNames {
-		// Only add to the map if the value descriptor is NOT there
-		if _, ok := (*vdNames)[pn]; !ok {
-			(*vdNames)[pn] = pn
-		}
-	}
-}

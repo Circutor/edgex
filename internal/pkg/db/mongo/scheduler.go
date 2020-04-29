@@ -84,6 +84,10 @@ func (mc MongoClient) AddInterval(interval contract.Interval) (string, error) {
 
 	// See if the name is unique and add the value descriptors
 	found, err := s.DB(mc.database.Name).C(db.Interval).Find(bson.M{"name": mapped.Name}).Count()
+	if err != nil {
+		return "", err
+	}
+
 	// Duplicate name
 	if found > 0 {
 		return "", db.ErrNotUnique
@@ -197,6 +201,10 @@ func (mc MongoClient) AddIntervalAction(action contract.IntervalAction) (string,
 
 	// See if the name is unique and add the value descriptors
 	found, err := s.DB(mc.database.Name).C(db.IntervalAction).Find(bson.M{"name": mapped.Name}).Count()
+	if err != nil {
+		return "", err
+	}
+
 	// Duplicate name
 	if found > 0 {
 		return "", db.ErrNotUnique
@@ -345,6 +353,9 @@ func (mc MongoClient) ScrubAllIntervals() (int, error) {
 
 	// Ensure we have removed interval actions first
 	count, err := s.DB(mc.database.Name).C(db.IntervalAction).Count()
+	if err != nil {
+		return 0, errorMap(err)
+	}
 	if count > 0 {
 		_, err = s.DB(mc.database.Name).C(db.IntervalAction).RemoveAll(nil)
 		if err != nil {

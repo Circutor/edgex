@@ -73,7 +73,7 @@ func logBeforeInit(err error) {
 func listenForInterrupt(errChan chan error) {
 	go func() {
 		correlation.LoggingClient = client.LoggingClient
-		c := make(chan os.Signal)
+		c := make(chan os.Signal, 1)
 		signal.Notify(c, syscall.SIGINT)
 		errChan <- fmt.Errorf("%s", <-c)
 	}()

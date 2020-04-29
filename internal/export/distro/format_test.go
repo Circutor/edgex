@@ -140,7 +140,7 @@ func TestAWSIoTJson(t *testing.T) {
 
 	reported := state["reported"].(map[string]interface{})
 
-	val, err := strconv.ParseFloat(readingValue1, 64)
+	val, _ := strconv.ParseFloat(readingValue1, 64)
 
 	if reported[readingName1] != val {
 		t.Fatalf("Unmshalred json is not correct: %v", reported)

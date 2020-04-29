@@ -94,7 +94,7 @@ func getConfig(services []string, ctx context.Context) (ConfigRespMap, error) {
 
 			responseJSON, err := generalClients[service].FetchConfiguration(ctx)
 			if err != nil {
-				c.Configuration[service] = fmt.Sprintf(err.Error())
+				c.Configuration[service] = err.Error()
 				LoggingClient.Error(err.Error())
 			} else {
 				c.Configuration[service] = ProcessResponse(responseJSON)
@@ -123,7 +123,7 @@ func getMetrics(services []string, ctx context.Context) (MetricsRespMap, error) 
 
 			responseJSON, err := generalClients[service].FetchMetrics(ctx)
 			if err != nil {
-				m.Metrics[service] = fmt.Sprintf(err.Error())
+				m.Metrics[service] = err.Error()
 				LoggingClient.Error(err.Error())
 			} else {
 				m.Metrics[service] = ProcessResponse(responseJSON)

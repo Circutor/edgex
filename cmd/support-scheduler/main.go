@@ -74,7 +74,7 @@ func logBeforeInit(err error) {
 
 func listenForInterrupt(errChan chan error) {
 	go func() {
-		c := make(chan os.Signal)
+		c := make(chan os.Signal, 1)
 		signal.Notify(c, syscall.SIGINT)
 		errChan <- fmt.Errorf("%s", <-c)
 	}()

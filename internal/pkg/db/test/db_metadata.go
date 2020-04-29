@@ -595,7 +595,7 @@ func testDBDeviceService(t *testing.T, db interfaces.DBClient) {
 	if len(deviceServices) != 1 {
 		t.Fatalf("There should be 1 deviceServices instead of %d", len(deviceServices))
 	}
-	deviceServices, err = db.GetDeviceServicesByAddressableId(uuid.New().String())
+	_, err = db.GetDeviceServicesByAddressableId(uuid.New().String())
 	if err != dataBase.ErrNotFound {
 		t.Fatalf("Error getting deviceServices by addressable id")
 	}

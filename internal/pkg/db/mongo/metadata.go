@@ -677,6 +677,9 @@ func (mc MongoClient) getProvisionWatcher(q bson.M) (mpw models.ProvisionWatcher
 
 func (mc MongoClient) getProvisionWatchers(q bson.M) (pws []contract.ProvisionWatcher, err error) {
 	mpws, err := mc.provisionWatchers(q)
+	if err != nil {
+		return []contract.ProvisionWatcher{}, err
+	}
 
 	cpws := make([]contract.ProvisionWatcher, 0)
 	for _, mpw := range mpws {

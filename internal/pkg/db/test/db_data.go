@@ -67,13 +67,13 @@ func testDBReadings(t *testing.T, db interfaces.DBClient) {
 	}
 
 	beforeTime := dbp.MakeTimestamp()
-	id, err := populateDbReadings(db, 100)
+	_, err = populateDbReadings(db, 100)
 	if err != nil {
 		t.Fatalf("Error populating db: %v\n", err)
 	}
 
 	// To have two readings with the same name
-	id, err = populateDbReadings(db, 10)
+	id, err := populateDbReadings(db, 10)
 	if err != nil {
 		t.Fatalf("Error populating db: %v\n", err)
 	}
@@ -241,13 +241,13 @@ func testDBEvents(t *testing.T, db interfaces.DBClient) {
 	}
 
 	beforeTime := dbp.MakeTimestamp()
-	id, err := populateDbEvents(db, 100, 0)
+	_, err = populateDbEvents(db, 100, 0)
 	if err != nil {
 		t.Fatalf("Error populating db: %v\n", err)
 	}
 
 	// To have two events with the same name
-	id, err = populateDbEvents(db, 10, 1)
+	id, err := populateDbEvents(db, 10, 1)
 	if err != nil {
 		t.Fatalf("Error populating db: %v\n", err)
 	}

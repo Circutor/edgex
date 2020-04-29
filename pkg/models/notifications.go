@@ -37,7 +37,7 @@ func (n Notification) MarshalJSON() ([]byte, error) {
 	test := struct {
 		BaseObject
 		ID          *string               `json:"id"`
-		Slug        *string               `json:"slug,omitempty,omitempty"`
+		Slug        *string               `json:"slug,omitempty"`
 		Sender      *string               `json:"sender,omitempty"`
 		Category    NotificationsCategory `json:"category,omitempty"`
 		Severity    NotificationsSeverity `json:"severity,omitempty"`

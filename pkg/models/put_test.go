@@ -67,25 +67,3 @@ func TestPut_String(t *testing.T) {
 		})
 	}
 }
-
-func TestPut_AllAssociatedValueDescriptors(t *testing.T) {
-	var testMap = make(map[string]string)
-	type args struct {
-		vdNames *map[string]string
-	}
-	tests := []struct {
-		name string
-		p    *Put
-		args args
-	}{
-		{"put assoc val descs", &TestPut, args{vdNames: &testMap}},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tt.p.AllAssociatedValueDescriptors(tt.args.vdNames)
-			if len(*tt.args.vdNames) != 2 {
-				t.Error("Associated value descriptor size > than expected")
-			}
-		})
-	}
-}
