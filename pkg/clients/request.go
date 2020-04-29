@@ -19,7 +19,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/google/uuid"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
@@ -27,6 +26,7 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"github.com/google/uuid"
 	"gitlab.circutor.com/EDS/edgex-go/pkg/clients/types"
 )
 

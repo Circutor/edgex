@@ -16,6 +16,7 @@ package models
 
 import (
 	"encoding/json"
+
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db"

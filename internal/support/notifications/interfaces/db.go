@@ -17,6 +17,7 @@ package interfaces
 
 import (
 	"errors"
+
 	contract "gitlab.circutor.com/EDS/edgex-go/pkg/models"
 )
 

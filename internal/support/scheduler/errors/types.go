@@ -15,6 +15,7 @@ package errors
 
 import (
 	"fmt"
+
 	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db"
 )
 

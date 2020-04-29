@@ -9,13 +9,14 @@ package scheduler
 import (
 	"errors"
 	"fmt"
-	contract "gitlab.circutor.com/EDS/edgex-go/pkg/models"
-	queueV1 "gopkg.in/eapache/queue.v1"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
+
+	contract "gitlab.circutor.com/EDS/edgex-go/pkg/models"
+	queueV1 "gopkg.in/eapache/queue.v1"
 )
 
 //the interval specific shared variables

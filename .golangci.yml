@@ -4,6 +4,7 @@ linters:
     - dogsled
     - gochecknoinits
     - gofmt
+    - goimports
     - interfacer
   disable:
     - bodyclose
@@ -16,7 +17,6 @@ linters:
     - gocritic
     - gocyclo
     - godox
-    - goimports
     - golint
     - gosec
     - gosimple

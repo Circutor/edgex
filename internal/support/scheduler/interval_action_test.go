@@ -14,11 +14,12 @@
 package scheduler
 
 import (
+	"testing"
+
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 	dbMock "gitlab.circutor.com/EDS/edgex-go/internal/support/scheduler/interfaces/mocks"
 	"gitlab.circutor.com/EDS/edgex-go/pkg/models"
-	"testing"
 )
 
 func newGetIntervalActionsWithLimitMockDB(expectedLimit int) *dbMock.DBClient {

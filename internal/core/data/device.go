@@ -15,6 +15,7 @@ package data
 
 import (
 	"context"
+
 	"gitlab.circutor.com/EDS/edgex-go/internal/core/data/errors"
 	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db"
 )

@@ -2,6 +2,7 @@ package correlation
 
 import (
 	"context"
+
 	"gitlab.circutor.com/EDS/edgex-go/pkg/clients"
 )
 

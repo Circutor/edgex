@@ -2,10 +2,10 @@ package correlation
 
 import (
 	"context"
-	"github.com/google/uuid"
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
 	"gitlab.circutor.com/EDS/edgex-go/internal"
 	"gitlab.circutor.com/EDS/edgex-go/pkg/clients"
 	"gitlab.circutor.com/EDS/edgex-go/pkg/clients/logger"

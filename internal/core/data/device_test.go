@@ -3,7 +3,6 @@ package data
 import (
 	"context"
 	"fmt"
-	"github.com/google/uuid"
 	"math"
 	"net/http"
 	"os"
@@ -11,18 +10,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/globalsign/mgo/bson"
+	"github.com/google/uuid"
+	"github.com/gorilla/mux"
+	"github.com/stretchr/testify/mock"
 	"gitlab.circutor.com/EDS/edgex-go/internal/core/data/messaging"
 	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/correlation/models"
 	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db"
-
 	"gitlab.circutor.com/EDS/edgex-go/pkg/clients/logger"
 	"gitlab.circutor.com/EDS/edgex-go/pkg/clients/metadata/mocks"
 	"gitlab.circutor.com/EDS/edgex-go/pkg/clients/types"
 	contract "gitlab.circutor.com/EDS/edgex-go/pkg/models"
-
-	"github.com/globalsign/mgo/bson"
-	"github.com/gorilla/mux"
-	"github.com/stretchr/testify/mock"
 )
 
 var testEvent contract.Event
