@@ -22,7 +22,6 @@ import (
 type xmppSender struct {
 	client  *xmpp.Client
 	remote  string
-	msgType string
 	subject string
 	thread  string
 	other   []string

@@ -30,7 +30,6 @@ import (
 var Configuration *ConfigurationStruct
 var LoggingClient logger.LoggingClient
 var mdc metadata.DeviceClient
-var cc metadata.CommandClient
 
 func Retry(useProfile string, timeout int, wait *sync.WaitGroup, ch chan error) {
 	until := time.Now().Add(time.Millisecond * time.Duration(timeout))
@@ -94,9 +93,6 @@ func initializeClients() {
 	// Create metadata clients
 	url := Configuration.Clients["Metadata"].Url() + clients.ApiDeviceRoute
 	mdc = metadata.NewDeviceClient(url)
-
-	url = Configuration.Clients["Metadata"].Url() + clients.ApiCommandRoute
-	cc = metadata.NewCommandClient(url)
 }
 
 func setLoggingTarget() string {

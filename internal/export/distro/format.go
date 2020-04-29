@@ -16,8 +16,8 @@ import (
 	"strings"
 	"time"
 
-	contract "gitlab.circutor.com/EDS/edgex-go/pkg/models"
 	"github.com/google/uuid"
+	contract "gitlab.circutor.com/EDS/edgex-go/pkg/models"
 )
 
 type jsonFormatter struct {
@@ -28,9 +28,6 @@ type feedbackCode int
 
 const (
 	none feedbackCode = iota
-	positive
-	negative
-	full
 )
 
 func (jsonTr jsonFormatter) Format(event *contract.Event) []byte {

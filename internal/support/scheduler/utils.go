@@ -48,16 +48,12 @@ func msToTime(ms string) (time.Time, error) {
 	return time.Unix(0, msInt*int64(time.Millisecond)), nil
 }
 
-
 // Scheduler Queue Client
-var currentQueueClient *QueueClient // Singleton used so that queueClient can use it to de-reference readings
 type QueueClient struct {
-
 }
 
 // NewClient
 func NewSchedulerQueueClient() *QueueClient {
 	queueClient := &QueueClient{}
-	currentQueueClient = queueClient // Set the singleton
 	return queueClient
 }

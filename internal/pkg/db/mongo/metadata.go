@@ -18,11 +18,11 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/globalsign/mgo"
+	"github.com/globalsign/mgo/bson"
 	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db"
 	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db/mongo/models"
 	contract "gitlab.circutor.com/EDS/edgex-go/pkg/models"
-	"github.com/globalsign/mgo"
-	"github.com/globalsign/mgo/bson"
 )
 
 /* ----------------------------- Device ---------------------------------- */
@@ -560,15 +560,6 @@ func (mc MongoClient) deviceServices(q bson.M) (dss []models.DeviceService, err 
 		return []models.DeviceService{}, errorMap(err)
 	}
 
-	return
-}
-
-func (mc MongoClient) getDeviceService(q bson.M) (ds contract.DeviceService, err error) {
-	mds, err := mc.deviceService(q)
-	if err != nil {
-		return contract.DeviceService{}, err
-	}
-	ds, err = mds.ToContract(mc)
 	return
 }
 

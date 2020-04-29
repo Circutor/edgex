@@ -1,0 +1,34 @@
+linters:
+  enable:
+    - depguard
+    - dogsled
+    - gochecknoinits
+    - interfacer
+  disable:
+    - bodyclose
+    - dupl
+    - errcheck
+    - funlen
+    - gochecknoglobals
+    - gocognit
+    - goconst
+    - gocritic
+    - gocyclo
+    - godox
+    - gofmt
+    - goimports
+    - golint
+    - gosec
+    - gosimple
+    - ineffassign
+    - lll
+    - maligned
+    - misspell
+    - nakedret
+    - prealloc
+    - scopelint
+    - staticcheck
+    - stylecheck
+    - unparam
+    - wsl
+    - whitespace

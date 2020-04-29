@@ -17,13 +17,9 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db"
 	"gitlab.circutor.com/EDS/edgex-go/pkg/models"
-	"github.com/gorilla/mux"
-)
-
-const (
-	distroPort int = 48070
 )
 
 const (

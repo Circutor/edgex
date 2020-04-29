@@ -14,26 +14,22 @@
 package scheduler
 
 import (
+	"testing"
+
+	"github.com/stretchr/testify/mock"
 	errorsSched "gitlab.circutor.com/EDS/edgex-go/internal/support/scheduler/errors"
 	dbMock "gitlab.circutor.com/EDS/edgex-go/internal/support/scheduler/interfaces/mocks"
 	"gitlab.circutor.com/EDS/edgex-go/pkg/models"
-	"github.com/gorilla/mux"
-	"github.com/stretchr/testify/mock"
-	"testing"
 )
 
 var testInterval models.Interval
 var testIntervalAction models.IntervalAction
 
-var testRoutes *mux.Router
-
 const (
-	testIntervalName     string = "midnight"
-	testInterNewName     string = "noon"
-	testOrigin           int64  = 123456789
-	testBsonString       string = "57e59a71e4b0ca8e6d6d4cc2"
-	testUUIDString       string = "ca93c8fa-9919-4ec5-85d3-f81b2b6a7bc1"
-	testIntervalActionId string = "ca93c8fa-9919-4ec5-85d3-f81b2b6a7bc1"
+	testIntervalName string = "midnight"
+	testInterNewName string = "noon"
+	testOrigin       int64  = 123456789
+	testUUIDString   string = "ca93c8fa-9919-4ec5-85d3-f81b2b6a7bc1"
 
 	testIntervalActionName     string = "scrub-aged-events"
 	testIntervalActionNewName  string = "scub-bub"

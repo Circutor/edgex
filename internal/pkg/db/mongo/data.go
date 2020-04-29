@@ -14,11 +14,11 @@
 package mongo
 
 import (
+	"github.com/globalsign/mgo"
+	"github.com/globalsign/mgo/bson"
 	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db"
 	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db/mongo/models"
 	contract "gitlab.circutor.com/EDS/edgex-go/pkg/models"
-	"github.com/globalsign/mgo"
-	"github.com/globalsign/mgo/bson"
 )
 
 /*
@@ -401,18 +401,6 @@ func (mc MongoClient) getReadings(q bson.M) ([]models.Reading, error) {
 		return []models.Reading{}, errorMap(err)
 	}
 	return readings, nil
-}
-
-// Get a reading from the database with the passed query
-func (mc MongoClient) getReading(q bson.M) (models.Reading, error) {
-	s := mc.getSessionCopy()
-	defer s.Close()
-
-	var res models.Reading
-	if err := s.DB(mc.database.Name).C(db.ReadingsCollection).Find(q).One(&res); err != nil {
-		return models.Reading{}, errorMap(err)
-	}
-	return res, nil
 }
 
 func (mc MongoClient) mapEvents(events []models.Event, errIn error) (ce []contract.Event, err error) {

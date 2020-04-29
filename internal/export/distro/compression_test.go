@@ -17,8 +17,6 @@ import (
 
 const (
 	clearString = "This is the test string used for testing"
-	gzipString  = "H4sIAAAJbogA/wrJyCxWyCxWKMlIVShJLS5RKC4pysxLVygtTk1RSMsvAgtm5qUDAgAA//8tdaMdKAAAAA=="
-	zlibString  = "eJwKycgsVsgsVijJSFUoSS0uUSguKcrMS1coLU5NUUjLLwILZualAwIAAP//KucO4w=="
 )
 
 func TestGzip(t *testing.T) {

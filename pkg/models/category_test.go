@@ -42,9 +42,6 @@ func TestNotificationsCategory_UnmarshalJSON(t *testing.T) {
 }
 
 func TestIsNotificationsCategory(t *testing.T) {
-	type args struct {
-		as string
-	}
 	tests := []struct {
 		name string
 		arg  string

@@ -17,11 +17,9 @@ import (
 	"strconv"
 	"time"
 
-	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db"
 	"github.com/globalsign/mgo"
+	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db"
 )
-
-var currentMongoClient MongoClient // Singleton used so that mongoEvent can use it to de-reference readings
 
 type MongoClient struct {
 	session  *mgo.Session  // Mongo database session
@@ -49,7 +47,6 @@ func NewClient(config db.Configuration) (MongoClient, error) {
 	m.session = session
 	m.database = session.DB(config.DatabaseName)
 
-	currentMongoClient = m // Set the singleton
 	return m, nil
 }
 
@@ -58,11 +55,6 @@ func (mc MongoClient) CloseSession() {
 		mc.session.Close()
 		mc.session = nil
 	}
-}
-
-// Get the current Mongo Client
-func getCurrentMongoClient() (MongoClient, error) {
-	return currentMongoClient, nil
 }
 
 // Get a copy of the session

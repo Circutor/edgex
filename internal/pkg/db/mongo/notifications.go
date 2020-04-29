@@ -16,10 +16,10 @@
 package mongo
 
 import (
+	"github.com/globalsign/mgo/bson"
 	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db"
 	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db/mongo/models"
 	contract "gitlab.circutor.com/EDS/edgex-go/pkg/models"
-	"github.com/globalsign/mgo/bson"
 )
 
 const (
@@ -387,18 +387,6 @@ func (mc MongoClient) GetTransmissionsByEnd(end int64, resendLimit int) ([]contr
 
 func (mc MongoClient) GetTransmissionsByStatus(resendLimit int, status contract.TransmissionStatus) ([]contract.Transmission, error) {
 	return mc.getTransmissionsLimit(bson.M{"resendcount": bson.M{"$lt": resendLimit}, "status": status})
-}
-
-func (mc MongoClient) getTransmission(q bson.M) (c contract.Transmission, err error) {
-	s := mc.getSessionCopy()
-	defer s.Close()
-
-	var t models.Transmission
-	if err = errorMap(s.DB(mc.database.Name).C(TRANSMISSION_COLLECTION).Find(q).One(&t)); err != nil {
-		return
-	}
-	c = t.ToContract()
-	return
 }
 
 func (mc MongoClient) getTransmissionsLimit(q bson.M) (c []contract.Transmission, err error) {

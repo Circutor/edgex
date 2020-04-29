@@ -31,7 +31,6 @@ func (e ErrResponseNil) Error() string {
 type ErrServiceClient struct {
 	StatusCode int
 	bodyBytes  []byte
-	errMsg     string
 }
 
 func NewErrServiceClient(statusCode int, body []byte) error {
