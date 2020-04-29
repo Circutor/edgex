@@ -1,0 +1,48 @@
+before_script:
+    - echo "List files:" && ls -l
+    - echo "User:" && whoami
+    - echo "IDs:" && id
+    - echo "Hostname:" && hostname
+    - echo "Current directory:" && pwd
+    - echo "Go version:" && go version
+
+stages:
+    - build
+    - test
+    - lint
+    - deploy
+
+build:
+    stage: build
+    script:
+        - echo "Building"
+        - make
+
+test:
+    stage: test
+    script:
+        - echo "Testing"
+        - make test
+
+lint:
+    stage: lint
+    script:
+        - echo "Linter"
+        - golangci-lint version
+        - golangci-lint linters
+        - golangci-lint run
+
+deploy:
+    stage: deploy
+    only:
+        refs:
+          - master
+    script:
+        - echo "Building to deploy"
+        - make arm
+        - mv cmd/edgex/edgex .
+    artifacts:
+        paths:
+          - edgex
+        expire_in: 1 month
+
