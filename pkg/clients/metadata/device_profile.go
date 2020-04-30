@@ -19,8 +19,8 @@ import (
 	"encoding/json"
 	"net/url"
 
-	"gitlab.circutor.com/EDS/edgex-go/pkg/clients"
-	"gitlab.circutor.com/EDS/edgex-go/pkg/models"
+	"github.com/Circutor/edgex/pkg/clients"
+	"github.com/Circutor/edgex/pkg/models"
 )
 
 // Device Profile client for interacting with the device profile section of metadata

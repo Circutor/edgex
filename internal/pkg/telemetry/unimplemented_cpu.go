@@ -18,7 +18,7 @@
 package telemetry
 
 import (
-	"gitlab.circutor.com/EDS/edgex-go/pkg/clients/logger"
+	"github.com/Circutor/edgex/pkg/clients/logger"
 )
 
 var LoggingClient logger.LoggingClient

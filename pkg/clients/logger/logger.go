@@ -25,10 +25,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/Circutor/edgex/pkg/clients"
+	"github.com/Circutor/edgex/pkg/clients/types"
+	"github.com/Circutor/edgex/pkg/models"
 	"github.com/go-kit/kit/log"
-	"gitlab.circutor.com/EDS/edgex-go/pkg/clients"
-	"gitlab.circutor.com/EDS/edgex-go/pkg/clients/types"
-	"gitlab.circutor.com/EDS/edgex-go/pkg/models"
 )
 
 // These constants identify the log levels in order of increasing severity.

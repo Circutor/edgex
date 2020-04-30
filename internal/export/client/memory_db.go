@@ -18,9 +18,9 @@ package client
 import (
 	"time"
 
+	"github.com/Circutor/edgex/internal/pkg/db"
+	contract "github.com/Circutor/edgex/pkg/models"
 	"github.com/google/uuid"
-	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db"
-	contract "gitlab.circutor.com/EDS/edgex-go/pkg/models"
 )
 
 /* NB: This portion of the MemDB provider has been moved to

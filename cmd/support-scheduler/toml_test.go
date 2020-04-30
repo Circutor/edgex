@@ -3,8 +3,8 @@ package main
 import (
 	"testing"
 
-	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/config"
-	"gitlab.circutor.com/EDS/edgex-go/internal/support/scheduler"
+	"github.com/Circutor/edgex/internal/pkg/config"
+	"github.com/Circutor/edgex/internal/support/scheduler"
 )
 
 func TestToml(t *testing.T) {

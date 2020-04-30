@@ -14,7 +14,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"gitlab.circutor.com/EDS/edgex-go/pkg/models"
+	"github.com/Circutor/edgex/pkg/models"
 )
 
 const (

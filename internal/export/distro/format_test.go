@@ -14,7 +14,7 @@ import (
 	"strings"
 	"testing"
 
-	contract "gitlab.circutor.com/EDS/edgex-go/pkg/models"
+	contract "github.com/Circutor/edgex/pkg/models"
 )
 
 const (

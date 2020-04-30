@@ -15,7 +15,7 @@ import (
 	"sync"
 	"time"
 
-	contract "gitlab.circutor.com/EDS/edgex-go/pkg/models"
+	contract "github.com/Circutor/edgex/pkg/models"
 	queueV1 "gopkg.in/eapache/queue.v1"
 )
 

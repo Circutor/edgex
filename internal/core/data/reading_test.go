@@ -6,12 +6,12 @@ import (
 	"math"
 	"testing"
 
-	"gitlab.circutor.com/EDS/edgex-go/internal/core/data/errors"
-	"gitlab.circutor.com/EDS/edgex-go/internal/core/data/interfaces"
-	dbMock "gitlab.circutor.com/EDS/edgex-go/internal/core/data/interfaces/mocks"
-	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db"
+	"github.com/Circutor/edgex/internal/core/data/errors"
+	"github.com/Circutor/edgex/internal/core/data/interfaces"
+	dbMock "github.com/Circutor/edgex/internal/core/data/interfaces/mocks"
+	"github.com/Circutor/edgex/internal/pkg/db"
 
-	"gitlab.circutor.com/EDS/edgex-go/pkg/models"
+	"github.com/Circutor/edgex/pkg/models"
 
 	"github.com/stretchr/testify/mock"
 )

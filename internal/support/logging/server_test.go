@@ -15,10 +15,10 @@ import (
 	"strings"
 	"testing"
 
-	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/config"
-	"gitlab.circutor.com/EDS/edgex-go/pkg/clients"
-	"gitlab.circutor.com/EDS/edgex-go/pkg/clients/logger"
-	"gitlab.circutor.com/EDS/edgex-go/pkg/models"
+	"github.com/Circutor/edgex/internal/pkg/config"
+	"github.com/Circutor/edgex/pkg/clients"
+	"github.com/Circutor/edgex/pkg/clients/logger"
+	"github.com/Circutor/edgex/pkg/models"
 )
 
 type dummyPersist struct {

@@ -9,7 +9,7 @@
 
 GO=go
 VERSION=$(shell cat ./VERSION)
-GOFLAGS=-ldflags "-X gitlab.circutor.com/EDS/edgex-go.Version=$(VERSION)"
+GOFLAGS=-ldflags "-X github.com/Circutor/edgex.Version=$(VERSION)"
 
 MICROSERVICES=cmd/export-client/export-client cmd/export-distro/export-distro cmd/core-metadata/core-metadata cmd/core-data/core-data cmd/core-command/core-command cmd/support-logging/support-logging cmd/support-notifications/support-notifications cmd/sys-mgmt-agent/sys-mgmt-agent cmd/support-scheduler/support-scheduler cmd/edgex/edgex
 

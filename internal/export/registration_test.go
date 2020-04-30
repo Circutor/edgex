@@ -9,7 +9,7 @@ package export
 import (
 	"testing"
 
-	"gitlab.circutor.com/EDS/edgex-go/pkg/models"
+	"github.com/Circutor/edgex/pkg/models"
 )
 
 func TestRegistrationValid(t *testing.T) {

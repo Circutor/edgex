@@ -19,8 +19,8 @@ import (
 	"context"
 	"fmt"
 
-	"gitlab.circutor.com/EDS/edgex-go/internal"
-	"gitlab.circutor.com/EDS/edgex-go/internal/system/agent/interfaces"
+	"github.com/Circutor/edgex/internal"
+	"github.com/Circutor/edgex/internal/system/agent/interfaces"
 )
 
 const (

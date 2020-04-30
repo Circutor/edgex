@@ -21,9 +21,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/Circutor/edgex/pkg/clients"
+	"github.com/Circutor/edgex/pkg/models"
 	"github.com/google/uuid"
-	"gitlab.circutor.com/EDS/edgex-go/pkg/clients"
-	"gitlab.circutor.com/EDS/edgex-go/pkg/models"
 )
 
 // Test adding an addressable using the client

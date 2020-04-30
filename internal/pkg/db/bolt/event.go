@@ -15,8 +15,8 @@
 package bolt
 
 import (
+	"github.com/Circutor/edgex/pkg/models"
 	jsoniter "github.com/json-iterator/go"
-	"gitlab.circutor.com/EDS/edgex-go/pkg/models"
 )
 
 // Struct that wraps an event to handle DB references

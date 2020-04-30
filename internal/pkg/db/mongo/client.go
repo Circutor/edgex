@@ -17,8 +17,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/Circutor/edgex/internal/pkg/db"
 	"github.com/globalsign/mgo"
-	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db"
 )
 
 type MongoClient struct {

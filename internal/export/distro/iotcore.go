@@ -13,9 +13,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Circutor/edgex/pkg/models"
 	jwt "github.com/dgrijalva/jwt-go"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
-	"gitlab.circutor.com/EDS/edgex-go/pkg/models"
 )
 
 const (

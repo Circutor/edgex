@@ -17,7 +17,7 @@ package command
 import (
 	"context"
 
-	"gitlab.circutor.com/EDS/edgex-go/pkg/clients"
+	"github.com/Circutor/edgex/pkg/clients"
 )
 
 // CommandClient : client to interact with core command

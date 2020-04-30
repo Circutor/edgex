@@ -14,7 +14,7 @@
 package scheduler
 
 import (
-	contract "gitlab.circutor.com/EDS/edgex-go/pkg/models"
+	contract "github.com/Circutor/edgex/pkg/models"
 )
 
 // Utility function for adding configured locally intervals and scheduled events

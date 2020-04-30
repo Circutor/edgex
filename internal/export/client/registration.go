@@ -17,9 +17,9 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/Circutor/edgex/internal/pkg/db"
+	"github.com/Circutor/edgex/pkg/models"
 	"github.com/gorilla/mux"
-	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db"
-	"gitlab.circutor.com/EDS/edgex-go/pkg/models"
 )
 
 const (

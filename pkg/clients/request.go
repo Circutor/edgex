@@ -26,8 +26,8 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"github.com/Circutor/edgex/pkg/clients/types"
 	"github.com/google/uuid"
-	"gitlab.circutor.com/EDS/edgex-go/pkg/clients/types"
 )
 
 // Helper method to get the body from the response after making the request

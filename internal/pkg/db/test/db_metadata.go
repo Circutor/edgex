@@ -10,10 +10,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Circutor/edgex/internal/core/metadata/interfaces"
+	dataBase "github.com/Circutor/edgex/internal/pkg/db"
+	"github.com/Circutor/edgex/pkg/models"
 	"github.com/google/uuid"
-	"gitlab.circutor.com/EDS/edgex-go/internal/core/metadata/interfaces"
-	dataBase "gitlab.circutor.com/EDS/edgex-go/internal/pkg/db"
-	"gitlab.circutor.com/EDS/edgex-go/pkg/models"
 )
 
 func TestMetadataDB(t *testing.T, db interfaces.DBClient) {

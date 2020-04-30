@@ -17,10 +17,10 @@ import (
 	"strconv"
 	"time"
 
-	"gitlab.circutor.com/EDS/edgex-go/internal"
-	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/correlation/models"
-	"gitlab.circutor.com/EDS/edgex-go/pkg/clients"
-	contract "gitlab.circutor.com/EDS/edgex-go/pkg/models"
+	"github.com/Circutor/edgex/internal"
+	"github.com/Circutor/edgex/internal/pkg/correlation/models"
+	"github.com/Circutor/edgex/pkg/clients"
+	contract "github.com/Circutor/edgex/pkg/models"
 )
 
 type httpSender struct {

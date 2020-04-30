@@ -16,8 +16,8 @@ import (
 	"strings"
 	"time"
 
+	contract "github.com/Circutor/edgex/pkg/models"
 	"github.com/google/uuid"
-	contract "gitlab.circutor.com/EDS/edgex-go/pkg/models"
 )
 
 type jsonFormatter struct {

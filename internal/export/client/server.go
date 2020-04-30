@@ -11,11 +11,11 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/Circutor/edgex/pkg/clients"
 	"github.com/gorilla/mux"
-	"gitlab.circutor.com/EDS/edgex-go/pkg/clients"
 
-	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/correlation"
-	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/telemetry"
+	"github.com/Circutor/edgex/internal/pkg/correlation"
+	"github.com/Circutor/edgex/internal/pkg/telemetry"
 )
 
 // Test if the service is working

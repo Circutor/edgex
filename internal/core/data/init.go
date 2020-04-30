@@ -19,17 +19,17 @@ import (
 	"sync"
 	"time"
 
-	"gitlab.circutor.com/EDS/edgex-go/internal"
-	"gitlab.circutor.com/EDS/edgex-go/internal/core/data/interfaces"
-	"gitlab.circutor.com/EDS/edgex-go/internal/core/data/messaging"
-	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/config"
-	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db"
-	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db/bolt"
-	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db/mongo"
-	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/telemetry"
-	"gitlab.circutor.com/EDS/edgex-go/pkg/clients"
-	"gitlab.circutor.com/EDS/edgex-go/pkg/clients/logger"
-	"gitlab.circutor.com/EDS/edgex-go/pkg/clients/metadata"
+	"github.com/Circutor/edgex/internal"
+	"github.com/Circutor/edgex/internal/core/data/interfaces"
+	"github.com/Circutor/edgex/internal/core/data/messaging"
+	"github.com/Circutor/edgex/internal/pkg/config"
+	"github.com/Circutor/edgex/internal/pkg/db"
+	"github.com/Circutor/edgex/internal/pkg/db/bolt"
+	"github.com/Circutor/edgex/internal/pkg/db/mongo"
+	"github.com/Circutor/edgex/internal/pkg/telemetry"
+	"github.com/Circutor/edgex/pkg/clients"
+	"github.com/Circutor/edgex/pkg/clients/logger"
+	"github.com/Circutor/edgex/pkg/clients/metadata"
 )
 
 // Global variables

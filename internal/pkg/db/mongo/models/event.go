@@ -14,11 +14,11 @@
 package models
 
 import (
+	"github.com/Circutor/edgex/internal/pkg/db"
+	contract "github.com/Circutor/edgex/pkg/models"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	"github.com/pkg/errors"
-	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/db"
-	contract "gitlab.circutor.com/EDS/edgex-go/pkg/models"
 )
 
 type Event struct {

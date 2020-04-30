@@ -22,8 +22,8 @@ import (
 	"net/url"
 	"strconv"
 
-	"gitlab.circutor.com/EDS/edgex-go/pkg/clients"
-	"gitlab.circutor.com/EDS/edgex-go/pkg/models"
+	"github.com/Circutor/edgex/pkg/clients"
+	"github.com/Circutor/edgex/pkg/models"
 )
 
 type EventClient interface {

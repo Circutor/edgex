@@ -16,10 +16,10 @@ package scheduler
 import (
 	"testing"
 
+	errorsSched "github.com/Circutor/edgex/internal/support/scheduler/errors"
+	dbMock "github.com/Circutor/edgex/internal/support/scheduler/interfaces/mocks"
+	"github.com/Circutor/edgex/pkg/models"
 	"github.com/stretchr/testify/mock"
-	errorsSched "gitlab.circutor.com/EDS/edgex-go/internal/support/scheduler/errors"
-	dbMock "gitlab.circutor.com/EDS/edgex-go/internal/support/scheduler/interfaces/mocks"
-	"gitlab.circutor.com/EDS/edgex-go/pkg/models"
 )
 
 var testInterval models.Interval

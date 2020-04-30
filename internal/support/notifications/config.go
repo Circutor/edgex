@@ -14,7 +14,7 @@
  *******************************************************************************/
 package notifications
 
-import "gitlab.circutor.com/EDS/edgex-go/internal/pkg/config"
+import "github.com/Circutor/edgex/internal/pkg/config"
 
 type ConfigurationStruct struct {
 	Writable  WritableInfo

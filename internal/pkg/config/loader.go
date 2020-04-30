@@ -22,9 +22,9 @@ import (
 	"path/filepath"
 
 	"github.com/BurntSushi/toml"
+	"github.com/Circutor/edgex/internal"
+	"github.com/Circutor/edgex/pkg/clients/logger"
 	"github.com/pkg/errors"
-	"gitlab.circutor.com/EDS/edgex-go/internal"
-	"gitlab.circutor.com/EDS/edgex-go/pkg/clients/logger"
 )
 
 const (

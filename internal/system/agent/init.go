@@ -17,11 +17,11 @@ import (
 	"sync"
 	"time"
 
-	"gitlab.circutor.com/EDS/edgex-go/internal"
-	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/config"
-	"gitlab.circutor.com/EDS/edgex-go/pkg/clients"
-	"gitlab.circutor.com/EDS/edgex-go/pkg/clients/general"
-	"gitlab.circutor.com/EDS/edgex-go/pkg/clients/logger"
+	"github.com/Circutor/edgex/internal"
+	"github.com/Circutor/edgex/internal/pkg/config"
+	"github.com/Circutor/edgex/pkg/clients"
+	"github.com/Circutor/edgex/pkg/clients/general"
+	"github.com/Circutor/edgex/pkg/clients/logger"
 )
 
 // Global variables

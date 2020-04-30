@@ -21,9 +21,9 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/Circutor/edgex/internal/pkg/correlation"
+	"github.com/Circutor/edgex/pkg/models"
 	"github.com/gorilla/mux"
-	"gitlab.circutor.com/EDS/edgex-go/internal/pkg/correlation"
-	"gitlab.circutor.com/EDS/edgex-go/pkg/models"
 )
 
 func LoadRestRoutes() *mux.Router {

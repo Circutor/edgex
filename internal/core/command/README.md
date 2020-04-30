@@ -15,8 +15,8 @@ To fetch the code and build the microservice execute the following:
 
 ```
 cd $GOPATH/src
-go get gitlab.circutor.com/EDS/edgex-go
-cd $GOPATH/src/gitlab.circutor.com/EDS/edgex-go
+go get github.com/Circutor/edgex
+cd $GOPATH/src/github.com/Circutor/edgex
 # pull the 3rd party / vendor packages
 make prepare
 # build the microservice
