@@ -34,6 +34,9 @@ lint:
 
 deploy:
     stage: deploy
+    only:
+        refs:
+          - master
     script:
         - echo "Building to deploy"
         - make arm
