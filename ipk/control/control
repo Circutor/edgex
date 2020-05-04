@@ -1,0 +1,13 @@
+Package: edgex
+Version: 1.0-r0-cir
+Description: edgex version 1.0-r0-cir
+ initscripts
+Section: base
+Priority: optional
+Maintainer: Poky <poky@yoctoproject.org>
+License: CLOSED
+Architecture: cortexa7hf-neon
+OE: edgex
+Depends: initd-functions
+Recommends: update-rc.d
+Source: edgex_1.0.bb
