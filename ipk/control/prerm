@@ -1,0 +1,4 @@
+#!/bin/sh
+if true && [ -z "$D" -a -x "/etc/init.d/edgex.sh" ]; then
+	/etc/init.d/edgex.sh stop || :
+fi

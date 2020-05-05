@@ -19,6 +19,7 @@ cmd/support-notifications/support-notifications
 cmd/sys-mgmt-agent/sys-mgmt-agent
 cmd/support-scheduler/support-scheduler
 cmd/edgex/edgex
+*.ipk
 docs/_build/
 
 # log dirs

@@ -40,9 +40,11 @@ deploy:
     script:
         - echo "Building to deploy"
         - make arm
+        - make package
         - mv cmd/edgex/edgex .
     artifacts:
         paths:
           - edgex
+          - edgex.ipk
         expire_in: 1 month
 
