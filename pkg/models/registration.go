@@ -75,7 +75,7 @@ type Registration struct {
 
 // Custom marshaling for JSON
 // Treat the strings as pointers so they can be null in JSON
-func (r Registration) MarshalJSON() ([]byte, error) {
+func (reg Registration) MarshalJSON() ([]byte, error) {
 	aux := struct {
 		ID          *string            `json:"id,omitempty"`
 		Created     int64              `json:"created,omitempty"`
@@ -90,34 +90,34 @@ func (r Registration) MarshalJSON() ([]byte, error) {
 		Enable      bool               `json:"enable"`
 		Destination *string            `json:"destination,omitempty"`
 	}{
-		Created:     r.Created,
-		Modified:    r.Modified,
-		Origin:      r.Origin,
-		Addressable: r.Addressable,
-		Enable:      r.Enable,
+		Created:     reg.Created,
+		Modified:    reg.Modified,
+		Origin:      reg.Origin,
+		Addressable: reg.Addressable,
+		Enable:      reg.Enable,
 	}
 
 	// Only initialize the non-empty strings (empty are null)
-	if r.ID != "" {
-		aux.ID = &r.ID
+	if reg.ID != "" {
+		aux.ID = &reg.ID
 	}
-	if r.Name != "" {
-		aux.Name = &r.Name
+	if reg.Name != "" {
+		aux.Name = &reg.Name
 	}
-	if r.Format != "" {
-		aux.Format = &r.Format
+	if reg.Format != "" {
+		aux.Format = &reg.Format
 	}
-	if len(r.Filter.DeviceIDs) != 0 || len(r.Filter.ValueDescriptorIDs) != 0 {
-		aux.Filter = &r.Filter
+	if len(reg.Filter.DeviceIDs) != 0 || len(reg.Filter.ValueDescriptorIDs) != 0 {
+		aux.Filter = &reg.Filter
 	}
-	if r.Encryption.Algo != "" || r.Encryption.Key != "" || r.Encryption.InitVector != "" {
-		aux.Encryption = &r.Encryption
+	if reg.Encryption.Algo != "" || reg.Encryption.Key != "" || reg.Encryption.InitVector != "" {
+		aux.Encryption = &reg.Encryption
 	}
-	if r.Compression != "" {
-		aux.Compression = &r.Compression
+	if reg.Compression != "" {
+		aux.Compression = &reg.Compression
 	}
-	if r.Destination != "" {
-		aux.Destination = &r.Destination
+	if reg.Destination != "" {
+		aux.Destination = &reg.Destination
 	}
 
 	return json.Marshal(aux)
