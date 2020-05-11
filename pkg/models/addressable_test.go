@@ -79,9 +79,7 @@ func TestAddressable_String(t *testing.T) {
 			"\",\"publisher\":\"" + TestAddressable.Publisher +
 			"\",\"user\":\"" + TestAddressable.User +
 			"\",\"password\":\"" + TestAddressable.Password +
-			"\",\"topic\":\"" + TestAddressable.Topic +
-			"\",\"baseURL\":\"" + TestAddressable.Protocol + "://" + TestAddressable.Address + ":" + strconv.Itoa(TestAddressable.Port) +
-			"\",\"url\":\"" + TestAddressable.Protocol + "://" + TestAddressable.Address + ":" + strconv.Itoa(TestAddressable.Port) + TestAddressable.Path + "\"}"},
+			"\",\"topic\":\"" + TestAddressable.Topic + "\"}"},
 		{"empty", EmptyAddressable, "{}"},
 	}
 	for _, tt := range tests {
