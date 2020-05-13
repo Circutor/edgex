@@ -10,13 +10,16 @@ package client
 
 import (
 	"context"
+	"crypto/rand"
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 
+	"github.com/BurntSushi/toml"
 	"github.com/Circutor/edgex/internal/pkg/db"
 	"github.com/Circutor/edgex/pkg/models"
 	"github.com/gorilla/mux"
@@ -154,24 +157,9 @@ func addReg(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if reg.Name == "Amazon Web Services (AWS)" || reg.Name == "Google Cloud IoT Core" {
-		var keyDirAmd64 string
-		//var keyDirArm string
-		var certDirAmd64 string
-		//var certDirArm string
 		var keyRegister string
 		var certRegister string
 
-		if reg.Name == "Amazon Web Services (AWS)" {
-			keyDirAmd64 = "./keys/aws_private.pem"
-			//keyDirArm = "/etc/edgex/aws_private.pem"
-			certDirAmd64 = "./keys/aws_cert.pem"
-			//certDirArm = "/etc/edgex/aws_cert.pem"
-		} else if reg.Name == "Google Cloud IoT Core" {
-			keyDirAmd64 = "./keys/giot_private.pem"
-			//keyDirArm = "/etc/edgex/giot_private.pem"
-			certDirAmd64 = "./keys/giot_cert.pem"
-			//certDirArm = "/etc/edgex/giot_cert.pem"
-		}
 		keyRegister = reg.Addressable.Path
 		certRegister = reg.Addressable.Protocol
 
@@ -192,13 +180,25 @@ func addReg(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		err = ioutil.WriteFile(keyDirAmd64, ([]byte(keyRegister)), 0644)
+		var pemblock *pem.Block
+		blockType := "RSA PRIVATE KEY"
+		alg := x509.PEMCipherAES256
+		pass, err := getShadow()
 		if err != nil {
-			LoggingClient.Error(fmt.Sprintf("Error Writting Private Key. Error: %s", err.Error()))
+			LoggingClient.Error(err.Error())
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
+		pemblock, err = x509.EncryptPEMBlock(rand.Reader, blockType, blockkey.Bytes, []byte(pass), alg)
+		if err != nil {
+			LoggingClient.Error(fmt.Sprintf("Error Encrypting PEM Block: %s", err.Error()))
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		encoded := pem.EncodeToMemory(pemblock)
+
+		reg.Addressable.Password = string(encoded)
 		LoggingClient.Debug("Check Certificate")
 		block, _ := pem.Decode([]byte(certRegister))
 		if block == nil {
@@ -213,12 +213,7 @@ func addReg(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = ioutil.WriteFile(certDirAmd64, ([]byte(certRegister)), 0644)
-		if err != nil {
-			LoggingClient.Error(fmt.Sprintf("Error Writting Certificate. Error: %s", err.Error()))
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		reg.Addressable.Certificate = certRegister
 
 		reg.Addressable.Path = ""
 		if reg.Name == "Amazon Web Services (AWS)" {
@@ -238,6 +233,29 @@ func addReg(w http.ResponseWriter, r *http.Request) {
 		Operation: "add"})
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(id))
+}
+
+func getShadow() (string, error) {
+	_, err := os.Stat("/etc/shadow.toml")
+	if err != nil {
+		if os.IsNotExist(err) {
+			return "", fmt.Errorf("Shadow file not found: %v", err)
+		}
+	}
+
+	contents, err := ioutil.ReadFile("/etc/shadow.toml")
+	if err != nil {
+		return "", fmt.Errorf("Failed to read shadow file: %v", err)
+	}
+	var psk struct {
+		Shadow string
+	}
+	err = toml.Unmarshal(contents, &psk)
+	if err != nil {
+		return "", fmt.Errorf("Failed to unmarshal shadow file: %v", err)
+	}
+
+	return psk.Shadow, nil
 }
 
 func updateReg(w http.ResponseWriter, r *http.Request) {
