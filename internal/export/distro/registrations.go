@@ -16,17 +16,11 @@ package distro
 
 import (
 	"context"
-	"crypto/rsa"
-	"crypto/x509"
-	"encoding/pem"
-	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
-	"os"
 	"time"
 
-	"github.com/BurntSushi/toml"
+	crypto "github.com/Circutor/edgex/internal/export/client"
 	"github.com/Circutor/edgex/internal/pkg/correlation/models"
 	contract "github.com/Circutor/edgex/pkg/models"
 )
@@ -113,31 +107,23 @@ func (reg *registrationInfo) update(newReg contract.Registration) bool {
 
 	reg.sender = nil
 	switch newReg.Destination {
-	case contract.DestMQTT, contract.DestAzureMQTT:
-		pKey, err := decryptPrivateKey(newReg.Addressable.Password)
-		if err != nil {
-			LoggingClient.Error(fmt.Sprintf("Error Decrypting Private Key: %s", err.Error()))
-			return false
-		}
-		reg.sender = newMqttSender(newReg.Addressable, pKey)
+	case contract.DestMQTT:
+		decKey, _ := crypto.Decrypt(newReg.Addressable.Password)
+		decCert, _ := crypto.Decrypt(newReg.Addressable.Certificate)
+		reg.sender = newMqttSender(newReg.Addressable, decKey, decCert)
+	case contract.DestAzureMQTT:
 	case contract.DestAWSMQTT:
 		newReg.Addressable.Protocol = "tls"
 		newReg.Addressable.Path = ""
 		newReg.Addressable.Topic = fmt.Sprintf(awsThingUpdateTopic, newReg.Addressable.Topic)
 		newReg.Addressable.Port = awsMQTTPort
-		pKey, err := decryptPrivateKey(newReg.Addressable.Password)
-		if err != nil {
-			LoggingClient.Error(fmt.Sprintf("Error Decrypting Private Key: %s", err.Error()))
-			return false
-		}
-		reg.sender = newMqttSender(newReg.Addressable, pKey)
+		decKey, _ := crypto.Decrypt(newReg.Addressable.Password)
+		decCert, _ := crypto.Decrypt(newReg.Addressable.Certificate)
+		reg.sender = newMqttSender(newReg.Addressable, decKey, decCert)
 	case contract.DestIotCoreMQTT:
-		pKey, err := decryptPrivateKey(newReg.Addressable.Password)
-		if err != nil {
-			LoggingClient.Error(fmt.Sprintf("Error Decrypting Private Key: %s", err.Error()))
-			return false
-		}
-		reg.sender = newIoTCoreSender(newReg.Addressable, pKey)
+		decKey, _ := crypto.Decrypt(newReg.Addressable.Password)
+		decCert, _ := crypto.Decrypt(newReg.Addressable.Certificate)
+		reg.sender = newIoTCoreSender(newReg.Addressable, decKey, decCert)
 	case contract.DestRest:
 		reg.sender = newHTTPSender(newReg.Addressable)
 	case "DEXMA_TOPIC":
@@ -182,78 +168,6 @@ func (reg *registrationInfo) update(newReg contract.Registration) bool {
 	return true
 }
 
-func decryptPrivateKey(encodedKey string) (key []byte, err error) {
-	keyIn := []byte(encodedKey)
-	decodedPEM, _ := pem.Decode(keyIn)
-	pass, err := getShadow()
-	if err != nil {
-		return
-	}
-
-	decrypedPemBlock, err := x509.DecryptPEMBlock(decodedPEM, []byte(pass))
-	if err != nil {
-		err = errors.New("Error Decrypting PEM Block")
-		return
-	}
-
-	var parsedKey interface{}
-	var bytes []byte
-	var privateKey *rsa.PrivateKey
-	var ok bool
-	if parsedKey, err = x509.ParsePKCS8PrivateKey(decrypedPemBlock); err != nil {
-		if parsedKey, err = x509.ParsePKCS1PrivateKey(decrypedPemBlock); err != nil {
-			err = errors.New("Couldn't parse Private Key")
-			return
-		}
-		privateKey, ok = parsedKey.(*rsa.PrivateKey)
-		if !ok {
-			err = errors.New("Couldn't parse PKCS1 Private Key")
-			return
-		}
-		bytes = x509.MarshalPKCS1PrivateKey(privateKey)
-	} else {
-		privateKey, ok = parsedKey.(*rsa.PrivateKey)
-		if !ok {
-			err = errors.New("Couldn't parse PKCS8 Private Key")
-			return
-		}
-		bytes, err = x509.MarshalPKCS8PrivateKey(privateKey)
-		if err != nil {
-			err = errors.New("Couldn't extract PKCS8 Private Key")
-			return
-		}
-	}
-
-	key = pem.EncodeToMemory(&pem.Block{
-		Type:  "RSA PRIVATE KEY",
-		Bytes: bytes,
-	})
-
-	return
-}
-
-func getShadow() (string, error) {
-	_, err := os.Stat("/etc/shadow.toml")
-	if err != nil {
-		if os.IsNotExist(err) {
-			return "", fmt.Errorf("Shadow file not found: %v", err)
-		}
-	}
-
-	contents, err := ioutil.ReadFile("/etc/shadow.toml")
-	if err != nil {
-		return "", fmt.Errorf("Failed to read shadow file: %v", err)
-	}
-	var psk struct {
-		Shadow string
-	}
-	err = toml.Unmarshal(contents, &psk)
-	if err != nil {
-		return "", fmt.Errorf("Failed to unmarshal shadow file: %v", err)
-	}
-
-	return psk.Shadow, nil
-}
 func (reg registrationInfo) processEvent(event *models.Event) {
 	// Valid Event Filter, needed?
 

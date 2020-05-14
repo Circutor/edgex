@@ -26,7 +26,7 @@ type mqttSender struct {
 }
 
 // newMqttSender - create new mqtt sender
-func newMqttSender(addr contract.Addressable, pKey []byte) sender {
+func newMqttSender(addr contract.Addressable, decKey string, decCert string) sender {
 	protocol := strings.ToLower(addr.Protocol)
 
 	opts := MQTT.NewClientOptions()
@@ -45,7 +45,7 @@ func newMqttSender(addr contract.Addressable, pKey []byte) sender {
 				InsecureSkipVerify: true,
 			}
 		} else {
-			cert, err := tls.X509KeyPair([]byte(addr.Certificate), pKey)
+			cert, err := tls.X509KeyPair([]byte(decCert), []byte(decKey))
 			if err != nil {
 				LoggingClient.Error(fmt.Sprintf("Failed loading x509 data: %s", err.Error()))
 				return nil

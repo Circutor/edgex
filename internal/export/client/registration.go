@@ -10,16 +10,14 @@ package client
 
 import (
 	"context"
-	"crypto/rand"
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 
-	"github.com/BurntSushi/toml"
 	"github.com/Circutor/edgex/internal/pkg/db"
 	"github.com/Circutor/edgex/pkg/models"
 	"github.com/gorilla/mux"
@@ -45,6 +43,10 @@ func getRegByID(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
+
+	reg.Addressable.Password, _ = Decrypt(reg.Addressable.Password)
+
+	reg.Addressable.Certificate, _ = Decrypt(reg.Addressable.Certificate)
 
 	w.Header().Set("Content-Type", applicationJson)
 	json.NewEncoder(w).Encode(&reg)
@@ -133,7 +135,9 @@ func addReg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if reg.Format == "DEXMA_JSON" && reg.Destination == "DEXMA_TOPIC" {
+	err = fillRegister(&reg)
+
+	if reg.Format == "DEXMA_JSON" {
 		if reg.Name == "" {
 			LoggingClient.Error(fmt.Sprintf("Failed to validate registrations fields: %X. Error: Name is required", data))
 			http.Error(w, "Could not validate json fields", http.StatusBadRequest)
@@ -156,7 +160,7 @@ func addReg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if reg.Name == "Amazon Web Services (AWS)" || reg.Name == "Google Cloud IoT Core" {
+	if reg.Format == "AWS_JSON" || reg.Format == "IOTCORE_JSON" {
 		var keyRegister string
 		var certRegister string
 
@@ -180,25 +184,15 @@ func addReg(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		var pemblock *pem.Block
-		blockType := "RSA PRIVATE KEY"
-		alg := x509.PEMCipherAES256
-		pass, err := getShadow()
+		encKey, err := Encrypt(keyRegister)
 		if err != nil {
-			LoggingClient.Error(err.Error())
+			LoggingClient.Error(fmt.Sprintf("Error encrypting Private Key. Error: %s", err.Error()))
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		pemblock, err = x509.EncryptPEMBlock(rand.Reader, blockType, blockkey.Bytes, []byte(pass), alg)
-		if err != nil {
-			LoggingClient.Error(fmt.Sprintf("Error Encrypting PEM Block: %s", err.Error()))
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		encoded := pem.EncodeToMemory(pemblock)
+		reg.Addressable.Password = encKey
 
-		reg.Addressable.Password = string(encoded)
 		LoggingClient.Debug("Check Certificate")
 		block, _ := pem.Decode([]byte(certRegister))
 		if block == nil {
@@ -213,12 +207,19 @@ func addReg(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		reg.Addressable.Certificate = certRegister
+		encCert, err := Encrypt(certRegister)
+		if err != nil {
+			LoggingClient.Error(fmt.Sprintf("Error encrypting Private Key. Error: %s", err.Error()))
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		reg.Addressable.Certificate = encCert
 
 		reg.Addressable.Path = ""
-		if reg.Name == "Amazon Web Services (AWS)" {
+		if reg.Format == "AWS_JSON" {
 			reg.Addressable.Protocol = ""
-		} else if reg.Name == "Google Cloud IoT Core" {
+		} else if reg.Format == "IOTCORE_JSON" {
 			reg.Addressable.Protocol = "tls"
 		}
 	}
@@ -235,27 +236,37 @@ func addReg(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(id))
 }
 
-func getShadow() (string, error) {
-	_, err := os.Stat("/etc/shadow.toml")
-	if err != nil {
-		if os.IsNotExist(err) {
-			return "", fmt.Errorf("Shadow file not found: %v", err)
-		}
+func fillRegister(reg *models.Registration) (err error) {
+	switch reg.Format {
+	case "THINGSBOARD_JSON":
+		reg.Addressable.Protocol = "TCP"
+		reg.Addressable.Publisher = "Circutor"
+		reg.Addressable.Topic = "v1/gateway/telemetry"
+		reg.Destination = "MQTT_TOPIC"
+	case "DEXMA_JSON":
+		reg.Addressable.Protocol = "HTTP"
+		reg.Addressable.HTTPMethod = "POST"
+		reg.Addressable.Topic = "readings"
+		reg.Destination = "DEXMA_TOPIC"
+	case "AZURE_JSON":
+		reg.Addressable.Protocol = "tls"
+		reg.Addressable.User = "EDS-Cloud.azure-devices.net/" + reg.Addressable.Publisher
+		reg.Addressable.Topic = "devices/DeviceId/messages/events/"
+		reg.Destination = "AZURE_TOPIC"
+	case "AWS_JSON":
+		reg.Destination = "AWS_TOPIC"
+	case "IOTCORE_JSON":
+		reg.Addressable.Protocol = "tls"
+		reg.Addressable.Path = ""
+		reg.Addressable.Address = "mqtt.googleapis.com"
+		reg.Addressable.Port = 8883
+		reg.Addressable.User = "unused"
+		reg.Destination = "AZURE_TOPIC"
+	default:
+		err = errors.New("Not valid protocol")
 	}
 
-	contents, err := ioutil.ReadFile("/etc/shadow.toml")
-	if err != nil {
-		return "", fmt.Errorf("Failed to read shadow file: %v", err)
-	}
-	var psk struct {
-		Shadow string
-	}
-	err = toml.Unmarshal(contents, &psk)
-	if err != nil {
-		return "", fmt.Errorf("Failed to unmarshal shadow file: %v", err)
-	}
-
-	return psk.Shadow, nil
+	return
 }
 
 func updateReg(w http.ResponseWriter, r *http.Request) {
@@ -337,6 +348,70 @@ func updateReg(w http.ResponseWriter, r *http.Request) {
 		LoggingClient.Error(fmt.Sprintf("Failed to validate registrations fields: %X. Error: %s", data, err.Error()))
 		http.Error(w, "Could not validate json fields", http.StatusBadRequest)
 		return
+	}
+
+	if toReg.Format == "AWS_JSON" || toReg.Format == "IOTCORE_JSON" {
+		var keyRegister string
+		var certRegister string
+
+		keyRegister = toReg.Addressable.Password
+		certRegister = toReg.Addressable.Certificate
+
+		LoggingClient.Debug("Check Private Key")
+		blockkey, _ := pem.Decode([]byte(keyRegister))
+		if blockkey == nil {
+			LoggingClient.Error("Error decoding Private Key")
+			http.Error(w, "Error decoding Private Key", http.StatusInternalServerError)
+			return
+		}
+		_, err = x509.ParsePKCS8PrivateKey(blockkey.Bytes)
+		if err != nil {
+			_, err = x509.ParsePKCS1PrivateKey(blockkey.Bytes)
+			if err != nil {
+				LoggingClient.Error(fmt.Sprintf("Error validating Private Key. Error: %s", err.Error()))
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
+
+		encKey, err := Encrypt(keyRegister)
+		if err != nil {
+			LoggingClient.Error(fmt.Sprintf("Error encrypting Private Key. Error: %s", err.Error()))
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		toReg.Addressable.Password = encKey
+
+		LoggingClient.Debug("Check Certificate")
+		block, _ := pem.Decode([]byte(certRegister))
+		if block == nil {
+			LoggingClient.Error("Error decoding Certificate")
+			http.Error(w, "Error decoding Certificate", http.StatusInternalServerError)
+			return
+		}
+		_, err = x509.ParseCertificate(block.Bytes)
+		if err != nil {
+			LoggingClient.Error("Error validating Certificate")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		encCert, err := Encrypt(certRegister)
+		if err != nil {
+			LoggingClient.Error(fmt.Sprintf("Error encrypting Certificate. Error: %s", err.Error()))
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		toReg.Addressable.Certificate = encCert
+
+		toReg.Addressable.Path = ""
+		if toReg.Format == "AWS_JSON" {
+			toReg.Addressable.Protocol = ""
+		} else if toReg.Format == "IOTCORE_JSON" {
+			toReg.Addressable.Protocol = "tls"
+		}
 	}
 
 	err = dbClient.UpdateRegistration(toReg)
