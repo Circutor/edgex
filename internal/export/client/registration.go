@@ -135,7 +135,7 @@ func addReg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = fillRegister(&reg)
+	fillRegister(&reg)
 
 	if reg.Format == "DEXMA_JSON" {
 		if reg.Name == "" {
