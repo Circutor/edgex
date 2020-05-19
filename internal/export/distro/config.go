@@ -17,7 +17,6 @@ import "github.com/Circutor/edgex/internal/pkg/config"
 
 type ConfigurationStruct struct {
 	Writable       WritableInfo
-	Certificates   map[string]CertificateInfo
 	Clients        map[string]config.ClientInfo
 	Logging        config.LoggingInfo
 	MessageQueue   config.MessageQueueInfo

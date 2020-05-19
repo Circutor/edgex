@@ -31,15 +31,6 @@ File = './logs/edgex-export-distro.log'
   Host = 'localhost'
   Port = 48080
 
-[Certificates]
-  [Certificates.MQTTS]
-  Cert = 'dummy.crt'
-  Key = 'dummy.key'
-
-  [Certificates.AWS]
-  Cert = 'dummy.crt'
-  Key = 'dummy.key'
-
 [MessageQueue]
 Protocol = 'tcp'
 Host = 'localhost'
