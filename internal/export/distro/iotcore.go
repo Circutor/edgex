@@ -28,7 +28,7 @@ const (
 )
 
 // newIoTCoreSender returns new Google IoT Core sender instance.
-func newIoTCoreSender(addr models.Addressable, decKey string, decCert string) sender {
+func newIoTCoreSender(addr models.Addressable) sender {
 	protocol := strings.ToLower(addr.Protocol)
 	broker := fmt.Sprintf("%s%s", addr.GetBaseURL(), addr.Path)
 	deviceID := extractDeviceID(addr.Publisher)
@@ -42,7 +42,7 @@ func newIoTCoreSender(addr models.Addressable, decKey string, decCert string) se
 	opts.SetProtocolVersion(4)
 
 	if validateProtocol(protocol) {
-		cert, err := tls.X509KeyPair([]byte(decCert), []byte(decKey))
+		cert, err := tls.X509KeyPair([]byte(addr.Certificate), []byte(addr.Password))
 		if err != nil {
 			LoggingClient.Error(fmt.Sprintf("Failed loading x509 data: %s", err.Error()))
 			return nil

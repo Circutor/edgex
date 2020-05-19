@@ -45,7 +45,6 @@ func getRegByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	reg.Addressable.Password, _ = Decrypt(reg.Addressable.Password)
-
 	reg.Addressable.Certificate, _ = Decrypt(reg.Addressable.Certificate)
 
 	w.Header().Set("Content-Type", applicationJson)
@@ -100,6 +99,11 @@ func getAllReg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	for i := range reg {
+		reg[i].Addressable.Password, _ = Decrypt(reg[i].Addressable.Password)
+		reg[i].Addressable.Certificate, _ = Decrypt(reg[i].Addressable.Certificate)
+	}
+
 	w.Header().Set("Content-Type", applicationJson)
 	json.NewEncoder(w).Encode(&reg)
 }
@@ -115,6 +119,9 @@ func getRegByName(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
+
+	reg.Addressable.Password, _ = Decrypt(reg.Addressable.Password)
+	reg.Addressable.Certificate, _ = Decrypt(reg.Addressable.Certificate)
 
 	w.Header().Set("Content-Type", applicationJson)
 	json.NewEncoder(w).Encode(&reg)
@@ -166,43 +173,16 @@ func addReg(w http.ResponseWriter, r *http.Request) {
 
 		keyRegister = reg.Addressable.Path
 		certRegister = reg.Addressable.Protocol
-
-		LoggingClient.Debug("Check Private Key")
-		blockkey, _ := pem.Decode([]byte(keyRegister))
-		if blockkey == nil {
-			LoggingClient.Error("Error decoding Private Key")
-			http.Error(w, "Error decoding Private Key", http.StatusInternalServerError)
-			return
-		}
-		_, err = x509.ParsePKCS8PrivateKey(blockkey.Bytes)
+		err = checkPair(keyRegister, certRegister)
 		if err != nil {
-			_, err = x509.ParsePKCS1PrivateKey(blockkey.Bytes)
-			if err != nil {
-				LoggingClient.Error(fmt.Sprintf("Error validating Private Key. Error: %s", err.Error()))
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
+			LoggingClient.Error(err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 
 		encKey, err := Encrypt(keyRegister)
 		if err != nil {
 			LoggingClient.Error(fmt.Sprintf("Error encrypting Private Key. Error: %s", err.Error()))
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		reg.Addressable.Password = encKey
-
-		LoggingClient.Debug("Check Certificate")
-		block, _ := pem.Decode([]byte(certRegister))
-		if block == nil {
-			LoggingClient.Error("Error decoding Certificate")
-			http.Error(w, "Error decoding Certificate", http.StatusInternalServerError)
-			return
-		}
-		_, err = x509.ParseCertificate(block.Bytes)
-		if err != nil {
-			LoggingClient.Error("Error validating Certificate")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -214,6 +194,7 @@ func addReg(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		reg.Addressable.Password = encKey
 		reg.Addressable.Certificate = encCert
 
 		reg.Addressable.Path = ""
@@ -234,6 +215,35 @@ func addReg(w http.ResponseWriter, r *http.Request) {
 		Operation: "add"})
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(id))
+}
+
+func checkPair(keyRegister, certRegister string) (err error) {
+	blockkey, _ := pem.Decode([]byte(keyRegister))
+	if blockkey == nil {
+		err = errors.New("Error decoding Private Key")
+		return
+	}
+	_, err = x509.ParsePKCS8PrivateKey(blockkey.Bytes)
+	if err != nil {
+		_, err = x509.ParsePKCS1PrivateKey(blockkey.Bytes)
+		if err != nil {
+			err = errors.New("Error validating Private Key")
+			return
+		}
+	}
+
+	block, _ := pem.Decode([]byte(certRegister))
+	if block == nil {
+		err = errors.New("Error decoding Certificate")
+		return
+	}
+	_, err = x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		err = errors.New("Error validating Certificate")
+		return
+	}
+
+	return nil
 }
 
 func fillRegister(reg *models.Registration) (err error) {
@@ -356,43 +366,16 @@ func updateReg(w http.ResponseWriter, r *http.Request) {
 
 		keyRegister = toReg.Addressable.Password
 		certRegister = toReg.Addressable.Certificate
-
-		LoggingClient.Debug("Check Private Key")
-		blockkey, _ := pem.Decode([]byte(keyRegister))
-		if blockkey == nil {
-			LoggingClient.Error("Error decoding Private Key")
-			http.Error(w, "Error decoding Private Key", http.StatusInternalServerError)
-			return
-		}
-		_, err = x509.ParsePKCS8PrivateKey(blockkey.Bytes)
+		err = checkPair(keyRegister, certRegister)
 		if err != nil {
-			_, err = x509.ParsePKCS1PrivateKey(blockkey.Bytes)
-			if err != nil {
-				LoggingClient.Error(fmt.Sprintf("Error validating Private Key. Error: %s", err.Error()))
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
+			LoggingClient.Error(err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 
 		encKey, err := Encrypt(keyRegister)
 		if err != nil {
 			LoggingClient.Error(fmt.Sprintf("Error encrypting Private Key. Error: %s", err.Error()))
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		toReg.Addressable.Password = encKey
-
-		LoggingClient.Debug("Check Certificate")
-		block, _ := pem.Decode([]byte(certRegister))
-		if block == nil {
-			LoggingClient.Error("Error decoding Certificate")
-			http.Error(w, "Error decoding Certificate", http.StatusInternalServerError)
-			return
-		}
-		_, err = x509.ParseCertificate(block.Bytes)
-		if err != nil {
-			LoggingClient.Error("Error validating Certificate")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -404,6 +387,7 @@ func updateReg(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		toReg.Addressable.Password = encKey
 		toReg.Addressable.Certificate = encCert
 
 		toReg.Addressable.Path = ""

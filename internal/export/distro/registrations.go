@@ -20,7 +20,6 @@ import (
 	"net/http"
 	"time"
 
-	crypto "github.com/Circutor/edgex/internal/export/client"
 	"github.com/Circutor/edgex/internal/pkg/correlation/models"
 	contract "github.com/Circutor/edgex/pkg/models"
 )
@@ -107,23 +106,16 @@ func (reg *registrationInfo) update(newReg contract.Registration) bool {
 
 	reg.sender = nil
 	switch newReg.Destination {
-	case contract.DestMQTT:
-		decKey, _ := crypto.Decrypt(newReg.Addressable.Password)
-		decCert, _ := crypto.Decrypt(newReg.Addressable.Certificate)
-		reg.sender = newMqttSender(newReg.Addressable, decKey, decCert)
-	case contract.DestAzureMQTT:
+	case contract.DestMQTT, contract.DestAzureMQTT:
+		reg.sender = newMqttSender(newReg.Addressable)
 	case contract.DestAWSMQTT:
 		newReg.Addressable.Protocol = "tls"
 		newReg.Addressable.Path = ""
 		newReg.Addressable.Topic = fmt.Sprintf(awsThingUpdateTopic, newReg.Addressable.Topic)
 		newReg.Addressable.Port = awsMQTTPort
-		decKey, _ := crypto.Decrypt(newReg.Addressable.Password)
-		decCert, _ := crypto.Decrypt(newReg.Addressable.Certificate)
-		reg.sender = newMqttSender(newReg.Addressable, decKey, decCert)
+		reg.sender = newMqttSender(newReg.Addressable)
 	case contract.DestIotCoreMQTT:
-		decKey, _ := crypto.Decrypt(newReg.Addressable.Password)
-		decCert, _ := crypto.Decrypt(newReg.Addressable.Certificate)
-		reg.sender = newIoTCoreSender(newReg.Addressable, decKey, decCert)
+		reg.sender = newIoTCoreSender(newReg.Addressable)
 	case contract.DestRest:
 		reg.sender = newHTTPSender(newReg.Addressable)
 	case "DEXMA_TOPIC":
