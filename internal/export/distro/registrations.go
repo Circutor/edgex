@@ -107,15 +107,13 @@ func (reg *registrationInfo) update(newReg contract.Registration) bool {
 	reg.sender = nil
 	switch newReg.Destination {
 	case contract.DestMQTT, contract.DestAzureMQTT:
-		c := Configuration.Certificates["MQTTS"]
-		reg.sender = newMqttSender(newReg.Addressable, c.Cert, c.Key)
+		reg.sender = newMqttSender(newReg.Addressable)
 	case contract.DestAWSMQTT:
 		newReg.Addressable.Protocol = "tls"
 		newReg.Addressable.Path = ""
 		newReg.Addressable.Topic = fmt.Sprintf(awsThingUpdateTopic, newReg.Addressable.Topic)
 		newReg.Addressable.Port = awsMQTTPort
-		c := Configuration.Certificates["AWS"]
-		reg.sender = newMqttSender(newReg.Addressable, c.Cert, c.Key)
+		reg.sender = newMqttSender(newReg.Addressable)
 	case contract.DestIotCoreMQTT:
 		reg.sender = newIoTCoreSender(newReg.Addressable)
 	case contract.DestRest:

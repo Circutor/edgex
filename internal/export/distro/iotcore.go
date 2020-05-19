@@ -42,8 +42,7 @@ func newIoTCoreSender(addr models.Addressable) sender {
 	opts.SetProtocolVersion(4)
 
 	if validateProtocol(protocol) {
-		c := Configuration.Certificates["GIOT"]
-		cert, err := tls.LoadX509KeyPair(c.Cert, c.Key)
+		cert, err := tls.X509KeyPair([]byte(addr.Certificate), []byte(addr.Password))
 		if err != nil {
 			LoggingClient.Error(fmt.Sprintf("Failed loading x509 data: %s", err.Error()))
 			return nil

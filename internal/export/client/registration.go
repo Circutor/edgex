@@ -13,6 +13,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -42,7 +43,12 @@ func getRegByID(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
-
+	if reg.Addressable.Password != "" {
+		reg.Addressable.Password, _ = Decrypt(reg.Addressable.Password)
+	}
+	if reg.Addressable.Certificate != "" {
+		reg.Addressable.Certificate, _ = Decrypt(reg.Addressable.Certificate)
+	}
 	w.Header().Set("Content-Type", applicationJson)
 	json.NewEncoder(w).Encode(&reg)
 }
@@ -95,6 +101,15 @@ func getAllReg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	for i := range reg {
+		if reg[i].Addressable.Password != "" {
+			reg[i].Addressable.Password, _ = Decrypt(reg[i].Addressable.Password)
+		}
+		if reg[i].Addressable.Certificate != "" {
+			reg[i].Addressable.Certificate, _ = Decrypt(reg[i].Addressable.Certificate)
+		}
+	}
+
 	w.Header().Set("Content-Type", applicationJson)
 	json.NewEncoder(w).Encode(&reg)
 }
@@ -109,6 +124,13 @@ func getRegByName(w http.ResponseWriter, r *http.Request) {
 		LoggingClient.Error(fmt.Sprintf("Failed to query by name. Error: %s", err.Error()))
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
+	}
+
+	if reg.Addressable.Password != "" {
+		reg.Addressable.Password, _ = Decrypt(reg.Addressable.Password)
+	}
+	if reg.Addressable.Certificate != "" {
+		reg.Addressable.Certificate, _ = Decrypt(reg.Addressable.Certificate)
 	}
 
 	w.Header().Set("Content-Type", applicationJson)
@@ -130,7 +152,9 @@ func addReg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if reg.Format == "DEXMA_JSON" && reg.Destination == "DEXMA_TOPIC" {
+	fillRegister(&reg)
+
+	if reg.Format == "DEXMA_JSON" {
 		if reg.Name == "" {
 			LoggingClient.Error(fmt.Sprintf("Failed to validate registrations fields: %X. Error: Name is required", data))
 			http.Error(w, "Could not validate json fields", http.StatusBadRequest)
@@ -153,79 +177,23 @@ func addReg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if reg.Name == "Amazon Web Services (AWS)" || reg.Name == "Google Cloud IoT Core" {
-		var keyDirAmd64 string
-		//var keyDirArm string
-		var certDirAmd64 string
-		//var certDirArm string
-		var keyRegister string
-		var certRegister string
-
-		if reg.Name == "Amazon Web Services (AWS)" {
-			keyDirAmd64 = "./keys/aws_private.pem"
-			//keyDirArm = "/etc/edgex/aws_private.pem"
-			certDirAmd64 = "./keys/aws_cert.pem"
-			//certDirArm = "/etc/edgex/aws_cert.pem"
-		} else if reg.Name == "Google Cloud IoT Core" {
-			keyDirAmd64 = "./keys/giot_private.pem"
-			//keyDirArm = "/etc/edgex/giot_private.pem"
-			certDirAmd64 = "./keys/giot_cert.pem"
-			//certDirArm = "/etc/edgex/giot_cert.pem"
-		}
-		keyRegister = reg.Addressable.Path
-		certRegister = reg.Addressable.Protocol
-
-		LoggingClient.Debug("Check Private Key")
-		blockkey, _ := pem.Decode([]byte(keyRegister))
-		if blockkey == nil {
-			LoggingClient.Error("Error decoding Private Key")
-			http.Error(w, "Error decoding Private Key", http.StatusInternalServerError)
-			return
-		}
-		_, err = x509.ParsePKCS8PrivateKey(blockkey.Bytes)
+	if reg.Format == "AWS_JSON" || reg.Format == "IOTCORE_JSON" {
+		err = checkPair(reg.Addressable.Password, reg.Addressable.Certificate)
 		if err != nil {
-			_, err = x509.ParsePKCS1PrivateKey(blockkey.Bytes)
-			if err != nil {
-				LoggingClient.Error(fmt.Sprintf("Error validating Private Key. Error: %s", err.Error()))
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-		}
-
-		err = ioutil.WriteFile(keyDirAmd64, ([]byte(keyRegister)), 0644)
-		if err != nil {
-			LoggingClient.Error(fmt.Sprintf("Error Writting Private Key. Error: %s", err.Error()))
+			LoggingClient.Error(err.Error())
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+	}
 
-		LoggingClient.Debug("Check Certificate")
-		block, _ := pem.Decode([]byte(certRegister))
-		if block == nil {
-			LoggingClient.Error("Error decoding Certificate")
-			http.Error(w, "Error decoding Certificate", http.StatusInternalServerError)
-			return
-		}
-		_, err = x509.ParseCertificate(block.Bytes)
-		if err != nil {
-			LoggingClient.Error("Error validating Certificate")
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+	if reg.Addressable.Password != "" {
+		encKey, _ := Encrypt(reg.Addressable.Password)
+		reg.Addressable.Password = encKey
+	}
 
-		err = ioutil.WriteFile(certDirAmd64, ([]byte(certRegister)), 0644)
-		if err != nil {
-			LoggingClient.Error(fmt.Sprintf("Error Writting Certificate. Error: %s", err.Error()))
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		reg.Addressable.Path = ""
-		if reg.Name == "Amazon Web Services (AWS)" {
-			reg.Addressable.Protocol = ""
-		} else if reg.Name == "Google Cloud IoT Core" {
-			reg.Addressable.Protocol = "tls"
-		}
+	if reg.Addressable.Certificate != "" {
+		encCert, _ := Encrypt(reg.Addressable.Certificate)
+		reg.Addressable.Certificate = encCert
 	}
 
 	id, err := dbClient.AddRegistration(reg)
@@ -238,6 +206,68 @@ func addReg(w http.ResponseWriter, r *http.Request) {
 		Operation: "add"})
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(id))
+}
+
+func checkPair(keyRegister, certRegister string) (err error) {
+	blockkey, _ := pem.Decode([]byte(keyRegister))
+	if blockkey == nil {
+		err = errors.New("Error decoding Private Key")
+		return
+	}
+	_, err = x509.ParsePKCS8PrivateKey(blockkey.Bytes)
+	if err != nil {
+		_, err = x509.ParsePKCS1PrivateKey(blockkey.Bytes)
+		if err != nil {
+			err = errors.New("Error validating Private Key")
+			return
+		}
+	}
+
+	block, _ := pem.Decode([]byte(certRegister))
+	if block == nil {
+		err = errors.New("Error decoding Certificate")
+		return
+	}
+	_, err = x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		err = errors.New("Error validating Certificate")
+		return
+	}
+
+	return nil
+}
+
+func fillRegister(reg *models.Registration) (err error) {
+	switch reg.Format {
+	case "THINGSBOARD_JSON":
+		reg.Addressable.Protocol = "TCP"
+		reg.Addressable.Publisher = "Circutor"
+		reg.Addressable.Topic = "v1/gateway/telemetry"
+		reg.Destination = "MQTT_TOPIC"
+	case "DEXMA_JSON":
+		reg.Addressable.Protocol = "HTTP"
+		reg.Addressable.HTTPMethod = "POST"
+		reg.Addressable.Topic = "readings"
+		reg.Destination = "DEXMA_TOPIC"
+	case "AZURE_JSON":
+		reg.Addressable.Protocol = "tls"
+		reg.Addressable.User = "EDS-Cloud.azure-devices.net/" + reg.Addressable.Publisher
+		reg.Addressable.Topic = "devices/DeviceId/messages/events/"
+		reg.Destination = "AZURE_TOPIC"
+	case "AWS_JSON":
+		reg.Destination = "AWS_TOPIC"
+	case "IOTCORE_JSON":
+		reg.Addressable.Protocol = "tls"
+		reg.Addressable.Path = ""
+		reg.Addressable.Address = "mqtt.googleapis.com"
+		reg.Addressable.Port = 8883
+		reg.Addressable.User = "unused"
+		reg.Destination = "IOTCORE_TOPIC"
+	default:
+		err = errors.New("Not valid protocol")
+	}
+
+	return
 }
 
 func updateReg(w http.ResponseWriter, r *http.Request) {
@@ -319,6 +349,25 @@ func updateReg(w http.ResponseWriter, r *http.Request) {
 		LoggingClient.Error(fmt.Sprintf("Failed to validate registrations fields: %X. Error: %s", data, err.Error()))
 		http.Error(w, "Could not validate json fields", http.StatusBadRequest)
 		return
+	}
+
+	if toReg.Format == "AWS_JSON" || toReg.Format == "IOTCORE_JSON" {
+		err = checkPair(toReg.Addressable.Password, toReg.Addressable.Certificate)
+		if err != nil {
+			LoggingClient.Error(err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	if toReg.Addressable.Password != "" {
+		encKey, _ := Encrypt(toReg.Addressable.Password)
+		toReg.Addressable.Password = encKey
+	}
+
+	if toReg.Addressable.Certificate != "" {
+		encCert, _ := Encrypt(toReg.Addressable.Certificate)
+		toReg.Addressable.Certificate = encCert
 	}
 
 	err = dbClient.UpdateRegistration(toReg)
