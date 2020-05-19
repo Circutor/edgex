@@ -43,10 +43,12 @@ func getRegByID(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
-
-	reg.Addressable.Password, _ = Decrypt(reg.Addressable.Password)
-	reg.Addressable.Certificate, _ = Decrypt(reg.Addressable.Certificate)
-
+	if reg.Addressable.Password != "" {
+		reg.Addressable.Password, _ = Decrypt(reg.Addressable.Password)
+	}
+	if reg.Addressable.Certificate != "" {
+		reg.Addressable.Certificate, _ = Decrypt(reg.Addressable.Certificate)
+	}
 	w.Header().Set("Content-Type", applicationJson)
 	json.NewEncoder(w).Encode(&reg)
 }
@@ -100,8 +102,12 @@ func getAllReg(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for i := range reg {
-		reg[i].Addressable.Password, _ = Decrypt(reg[i].Addressable.Password)
-		reg[i].Addressable.Certificate, _ = Decrypt(reg[i].Addressable.Certificate)
+		if reg[i].Addressable.Password != "" {
+			reg[i].Addressable.Password, _ = Decrypt(reg[i].Addressable.Password)
+		}
+		if reg[i].Addressable.Certificate != "" {
+			reg[i].Addressable.Certificate, _ = Decrypt(reg[i].Addressable.Certificate)
+		}
 	}
 
 	w.Header().Set("Content-Type", applicationJson)
@@ -120,8 +126,12 @@ func getRegByName(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	reg.Addressable.Password, _ = Decrypt(reg.Addressable.Password)
-	reg.Addressable.Certificate, _ = Decrypt(reg.Addressable.Certificate)
+	if reg.Addressable.Password != "" {
+		reg.Addressable.Password, _ = Decrypt(reg.Addressable.Password)
+	}
+	if reg.Addressable.Certificate != "" {
+		reg.Addressable.Certificate, _ = Decrypt(reg.Addressable.Certificate)
+	}
 
 	w.Header().Set("Content-Type", applicationJson)
 	json.NewEncoder(w).Encode(&reg)
@@ -168,41 +178,22 @@ func addReg(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if reg.Format == "AWS_JSON" || reg.Format == "IOTCORE_JSON" {
-		var keyRegister string
-		var certRegister string
-
-		keyRegister = reg.Addressable.Path
-		certRegister = reg.Addressable.Protocol
-		err = checkPair(keyRegister, certRegister)
+		err = checkPair(reg.Addressable.Password, reg.Addressable.Certificate)
 		if err != nil {
 			LoggingClient.Error(err.Error())
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+	}
 
-		encKey, err := Encrypt(keyRegister)
-		if err != nil {
-			LoggingClient.Error(fmt.Sprintf("Error encrypting Private Key. Error: %s", err.Error()))
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		encCert, err := Encrypt(certRegister)
-		if err != nil {
-			LoggingClient.Error(fmt.Sprintf("Error encrypting Private Key. Error: %s", err.Error()))
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
+	if reg.Addressable.Password != "" {
+		encKey, _ := Encrypt(reg.Addressable.Password)
 		reg.Addressable.Password = encKey
-		reg.Addressable.Certificate = encCert
+	}
 
-		reg.Addressable.Path = ""
-		if reg.Format == "AWS_JSON" {
-			reg.Addressable.Protocol = ""
-		} else if reg.Format == "IOTCORE_JSON" {
-			reg.Addressable.Protocol = "tls"
-		}
+	if reg.Addressable.Certificate != "" {
+		encCert, _ := Encrypt(reg.Addressable.Certificate)
+		reg.Addressable.Certificate = encCert
 	}
 
 	id, err := dbClient.AddRegistration(reg)
@@ -271,7 +262,7 @@ func fillRegister(reg *models.Registration) (err error) {
 		reg.Addressable.Address = "mqtt.googleapis.com"
 		reg.Addressable.Port = 8883
 		reg.Addressable.User = "unused"
-		reg.Destination = "AZURE_TOPIC"
+		reg.Destination = "IOTCORE_TOPIC"
 	default:
 		err = errors.New("Not valid protocol")
 	}
@@ -361,41 +352,22 @@ func updateReg(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if toReg.Format == "AWS_JSON" || toReg.Format == "IOTCORE_JSON" {
-		var keyRegister string
-		var certRegister string
-
-		keyRegister = toReg.Addressable.Password
-		certRegister = toReg.Addressable.Certificate
-		err = checkPair(keyRegister, certRegister)
+		err = checkPair(toReg.Addressable.Password, toReg.Addressable.Certificate)
 		if err != nil {
 			LoggingClient.Error(err.Error())
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+	}
 
-		encKey, err := Encrypt(keyRegister)
-		if err != nil {
-			LoggingClient.Error(fmt.Sprintf("Error encrypting Private Key. Error: %s", err.Error()))
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		encCert, err := Encrypt(certRegister)
-		if err != nil {
-			LoggingClient.Error(fmt.Sprintf("Error encrypting Certificate. Error: %s", err.Error()))
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
+	if toReg.Addressable.Password != "" {
+		encKey, _ := Encrypt(toReg.Addressable.Password)
 		toReg.Addressable.Password = encKey
-		toReg.Addressable.Certificate = encCert
+	}
 
-		toReg.Addressable.Path = ""
-		if toReg.Format == "AWS_JSON" {
-			toReg.Addressable.Protocol = ""
-		} else if toReg.Format == "IOTCORE_JSON" {
-			toReg.Addressable.Protocol = "tls"
-		}
+	if toReg.Addressable.Certificate != "" {
+		encCert, _ := Encrypt(toReg.Addressable.Certificate)
+		toReg.Addressable.Certificate = encCert
 	}
 
 	err = dbClient.UpdateRegistration(toReg)
