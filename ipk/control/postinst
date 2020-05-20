@@ -8,4 +8,5 @@ if true && type update-rc.d >/dev/null 2>/dev/null; then
 	update-rc.d $OPT edgex.sh start 80 5 .
 	chown -R root:root /etc/edgex
 	chown root:root /usr/bin/edgex
+	chown root:root /etc/init.d/edgex.sh
 fi
