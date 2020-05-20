@@ -37,11 +37,32 @@ i=0
 while [ $i -lt $len ]; do
 	conf=${confs[$i]}
 	mkdir -p "$workspace/ipk/data/etc/edgex/$conf/"
-	cp "$workspace/cmd/$conf/res/configuration.toml" "$workspace/ipk/data/etc/edgex/$conf/configuration.toml"
+	cp "$workspace/cmd/edgex/res/$conf/configuration.toml" "$workspace/ipk/data/etc/edgex/$conf/configuration.toml"
+
+	case $conf in
+		"core-command" | "export-distro")
+			sed -i "s/File.*/File = \'\/var\/log\/edgex-$conf.log\'/" "$workspace/ipk/data/etc/edgex/$conf/configuration.toml"
+		;;
+		"core-metadata")
+			sed -i "s/File.*/File = \'\/var\/log\/edgex-$conf.log\'/" "$workspace/ipk/data/etc/edgex/$conf/configuration.toml"
+			sed -i "s/Name.*/Name = \'\/usr\/share\/edgex\/metadata.db\'/" "$workspace/ipk/data/etc/edgex/$conf/configuration.toml"
+		;;
+		"support-logging")
+			sed -i "s/File.*/File = \'\/var\/log\/edgex.log\'/" "$workspace/ipk/data/etc/edgex/$conf/configuration.toml"
+		;;
+		"support-scheduler")
+			sed -i "s/File.*/File = \'\/var\/log\/edgex-$conf.log\'/" "$workspace/ipk/data/etc/edgex/$conf/configuration.toml"
+			sed -i "0,/Name/ s/Name.*/Name = \'\/usr\/share\/edgex\/scheduler.db\'/" "$workspace/ipk/data/etc/edgex/$conf/configuration.toml"
+		;;
+		*)
+			sed -i "s/File.*/File = \'\/var\/log\/edgex-$conf.log\'/" "$workspace/ipk/data/etc/edgex/$conf/configuration.toml"
+			ddbb=$(echo $conf | tr -d -)
+			sed -i "s/Name.*/Name = \'\/usr\/share\/edgex\/$ddbb.db\'/" "$workspace/ipk/data/etc/edgex/$conf/configuration.toml"
+		;;
+	esac
 	chmod $permissions "$workspace/ipk/data/etc/edgex/$conf/configuration.toml"
 	let i++
 done
-
 tar -cJf ../data.tar.xz ./
 
 ## IPK Generation
