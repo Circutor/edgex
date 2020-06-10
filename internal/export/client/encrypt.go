@@ -107,5 +107,19 @@ func getShadow() (string, error) {
 		return "", fmt.Errorf("Failed to unmarshal shadow file: %v", err)
 	}
 
-	return psk.Shadow, nil
+	hwCfg, err := ioutil.ReadFile("/sys/fsl_otp/HW_OCOTP_CFG0")
+	if err != nil {
+		return "", fmt.Errorf("Failed to read first HW UniqueID: %v", err)
+	}
+	hwCfg0 := string(hwCfg[2:10])
+
+	hwCfg, err = ioutil.ReadFile("/sys/fsl_otp/HW_OCOTP_CFG1")
+	if err != nil {
+		return "", fmt.Errorf("Failed to read second HW UniqueID: %v", err)
+	}
+	hwCfg1 := string(hwCfg[2:10])
+
+	newShadow := fmt.Sprintf("%s_%s_%s", hwCfg0, psk.Shadow, hwCfg1)
+
+	return newShadow, nil
 }
