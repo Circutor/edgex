@@ -15,6 +15,8 @@
 package bolt
 
 import (
+	"strconv"
+
 	"github.com/Circutor/edgex/internal/pkg/db"
 	contract "github.com/Circutor/edgex/pkg/models"
 	"github.com/google/uuid"
@@ -51,8 +53,8 @@ func (bc *BoltClient) EventsWithLimit(limit int) ([]contract.Event, error) {
 // UnexpectedError - failed to add to database
 // NoValueDescriptor - no existing value descriptor for a reading in the event
 func (bc *BoltClient) AddEvent(e contract.Event) (string, error) {
-	e.ID = uuid.New().String()
 	e.Created = db.MakeTimestamp()
+	e.ID = strconv.FormatInt(e.Created, 10) + "-" + uuid.New().String()
 	e.Modified = e.Created
 
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
@@ -126,6 +128,25 @@ func (bc *BoltClient) EventById(id string) (contract.Event, error) {
 // Get the number of events in bolt
 func (bc *BoltClient) EventCount() (int, error) {
 	return bc.count(db.EventsCollection)
+}
+
+// Get first event created
+func (bc *BoltClient) FirstEventCreated() (contract.Event, error) {
+	ev := contract.Event{}
+
+	err := bc.db.View(func(tx *bolt.Tx) error {
+		var err error
+		b := tx.Bucket([]byte(db.EventsCollection))
+		if b == nil {
+			return nil
+		}
+		c := b.Cursor()
+		_, v := c.First()
+
+		ev, err = getEvent(v, tx)
+		return err
+	})
+	return ev, err
 }
 
 // Get the number of events in bolt for the device

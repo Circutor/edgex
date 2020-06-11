@@ -129,6 +129,12 @@ func (mc MongoClient) EventCount() (int, error) {
 	return count, nil
 }
 
+// Get first event created
+func (mc MongoClient) FirstEventCreated() (contract.Event, error) {
+	ev := contract.Event{}
+	return ev, nil
+}
+
 // Get the number of events in Mongo for the device
 func (mc MongoClient) EventCountByDeviceId(id string) (int, error) {
 	s := mc.getSessionCopy()

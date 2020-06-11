@@ -61,6 +61,14 @@ func deleteEventsByAge(age int64) (int, error) {
 	return count, nil
 }
 
+func deleteFirstEvent() error {
+	event, err := dbClient.FirstEventCreated()
+	if err != nil {
+		return err
+	}
+	return deleteEvent(event)
+}
+
 func getEvents(limit int) ([]contract.Event, error) {
 	var err error
 	var events []contract.Event
