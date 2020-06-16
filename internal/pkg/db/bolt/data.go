@@ -15,7 +15,7 @@
 package bolt
 
 import (
-	"strconv"
+	"fmt"
 
 	"github.com/Circutor/edgex/internal/pkg/db"
 	contract "github.com/Circutor/edgex/pkg/models"
@@ -54,7 +54,7 @@ func (bc *BoltClient) EventsWithLimit(limit int) ([]contract.Event, error) {
 // NoValueDescriptor - no existing value descriptor for a reading in the event
 func (bc *BoltClient) AddEvent(e contract.Event) (string, error) {
 	e.Created = db.MakeTimestamp()
-	e.ID = strconv.FormatInt(e.Created, 10) + "-" + uuid.New().String()
+	e.ID = fmt.Sprintf("%013d-", e.Created) + uuid.New().String()
 	e.Modified = e.Created
 
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
