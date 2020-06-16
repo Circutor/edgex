@@ -143,6 +143,27 @@ func (_m *DBClient) EventCount() (int, error) {
 	return r0, r1
 }
 
+// Get first event created
+func (_m *DBClient) FirstEventCreated() (models.Event, error) {
+	ret := _m.Called()
+
+	var r0 models.Event
+	if rf, ok := ret.Get(0).(func() models.Event); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(models.Event)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // EventCountByDeviceId provides a mock function with given fields: id
 func (_m *DBClient) EventCountByDeviceId(id string) (int, error) {
 	ret := _m.Called(id)

@@ -1,7 +1,7 @@
 [Writable]
 DeviceUpdateLastConnected = true
 MetaDataCheck = false
-PersistData = false
+PersistData = true
 ServiceUpdateLastConnected = false
 LogLevel = 'INFO'
 
@@ -10,7 +10,7 @@ BootTimeout = 30000
 Host = 'localhost'
 Port = 48080
 Protocol = 'http'
-ReadMaxLimit = 1000
+ReadMaxLimit = 10000
 StartupMsg = 'This is the Core Data Microservice'
 Timeout = 5000
 
