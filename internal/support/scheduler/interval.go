@@ -60,9 +60,15 @@ func addNewInterval(interval contract.Interval) (string, error) {
 			return "", errors.NewErrInvalidTimeFormat(end)
 		}
 	}
-	// Validate the Frequency
+
+	// Validate the Cron
+	cronRec := interval.Cron
 	freq := interval.Frequency
-	if freq != "" {
+	if cronRec != "" {
+		if _, err := cron.Parse(cronRec); err != nil {
+			return "", errors.NewErrInvalidCronFormat(cronRec)
+		}
+	} else if freq != "" {
 		if !isFrequencyValid(interval.Frequency) {
 			return "", errors.NewErrInvalidFrequencyFormat(freq)
 		}
@@ -105,18 +111,18 @@ func updateInterval(from contract.Interval) error {
 			return errors.NewErrInvalidCronFormat(from.Cron)
 		}
 		to.Cron = from.Cron
+	} else if from.Frequency != "" {
+		if !isFrequencyValid(from.Frequency) {
+			return errors.NewErrInvalidFrequencyFormat(from.Frequency)
+		}
+		to.Frequency = from.Frequency
 	}
+
 	if from.End != "" {
 		if _, err := msToTime(from.End); err != nil {
 			return errors.NewErrInvalidTimeFormat(from.End)
 		}
 		to.End = from.End
-	}
-	if from.Frequency != "" {
-		if !isFrequencyValid(from.Frequency) {
-			return errors.NewErrInvalidFrequencyFormat(from.Frequency)
-		}
-		to.Frequency = from.Frequency
 	}
 	if from.Start != "" {
 		if _, err := msToTime(from.Start); err != nil {

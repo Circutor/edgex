@@ -8,7 +8,10 @@
 package scheduler
 
 import (
+	"fmt"
+
 	"github.com/Circutor/edgex/pkg/models"
+	"github.com/robfig/cron"
 
 	"regexp"
 	"strconv"
@@ -67,15 +70,32 @@ func (sc *IntervalContext) Reset(interval models.Interval) {
 		sc.EndTime = t
 	}
 
-	//frequency and next time
-	nowBenchmark := time.Now().Unix()
-	sc.Frequency = parseFrequency(sc.Interval.Frequency)
-
-	sc.NextTime = sc.StartTime
-	if sc.StartTime.Unix() <= nowBenchmark && !sc.Interval.RunOnce {
-		for sc.NextTime.Unix() <= nowBenchmark {
-			sc.NextTime = sc.NextTime.Add(sc.Frequency)
+	//Cron, frequency and next time
+	LoggingClient.Info("trying to parse cron:")
+	var newFreq cron.Schedule
+	var err error
+	if sc.Interval.Cron != "" {
+		parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
+		newFreq, err = parser.Parse(sc.Interval.Cron)
+		//newFreq, err := parser.Parse("0 0 15 */3 *")
+		if err != nil {
+			LoggingClient.Error("parse interval error, the original crontab string is : " + sc.Interval.Cron)
+		} else {
+			sc.NextTime = newFreq.Next(time.Now())
+			LoggingClient.Info(fmt.Sprintf("read from cron:  %v", newFreq.Next(time.Now())))
 		}
+	} else if sc.Interval.Frequency != "" {
+		LoggingClient.Info("cron empty, using frequency")
+		sc.Frequency = parseFrequency(sc.Interval.Frequency)
+		nowBenchmark := time.Now().Unix()
+		sc.NextTime = sc.StartTime
+		if sc.StartTime.Unix() <= nowBenchmark && !sc.Interval.RunOnce {
+			for sc.NextTime.Unix() <= nowBenchmark {
+				sc.NextTime = sc.NextTime.Add(sc.Frequency)
+			}
+		}
+	} else {
+		LoggingClient.Error("both cron and frequency fields empry")
 	}
 }
 
@@ -91,6 +111,7 @@ func (sc *IntervalContext) UpdateIterations() {
 
 func (sc *IntervalContext) UpdateNextTime() {
 	if !sc.IsComplete() {
+		// Aqui es donde la matan, hay que meter el crontab aqui
 		sc.NextTime = sc.NextTime.Add(sc.Frequency)
 	}
 }
