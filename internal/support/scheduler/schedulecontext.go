@@ -95,7 +95,7 @@ func (sc *IntervalContext) Reset(interval models.Interval) {
 			}
 		}
 	} else {
-		LoggingClient.Error("both cron and frequency fields empry")
+		LoggingClient.Error("both cron and frequency fields empty")
 	}
 }
 
@@ -111,8 +111,19 @@ func (sc *IntervalContext) UpdateIterations() {
 
 func (sc *IntervalContext) UpdateNextTime() {
 	if !sc.IsComplete() {
-		// Aqui es donde la matan, hay que meter el crontab aqui
-		sc.NextTime = sc.NextTime.Add(sc.Frequency)
+		if sc.Interval.Cron != "" {
+			parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
+			newFreq, err := parser.Parse(sc.Interval.Cron)
+			if err != nil {
+				LoggingClient.Error("parse interval error, the original crontab string is : " + sc.Interval.Cron)
+				return
+			}
+			sc.NextTime = newFreq.Next(time.Now())
+		} else if sc.Interval.Frequency != "" {
+			sc.NextTime = sc.NextTime.Add(sc.Frequency)
+		} else {
+			LoggingClient.Error("both cron and frequency fields empty")
+		}
 	}
 }
 
