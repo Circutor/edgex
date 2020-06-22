@@ -111,9 +111,13 @@ func updateInterval(from contract.Interval) error {
 			return errors.NewErrInvalidCronFormat(from.Cron)
 		}
 		to.Cron = from.Cron
-	} else if from.Frequency != "" {
-		if !isFrequencyValid(from.Frequency) {
-			return errors.NewErrInvalidFrequencyFormat(from.Frequency)
+	}
+
+	if from.Frequency != "" {
+		if to.Cron == "" {
+			if !isFrequencyValid(from.Frequency) {
+				return errors.NewErrInvalidFrequencyFormat(from.Frequency)
+			}
 		}
 		to.Frequency = from.Frequency
 	}
