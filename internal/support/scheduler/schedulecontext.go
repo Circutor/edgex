@@ -11,7 +11,7 @@ import (
 	"fmt"
 
 	"github.com/Circutor/edgex/pkg/models"
-	"github.com/robfig/cron"
+	"github.com/robfig/cron/v3"
 
 	"regexp"
 	"strconv"
@@ -75,9 +75,7 @@ func (sc *IntervalContext) Reset(interval models.Interval) {
 	var newFreq cron.Schedule
 	var err error
 	if sc.Interval.Cron != "" {
-		parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
-		newFreq, err = parser.Parse(sc.Interval.Cron)
-		//newFreq, err := parser.Parse("0 0 15 */3 *")
+		newFreq, err = cron.ParseStandard(sc.Interval.Cron)
 		if err != nil {
 			LoggingClient.Error("parse interval error, the original crontab string is : " + sc.Interval.Cron)
 		} else {
@@ -112,8 +110,7 @@ func (sc *IntervalContext) UpdateIterations() {
 func (sc *IntervalContext) UpdateNextTime() {
 	if !sc.IsComplete() {
 		if sc.Interval.Cron != "" {
-			parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
-			newFreq, err := parser.Parse(sc.Interval.Cron)
+			newFreq, err := cron.ParseStandard(sc.Interval.Cron)
 			if err != nil {
 				LoggingClient.Error("parse interval error, the original crontab string is : " + sc.Interval.Cron)
 				return

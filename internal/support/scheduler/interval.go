@@ -17,7 +17,7 @@ import (
 	"github.com/Circutor/edgex/internal/pkg/db"
 	"github.com/Circutor/edgex/internal/support/scheduler/errors"
 	contract "github.com/Circutor/edgex/pkg/models"
-	"github.com/robfig/cron"
+	"github.com/robfig/cron/v3"
 )
 
 func getIntervals(limit int) ([]contract.Interval, error) {
@@ -65,7 +65,7 @@ func addNewInterval(interval contract.Interval) (string, error) {
 	cronRec := interval.Cron
 	freq := interval.Frequency
 	if cronRec != "" {
-		if _, err := cron.Parse(cronRec); err != nil {
+		if _, err := cron.ParseStandard(cronRec); err != nil {
 			return "", errors.NewErrInvalidCronFormat(cronRec)
 		}
 	} else if freq != "" {
@@ -107,7 +107,7 @@ func updateInterval(from contract.Interval) error {
 	}
 	// Update the fields
 	if from.Cron != "" {
-		if _, err := cron.Parse(from.Cron); err != nil {
+		if _, err := cron.ParseStandard(from.Cron); err != nil {
 			return errors.NewErrInvalidCronFormat(from.Cron)
 		}
 		to.Cron = from.Cron
