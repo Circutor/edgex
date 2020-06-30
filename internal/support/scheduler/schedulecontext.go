@@ -8,8 +8,6 @@
 package scheduler
 
 import (
-	"fmt"
-
 	"github.com/Circutor/edgex/pkg/models"
 	"github.com/robfig/cron/v3"
 
@@ -71,7 +69,6 @@ func (sc *IntervalContext) Reset(interval models.Interval) {
 	}
 
 	//Cron, frequency and next time
-	LoggingClient.Info("trying to parse cron:")
 	var newFreq cron.Schedule
 	var err error
 	if sc.Interval.Cron != "" {
@@ -80,10 +77,8 @@ func (sc *IntervalContext) Reset(interval models.Interval) {
 			LoggingClient.Error("parse interval error, the original crontab string is : " + sc.Interval.Cron)
 		} else {
 			sc.NextTime = newFreq.Next(time.Now())
-			LoggingClient.Info(fmt.Sprintf("read from cron:  %v", newFreq.Next(time.Now())))
 		}
 	} else if sc.Interval.Frequency != "" {
-		LoggingClient.Info("cron empty, using frequency")
 		sc.Frequency = parseFrequency(sc.Interval.Frequency)
 		nowBenchmark := time.Now().Unix()
 		sc.NextTime = sc.StartTime
