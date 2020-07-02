@@ -14,6 +14,8 @@
 package scheduler
 
 import (
+	"fmt"
+
 	"github.com/Circutor/edgex/internal/pkg/db"
 	"github.com/Circutor/edgex/internal/support/scheduler/errors"
 	contract "github.com/Circutor/edgex/pkg/models"
@@ -72,6 +74,8 @@ func addNewInterval(interval contract.Interval) (string, error) {
 		if !isFrequencyValid(interval.Frequency) {
 			return "", errors.NewErrInvalidFrequencyFormat(freq)
 		}
+	} else {
+		return "", fmt.Errorf("both cron and frequency fields empty")
 	}
 
 	// Validate that interval is not in queue

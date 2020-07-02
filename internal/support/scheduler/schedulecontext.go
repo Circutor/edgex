@@ -72,7 +72,7 @@ func (sc *IntervalContext) Reset(interval models.Interval) {
 	var newFreq cron.Schedule
 	var err error
 	if sc.Interval.Cron != "" {
-		LoggingClient.Info("cron not empty, trying to parse...")
+		LoggingClient.Debug("cron not empty, trying to parse...")
 		newFreq, err = cron.ParseStandard(sc.Interval.Cron)
 		if err != nil {
 			LoggingClient.Error("parse cron interval error, the original crontab string is : " + sc.Interval.Cron)
@@ -80,7 +80,7 @@ func (sc *IntervalContext) Reset(interval models.Interval) {
 			sc.NextTime = newFreq.Next(sc.StartTime)
 		}
 	} else if sc.Interval.Frequency != "" {
-		LoggingClient.Info("cron empty, using frequency for interval")
+		LoggingClient.Debug("cron empty, using frequency for interval")
 		sc.Frequency = parseFrequency(sc.Interval.Frequency)
 		nowBenchmark := time.Now().Unix()
 		sc.NextTime = sc.StartTime
