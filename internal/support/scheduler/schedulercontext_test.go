@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Circutor/edgex/internal"
+	"github.com/Circutor/edgex/pkg/clients/logger"
 	"github.com/Circutor/edgex/pkg/models"
 )
 
@@ -21,6 +23,7 @@ const (
 	TestUnexpectedMsgFormatStrForIntVal   = "unexpected result, active: '%d' but expected: '%d'"
 	TestUnexpectedMsgFormatStrForFloatVal = "unexpected result, active: '%f' but expected: '%f'"
 	TestUnexpectedMsgFormatStrForBoolVal  = "unexpected result, active: '%t' but expected: '%t'"
+	TestUnexpectedMsgFormatTimeVal        = "unexpected result, active: '%v' but expected: '%v'"
 )
 
 // Test Schedule model const fields
@@ -29,7 +32,7 @@ const (
 	TestIntervalStart        = "20000101T000000"
 	TestIntervalEnd          = ""
 	TestIntervalFrequency    = "P1D"
-	TestIntervalCron         = "This is a description"
+	TestIntervalCron         = "5 * * * *"
 	TestIntervalRunOnce      = true
 	TestIntervalUpdatingName = "midnight-2"
 
@@ -57,6 +60,9 @@ func TestRet(t *testing.T) {
 		Cron:      TestIntervalCron,
 		RunOnce:   TestIntervalRunOnce,
 	}
+
+	logTarget := setLoggingTarget()
+	LoggingClient = logger.NewClient(internal.SupportSchedulerServiceKey, Configuration.Logging.EnableRemote, logTarget, Configuration.Writable.LogLevel)
 
 	//init reset
 	testIntervalContext := IntervalContext{}
@@ -87,7 +93,7 @@ func TestRet(t *testing.T) {
 		t.Errorf(TestUnexpectedMsg)
 	}
 
-	testInterval.Start = "20180101T010101"
+	testInterval.Start = "20180101T010000"
 	testIntervalContext.Reset(testInterval)
 
 	if testIntervalContext.StartTime.Year() != 2018 {
@@ -106,7 +112,16 @@ func TestRet(t *testing.T) {
 		t.Errorf(TestUnexpectedMsgFormatStrForIntVal, testIntervalContext.EndTime.Year(), 2017)
 	}
 
+	//cron
+	next := testIntervalContext.StartTime.Add(5 * time.Minute)
+	testIntervalContext.Reset(testInterval)
+	if testIntervalContext.NextTime != next {
+		t.Errorf(TestUnexpectedMsgFormatTimeVal, testIntervalContext.NextTime, next)
+	}
+
 	//frequency
+	testInterval.Cron = ""
+	testIntervalContext.Reset(testInterval)
 	if testIntervalContext.Frequency.Hours() != 24 {
 		t.Errorf(TestUnexpectedMsgFormatStrForFloatVal, testIntervalContext.Frequency.Hours(), 24.0)
 	}

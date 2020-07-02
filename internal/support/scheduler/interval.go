@@ -14,10 +14,12 @@
 package scheduler
 
 import (
+	"fmt"
+
 	"github.com/Circutor/edgex/internal/pkg/db"
 	"github.com/Circutor/edgex/internal/support/scheduler/errors"
 	contract "github.com/Circutor/edgex/pkg/models"
-	"github.com/robfig/cron"
+	"github.com/robfig/cron/v3"
 )
 
 func getIntervals(limit int) ([]contract.Interval, error) {
@@ -60,12 +62,20 @@ func addNewInterval(interval contract.Interval) (string, error) {
 			return "", errors.NewErrInvalidTimeFormat(end)
 		}
 	}
-	// Validate the Frequency
+
+	// Validate the Cron
+	cronRec := interval.Cron
 	freq := interval.Frequency
-	if freq != "" {
+	if cronRec != "" {
+		if _, err := cron.ParseStandard(cronRec); err != nil {
+			return "", errors.NewErrInvalidCronFormat(cronRec)
+		}
+	} else if freq != "" {
 		if !isFrequencyValid(interval.Frequency) {
 			return "", errors.NewErrInvalidFrequencyFormat(freq)
 		}
+	} else {
+		return "", fmt.Errorf("both cron and frequency fields empty")
 	}
 
 	// Validate that interval is not in queue
@@ -101,22 +111,26 @@ func updateInterval(from contract.Interval) error {
 	}
 	// Update the fields
 	if from.Cron != "" {
-		if _, err := cron.Parse(from.Cron); err != nil {
+		if _, err := cron.ParseStandard(from.Cron); err != nil {
 			return errors.NewErrInvalidCronFormat(from.Cron)
 		}
 		to.Cron = from.Cron
 	}
+
+	if from.Frequency != "" {
+		if to.Cron == "" {
+			if !isFrequencyValid(from.Frequency) {
+				return errors.NewErrInvalidFrequencyFormat(from.Frequency)
+			}
+		}
+		to.Frequency = from.Frequency
+	}
+
 	if from.End != "" {
 		if _, err := msToTime(from.End); err != nil {
 			return errors.NewErrInvalidTimeFormat(from.End)
 		}
 		to.End = from.End
-	}
-	if from.Frequency != "" {
-		if !isFrequencyValid(from.Frequency) {
-			return errors.NewErrInvalidFrequencyFormat(from.Frequency)
-		}
-		to.Frequency = from.Frequency
 	}
 	if from.Start != "" {
 		if _, err := msToTime(from.Start); err != nil {

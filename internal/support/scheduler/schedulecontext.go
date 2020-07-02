@@ -9,6 +9,7 @@ package scheduler
 
 import (
 	"github.com/Circutor/edgex/pkg/models"
+	"github.com/robfig/cron/v3"
 
 	"regexp"
 	"strconv"
@@ -67,15 +68,29 @@ func (sc *IntervalContext) Reset(interval models.Interval) {
 		sc.EndTime = t
 	}
 
-	//frequency and next time
-	nowBenchmark := time.Now().Unix()
-	sc.Frequency = parseFrequency(sc.Interval.Frequency)
-
-	sc.NextTime = sc.StartTime
-	if sc.StartTime.Unix() <= nowBenchmark && !sc.Interval.RunOnce {
-		for sc.NextTime.Unix() <= nowBenchmark {
-			sc.NextTime = sc.NextTime.Add(sc.Frequency)
+	//Cron, frequency and next time
+	var newFreq cron.Schedule
+	var err error
+	if sc.Interval.Cron != "" {
+		LoggingClient.Debug("cron not empty, trying to parse...")
+		newFreq, err = cron.ParseStandard(sc.Interval.Cron)
+		if err != nil {
+			LoggingClient.Error("parse cron interval error, the original crontab string is : " + sc.Interval.Cron)
+		} else {
+			sc.NextTime = newFreq.Next(sc.StartTime)
 		}
+	} else if sc.Interval.Frequency != "" {
+		LoggingClient.Debug("cron empty, using frequency for interval")
+		sc.Frequency = parseFrequency(sc.Interval.Frequency)
+		nowBenchmark := time.Now().Unix()
+		sc.NextTime = sc.StartTime
+		if sc.StartTime.Unix() <= nowBenchmark && !sc.Interval.RunOnce {
+			for sc.NextTime.Unix() <= nowBenchmark {
+				sc.NextTime = sc.NextTime.Add(sc.Frequency)
+			}
+		}
+	} else {
+		LoggingClient.Error("both cron and frequency fields empty")
 	}
 }
 
@@ -91,7 +106,18 @@ func (sc *IntervalContext) UpdateIterations() {
 
 func (sc *IntervalContext) UpdateNextTime() {
 	if !sc.IsComplete() {
-		sc.NextTime = sc.NextTime.Add(sc.Frequency)
+		if sc.Interval.Cron != "" {
+			newFreq, err := cron.ParseStandard(sc.Interval.Cron)
+			if err != nil {
+				LoggingClient.Error("parse interval error, the original crontab string is : " + sc.Interval.Cron)
+				return
+			}
+			sc.NextTime = newFreq.Next(sc.StartTime)
+		} else if sc.Interval.Frequency != "" {
+			sc.NextTime = sc.NextTime.Add(sc.Frequency)
+		} else {
+			LoggingClient.Error("both cron and frequency fields empty")
+		}
 	}
 }
 

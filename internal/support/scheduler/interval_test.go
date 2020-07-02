@@ -163,7 +163,7 @@ func TestAddInterval(t *testing.T) {
 	mySchedulerMock.On("QueryIntervalByName",
 		mock.Anything).Return(models.Interval{}, nil)
 
-	nInterval := models.Interval{Name: testInterNewName, Origin: testOrigin}
+	nInterval := models.Interval{Name: testInterNewName, Origin: testOrigin, Cron: "5 * * * *", Frequency: "PT60S"}
 	dbClient = myMock
 	scClient = mySchedulerMock
 
@@ -235,7 +235,7 @@ func TestAddIntervalFailOnInvalidTimeFormat(t *testing.T) {
 	mySchedulerMock.On("QueryIntervalByName",
 		mock.Anything).Return(models.Interval{}, nil)
 
-	nInterval := models.Interval{Name: testInterval.Name, Start: "34343", Origin: testOrigin}
+	nInterval := models.Interval{Name: testInterval.Name, Start: "34343", Origin: testOrigin, Cron: "5 * * * *", Frequency: "PT60S"}
 	dbClient = myMock
 	scClient = mySchedulerMock
 
