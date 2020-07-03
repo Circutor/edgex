@@ -52,9 +52,9 @@ func (r Reading) MarshalJSON() ([]byte, error) {
 		Name        *string `json:"name,omitempty"`
 		Value       *string `json:"value,omitempty"`       // Device sensor data value
 		BinaryValue []byte  `json:"binaryValue,omitempty"` // Binary data payload
-		AvgValue    string  `json:"avgValue,omitempty"`    // Device calculated average value
-		MinValue    string  `json:"minValue,omitempty"`    // Device minimum sensor data value
-		MaxValue    string  `json:"maxValue,omitempty"`    // Device maximum sensor data value
+		AvgValue    *string `json:"avgValue,omitempty"`    // Device calculated average value
+		MinValue    *string `json:"minValue,omitempty"`    // Device minimum sensor data value
+		MaxValue    *string `json:"maxValue,omitempty"`    // Device maximum sensor data value
 	}{
 		Pushed:      r.Pushed,
 		Created:     r.Created,
@@ -75,6 +75,15 @@ func (r Reading) MarshalJSON() ([]byte, error) {
 	}
 	if r.Value != "" {
 		test.Value = &r.Value
+	}
+	if r.AvgValue != "" {
+		test.AvgValue = &r.AvgValue
+	}
+	if r.MinValue != "" {
+		test.MinValue = &r.MinValue
+	}
+	if r.MaxValue != "" {
+		test.MaxValue = &r.MaxValue
 	}
 
 	return json.Marshal(test)
