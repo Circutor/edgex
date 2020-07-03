@@ -132,6 +132,15 @@ func updateReading(reading contract.Reading) error {
 	if reading.Value != "" {
 		to.Value = reading.Value
 	}
+	if reading.AvgValue != "" {
+		to.AvgValue = reading.AvgValue
+	}
+	if reading.MinValue != "" {
+		to.MinValue = reading.MinValue
+	}
+	if reading.MaxValue != "" {
+		to.MaxValue = reading.MaxValue
+	}
 	if reading.Name != "" {
 		to.Name = reading.Name
 	}

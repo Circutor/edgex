@@ -35,6 +35,9 @@ type Reading struct {
 	Name        string `json:"name"`
 	Value       string `json:"value"`       // Device sensor data value
 	BinaryValue []byte `json:"binaryValue"` // Binary data payload
+	AvgValue    string `json:"avgValue"`    // Device calculated average value
+	MinValue    string `json:"minValue"`    // Device minimum sensor data value
+	MaxValue    string `json:"maxValue"`    // Device maximum sensor data value
 }
 
 // Custom marshaling to make empty strings null
@@ -49,6 +52,9 @@ func (r Reading) MarshalJSON() ([]byte, error) {
 		Name        *string `json:"name,omitempty"`
 		Value       *string `json:"value,omitempty"`       // Device sensor data value
 		BinaryValue []byte  `json:"binaryValue,omitempty"` // Binary data payload
+		AvgValue    string  `json:"avgValue,omitempty"`    // Device calculated average value
+		MinValue    string  `json:"minValue,omitempty"`    // Device minimum sensor data value
+		MaxValue    string  `json:"maxValue,omitempty"`    // Device maximum sensor data value
 	}{
 		Pushed:      r.Pushed,
 		Created:     r.Created,

@@ -29,6 +29,14 @@ type AutoEvent struct {
 	OnChange bool `json:"onChange,omitempty"`
 	// Resource indicates the name of the resource in the device profile which describes the event to generate
 	Resource string `json:"resource,omitempty"`
+	// InstantValue selects if we are to send the instantaneous last value from the selected resource
+	InstantValue bool `json:"instantValue,omitempty"`
+	// AverageValue selects if we are to calculate and send the average value for the frequency integration period from the selected resource
+	AverageValue bool `json:"averageValue,omitempty"`
+	// MinValue selects if we are to store and send the minimum value read for the frequency integration period from the selected resource
+	MinValue bool `json:"minValue,omitempty"`
+	// MaxValue selects if we are to store and send the maximum value read for the frequency integration period from the selected resource
+	MaxValue bool `json:"maxValue,omitempty"`
 }
 
 /*
