@@ -25,7 +25,6 @@ import (
 	"github.com/Circutor/edgex/internal/pkg/config"
 	"github.com/Circutor/edgex/internal/pkg/db"
 	"github.com/Circutor/edgex/internal/pkg/db/bolt"
-	"github.com/Circutor/edgex/internal/pkg/db/mongo"
 	"github.com/Circutor/edgex/internal/pkg/telemetry"
 	"github.com/Circutor/edgex/pkg/clients"
 	"github.com/Circutor/edgex/pkg/clients/logger"
@@ -141,8 +140,6 @@ func connectToDatabase() error {
 // Return the dbClient interface
 func newDBClient(dbType string, config db.Configuration) (interfaces.DBClient, error) {
 	switch dbType {
-	case db.MongoDB:
-		return mongo.NewClient(config)
 	case db.BoltDB:
 		return bolt.NewClient(config)
 	default:

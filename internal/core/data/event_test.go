@@ -17,6 +17,7 @@ package data
 import (
 	"context"
 	"fmt"
+	"math"
 	"strconv"
 	"sync"
 	"testing"
@@ -84,14 +85,6 @@ func newDeleteEventsOlderThanAgeMockDB() *dbMock.DBClient {
 	myMock.On("EventsOlderThanAge", mock.MatchedBy(func(age int64) bool {
 		return age == -1
 	})).Return(buildEvents(), nil).Maybe()
-
-	myMock.On("DeleteReadingById", mock.MatchedBy(func(id string) bool {
-		return id == "1"
-	})).Return(nil)
-
-	myMock.On("DeleteReadingById", mock.MatchedBy(func(id string) bool {
-		return id == "2"
-	})).Return(nil)
 
 	myMock.On("DeleteEventById", mock.MatchedBy(func(id string) bool {
 		return id == "1"
@@ -380,12 +373,6 @@ func newDeleteEventMockDB() *dbMock.DBClient {
 	myMock.On("EventById", mock.MatchedBy(func(id string) bool {
 		return id == testEvent.ID
 	})).Return(testEvent, nil)
-	myMock.On("DeleteReadingById", mock.MatchedBy(func(id string) bool {
-		return id == testEvent.Readings[0].Id
-	})).Return(nil)
-	myMock.On("DeleteReadingById", mock.MatchedBy(func(id string) bool {
-		return id == testEvent.Readings[1].Id
-	})).Return(nil)
 	myMock.On("DeleteEventById", mock.MatchedBy(func(id string) bool {
 		return id == testEvent.ID
 	})).Return(nil)
@@ -448,9 +435,6 @@ func TestDeleteEventReadingDoesNotExist(t *testing.T) {
 	myMock := &dbMock.DBClient{}
 	myMock.On("DeleteEventById", mock.MatchedBy(func(id string) bool {
 		return id == testEvent.ID
-	})).Return(db.ErrNotFound)
-	myMock.On("DeleteReadingById", mock.MatchedBy(func(id string) bool {
-		return id == testEvent.Readings[0].Id || id == testEvent.Readings[1].Id
 	})).Return(db.ErrNotFound)
 	dbClient = myMock
 
@@ -549,6 +533,29 @@ func TestGetEventsByCreationTimeDBThrowsError(t *testing.T) {
 	}
 }
 
+func TestGetReadingsByDeviceId(t *testing.T) {
+	reset()
+	myMock := &dbMock.DBClient{}
+
+	myMock.On("EventsForDevice", mock.Anything).Return([]models.Event{{Readings: append(buildReadings(), buildReadings()...)}}, nil)
+
+	dbClient = myMock
+
+	expectedReadings, expectedNil := getReadingsByDeviceId(math.MaxInt32, "valid", "Pressure")
+
+	if expectedReadings == nil {
+		t.Errorf("Should return Readings")
+	}
+
+	if expectedNil != nil {
+		t.Errorf("Should not throw error")
+	}
+
+	if len(expectedReadings) != len(buildReadings()) {
+		t.Errorf("Returned %d readings, expected %d", len(expectedReadings), len(buildReadings()))
+	}
+}
+
 func TestDeleteEvents(t *testing.T) {
 	reset()
 	readings := buildReadings()
@@ -557,8 +564,6 @@ func TestDeleteEvents(t *testing.T) {
 	myMock.On("EventsForDevice", mock.MatchedBy(func(deviceId string) bool {
 		return deviceId == testUUIDString
 	})).Return([]models.Event{{ID: testUUIDString, Readings: readings}}, nil)
-
-	myMock.On("DeleteReadingById", mock.Anything).Return(nil).Times(len(readings))
 
 	myMock.On("DeleteEventById", mock.MatchedBy(func(eventId string) bool {
 		return eventId == testUUIDString
@@ -602,10 +607,6 @@ func TestScrubPushedEvents(t *testing.T) {
 
 	myMock := &dbMock.DBClient{}
 	myMock.On("EventsPushed").Return(pushedEvents, nil)
-
-	myMock.On("DeleteReadingById", mock.MatchedBy(func(id string) bool {
-		return id == pushedEvents[0].Readings[0].Id || id == pushedEvents[0].Readings[1].Id
-	})).Return(nil).Times(4)
 
 	myMock.On("DeleteEventById", mock.MatchedBy(func(id string) bool {
 		return id == pushedEvents[0].ID || id == pushedEvents[1].ID

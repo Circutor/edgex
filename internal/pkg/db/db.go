@@ -25,8 +25,7 @@ const (
 	BoltDB  = "boltdb"
 
 	// Data
-	EventsCollection   = "event"
-	ReadingsCollection = "reading"
+	EventsCollection = "event"
 
 	// Export
 	ExportCollection = "exportConfiguration"

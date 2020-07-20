@@ -34,7 +34,6 @@ const (
 	ApiNotifyRegistrationRoute = "/api/v1/notify/registrations"
 	ApiPingRoute               = "/api/v1/ping"
 	ApiProvisionWatcherRoute   = "/api/v1/provisionwatcher"
-	ApiReadingRoute            = "/api/v1/reading"
 	ApiRegistrationRoute       = "/api/v1/registration"
 	ApiRegistrationByNameRoute = ApiRegistrationRoute + "/name"
 	ApiSubscriptionRoute       = "/api/v1/subscription"
