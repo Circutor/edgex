@@ -44,9 +44,6 @@ type DBClient interface {
 	// Get the number of events in Core Data
 	EventCount() (int, error)
 
-	// Get first event created
-	FirstEventCreated() (contract.Event, error)
-
 	// Get the number of events in Core Data for the device specified by id
 	EventCountByDeviceId(id string) (int, error)
 

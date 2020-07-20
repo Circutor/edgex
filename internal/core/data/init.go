@@ -94,8 +94,6 @@ func Init() bool {
 
 	go telemetry.StartCpuUsageAverage()
 
-	go coredataDBSizeWatcher()
-
 	return true
 }
 
@@ -171,22 +169,4 @@ func setLoggingTarget() string {
 		return Configuration.Clients["Logging"].Url() + clients.ApiLoggingRoute
 	}
 	return Configuration.Logging.File
-}
-
-func coredataDBSizeWatcher() {
-	once.Do(func() {
-		max := 200000 //max readings in db
-		for {
-			recount, _ := dbClient.ReadingCount()
-			for recount > max {
-				ret := deleteFirstEvent()
-				if ret != nil {
-					break
-				}
-				recount, _ = dbClient.ReadingCount()
-			}
-			// Wait for 10s.
-			time.Sleep(10 * time.Second)
-		}
-	})
 }

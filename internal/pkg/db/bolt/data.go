@@ -29,6 +29,10 @@ Core data client
 Has functions for interacting with the core data bolt database
 */
 
+const (
+	maxEvents = 50000
+)
+
 // ******************************* EVENTS **********************************
 
 // Return all the events
@@ -59,34 +63,23 @@ func (bc *BoltClient) AddEvent(e contract.Event) (string, error) {
 
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
 	err := bc.db.Update(func(tx *bolt.Tx) error {
-
-		// Insert readings
-		b, _ := tx.CreateBucketIfNotExists([]byte(db.ReadingsCollection))
+		b, _ := tx.CreateBucketIfNotExists([]byte(db.EventsCollection))
 		if b == nil {
 			return db.ErrUnsupportedDatabase
 		}
-		for i := range e.Readings {
-			e.Readings[i].Id = uuid.New().String()
-			e.Readings[i].Created = e.Created
-			e.Readings[i].Modified = e.Modified
-			e.Readings[i].Device = e.Device
-			encoded, err := json.Marshal(e.Readings[i])
-			if err != nil {
-				return err
-			}
-			err = b.Put([]byte(e.Readings[i].Id), encoded)
+
+		// Deletes older event if its necessary
+		numElements := b.Stats().KeyN
+		if numElements > maxEvents {
+			cursor := b.Cursor()
+			cursor.First()
+			err := cursor.Delete()
 			if err != nil {
 				return err
 			}
 		}
 
-		// Add the event
-		be := boltEvent{Event: e}
-		b, _ = tx.CreateBucketIfNotExists([]byte(db.EventsCollection))
-		if b == nil {
-			return db.ErrUnsupportedDatabase
-		}
-		encoded, err := json.Marshal(be)
+		encoded, err := json.Marshal(e)
 		if err != nil {
 			return err
 		}
@@ -101,52 +94,19 @@ func (bc *BoltClient) AddEvent(e contract.Event) (string, error) {
 func (bc *BoltClient) UpdateEvent(e contract.Event) error {
 	e.Modified = db.MakeTimestamp()
 
-	be := boltEvent{Event: e}
-	return bc.update(db.EventsCollection, be, e.ID)
+	return bc.update(db.EventsCollection, e, e.ID)
 }
 
 // Get an event by id
 func (bc *BoltClient) EventById(id string) (contract.Event, error) {
-	ev := contract.Event{}
-	if !isIdValid(id) {
-		return ev, db.ErrInvalidObjectId
-	}
-	err := bc.db.View(func(tx *bolt.Tx) error {
-		var err error
-		b := tx.Bucket([]byte(db.EventsCollection))
-		if b == nil {
-			return db.ErrNotFound
-		}
-		encoded := b.Get([]byte(id))
-		ev, err = getEvent(encoded, tx)
-		return err
-	})
-
+	var ev contract.Event
+	err := bc.getById(&ev, db.EventsCollection, id)
 	return ev, err
 }
 
 // Get the number of events in bolt
 func (bc *BoltClient) EventCount() (int, error) {
 	return bc.count(db.EventsCollection)
-}
-
-// Get first event created
-func (bc *BoltClient) FirstEventCreated() (contract.Event, error) {
-	ev := contract.Event{}
-
-	err := bc.db.View(func(tx *bolt.Tx) error {
-		var err error
-		b := tx.Bucket([]byte(db.EventsCollection))
-		if b == nil {
-			return nil
-		}
-		c := b.Cursor()
-		_, v := c.First()
-
-		ev, err = getEvent(v, tx)
-		return err
-	})
-	return ev, err
 }
 
 // Get the number of events in bolt for the device
@@ -242,7 +202,9 @@ func (bc *BoltClient) ScrubAllEvents() error {
 
 // Get events for the passed check
 func (bc *BoltClient) getEvents(fn func(encoded []byte) bool, limit int) ([]contract.Event, error) {
-	events := []contract.Event{}
+	var event contract.Event
+	var events []contract.Event
+	json := jsoniter.ConfigCompatibleWithStandardLibrary
 
 	// Check if limit is not 0
 	if limit == 0 {
@@ -257,11 +219,11 @@ func (bc *BoltClient) getEvents(fn func(encoded []byte) bool, limit int) ([]cont
 		}
 		err := b.ForEach(func(id, encoded []byte) error {
 			if fn(encoded) == true {
-				ev, err := getEvent(encoded, tx)
+				err := json.Unmarshal(encoded, &event)
 				if err != nil {
 					return err
 				}
-				events = append(events, ev)
+				events = append(events, event)
 				if limit > 0 {
 					cnt++
 					if cnt >= limit {
@@ -277,39 +239,6 @@ func (bc *BoltClient) getEvents(fn func(encoded []byte) bool, limit int) ([]cont
 		return err
 	})
 	return events, err
-}
-
-// Get a single event
-func getEvent(encoded []byte, tx *bolt.Tx) (contract.Event, error) {
-	ev := contract.Event{}
-	b := tx.Bucket([]byte(db.ReadingsCollection))
-	if b == nil {
-		return ev, db.ErrNotFound
-	}
-	var be boltEvent
-	if encoded == nil {
-		return ev, db.ErrNotFound
-	}
-	json := jsoniter.ConfigCompatibleWithStandardLibrary
-	err := json.Unmarshal(encoded, &be)
-	if err != nil {
-		return ev, err
-	}
-
-	for _, id := range be.Readings {
-		encoded := b.Get([]byte(id))
-		if encoded == nil {
-			return ev, db.ErrNotFound
-		}
-		var reading contract.Reading
-		err = json.Unmarshal(encoded, &reading)
-		if err != nil {
-			return ev, err
-		}
-		be.Event.Readings = append(be.Event.Readings, reading)
-	}
-	ev = be.Event
-	return ev, nil
 }
 
 // ************************ READINGS ************************************

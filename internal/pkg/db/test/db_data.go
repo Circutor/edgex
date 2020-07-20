@@ -530,37 +530,15 @@ func benchmarkEvents(b *testing.B, db interfaces.DBClient) {
 	// Remove previous events and readings
 	db.ScrubAllEvents()
 
-	b.Run("AddEvent", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			device := fmt.Sprintf("device" + strconv.Itoa(i/100))
-			e := contract.Event{
-				Device: device,
-			}
-			for j := 0; j < 5; j++ {
-				r := contract.Reading{
-					Device: device,
-					Name:   fmt.Sprintf("name%d", j),
-				}
-				e.Readings = append(e.Readings, r)
-			}
-			_, err := db.AddEvent(e)
-			if err != nil {
-				b.Fatalf("Error add event: %v", err)
-			}
-		}
-	})
-
-	// Remove previous events and readings
-	db.ScrubAllEvents()
-	// prepare to benchmark n events (5 readings each)
-	n := 1000
+	// prepare to benchmark n events (15 readings each)
+	n := 10000
 	events := make([]string, n)
 	for i := 0; i < n; i++ {
 		device := fmt.Sprintf("device" + strconv.Itoa(i/100))
 		e := contract.Event{
 			Device: device,
 		}
-		for j := 0; j < 5; j++ {
+		for j := 0; j < 15; j++ {
 			r := contract.Reading{
 				Device: device,
 				Name:   fmt.Sprintf("name%d", j),
@@ -573,6 +551,26 @@ func benchmarkEvents(b *testing.B, db interfaces.DBClient) {
 		}
 		events[i] = id
 	}
+
+	b.Run("AddEvent", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			device := fmt.Sprintf("device" + strconv.Itoa(i/100))
+			e := contract.Event{
+				Device: device,
+			}
+			for j := 0; j < 15; j++ {
+				r := contract.Reading{
+					Device: device,
+					Name:   fmt.Sprintf("name%d", j),
+				}
+				e.Readings = append(e.Readings, r)
+			}
+			_, err := db.AddEvent(e)
+			if err != nil {
+				b.Fatalf("Error add event: %v", err)
+			}
+		}
+	})
 
 	b.Run("Events", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
