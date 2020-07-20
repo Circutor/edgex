@@ -35,7 +35,6 @@ import (
 var Configuration *ConfigurationStruct
 var dbClient interfaces.DBClient
 var LoggingClient logger.LoggingClient
-var once sync.Once
 
 var chEvents chan interface{} //A channel for "domain events" sourced from event operations
 
