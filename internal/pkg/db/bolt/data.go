@@ -99,7 +99,7 @@ func (bc *BoltClient) UpdateEvent(e contract.Event) error {
 
 // Get an event by id
 func (bc *BoltClient) EventById(id string) (contract.Event, error) {
-	var ev contract.Event
+	ev := contract.Event{}
 	err := bc.getById(&ev, db.EventsCollection, id)
 	return ev, err
 }
@@ -201,8 +201,7 @@ func (bc *BoltClient) ScrubAllEvents() error {
 
 // Get events for the passed check
 func (bc *BoltClient) getEvents(fn func(encoded []byte) bool, limit int) ([]contract.Event, error) {
-	var event contract.Event
-	var events []contract.Event
+	events := []contract.Event{}
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
 
 	// Check if limit is not 0
@@ -218,6 +217,7 @@ func (bc *BoltClient) getEvents(fn func(encoded []byte) bool, limit int) ([]cont
 		}
 		err := b.ForEach(func(id, encoded []byte) error {
 			if fn(encoded) == true {
+				event := contract.Event{}
 				err := json.Unmarshal(encoded, &event)
 				if err != nil {
 					return err
