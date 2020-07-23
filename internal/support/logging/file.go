@@ -132,23 +132,33 @@ func (fl *fileLog) remove(criteria matchCriteria) (int, error) {
 
 func (fl *fileLog) find(criteria matchCriteria) ([]models.LogEntry, error) {
 	var logs []models.LogEntry
-	f, err := os.Open(fl.filename)
-	if err != nil {
-		//fmt.Println("Error opening log file: ", fl.filename, err)
-		return nil, err
-	}
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		var le models.LogEntry
+	var err error
+	// Here we should make a for to include all files in logs
+	for i := fl.logsCount - 1; i > 0; i-- {
+		var logPartialFile string
+		if i > 0 {
+			logPartialFile = fmt.Sprintf("%s.%d", fl.filename, i)
+		} else {
+			logPartialFile = fl.filename
+		}
+		f, err := os.Open(logPartialFile)
+		if err != nil {
+			//fmt.Println("Error opening log file: ", fl.filename, err)
+			return nil, err
+		}
+		scanner := bufio.NewScanner(f)
+		for scanner.Scan() {
+			var le models.LogEntry
 
-		line := scanner.Bytes()
-		err := json.Unmarshal(line, &le)
-		if err == nil {
-			if criteria.match(le) {
-				logs = append(logs, le)
+			line := scanner.Bytes()
+			err := json.Unmarshal(line, &le)
+			if err == nil {
+				if criteria.match(le) {
+					logs = append(logs, le)
 
-				if criteria.Limit != 0 && len(logs) >= criteria.Limit {
-					break
+					if criteria.Limit != 0 && len(logs) >= criteria.Limit {
+						break
+					}
 				}
 			}
 		}
