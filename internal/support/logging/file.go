@@ -10,7 +10,6 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 
@@ -22,8 +21,10 @@ const (
 )
 
 type fileLog struct {
-	filename string
-	out      io.WriteCloser
+	filename  string
+	maxBytes  int64
+	logsCount int
+	out       *os.File //io.WriteCloser
 }
 
 func (fl *fileLog) closeSession() {
@@ -48,7 +49,24 @@ func (fl *fileLog) add(le models.LogEntry) error {
 			return err
 		}
 	}
+	stat, err := fl.out.Stat()
+	if err != nil {
+		//fmt.Println("Error reading log file size: ", fl.filename, err)
+		return err
+	}
+	if stat.Size() > fl.maxBytes {
+		fl.out.Close()
 
+		for i := fl.logsCount - 1; i > 0; i-- {
+			oldFileName := fmt.Sprintf("%s.%d", fl.filename, i)
+			newFileName := fmt.Sprintf("%s.%d", fl.filename, i+1)
+
+			os.Rename(oldFileName, newFileName)
+		}
+		newFileName := fmt.Sprintf("%s.1", fl.filename)
+		os.Rename(fl.filename, newFileName)
+		fl.out, _ = os.OpenFile(fl.filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	}
 	res, err := json.Marshal(le)
 	if err != nil {
 		return err
