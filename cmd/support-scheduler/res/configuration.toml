@@ -30,30 +30,3 @@ File = './logs/edgex-support-scheduler.log'
   Username = ''
   Timeout = 5000
   Type = 'boltdb'
-
-[Intervals]
-    [Intervals.Midnight]
-    Name = 'midnight'
-    Start = '20180101T000000'
-    Frequency = 'P1D'
-
-[IntervalActions]
-    [IntervalActions.ScrubPushed]
-    Name = 'scrub-pushed-events'
-    Host = 'localhost'
-    Port = 48080
-    Protocol = 'http'
-    Method = 'DELETE'
-    Target = 'core-data'
-    Path = '/api/v1/event/scrub'
-    Interval = 'midnight'
-
-    [IntervalActions.ScrubAged]
-    Name = 'scrub-aged-events'
-    Host = 'localhost'
-    Port = 48080
-    Protocol = 'http'
-    Method = 'DELETE'
-    Target = 'core-data'
-    Path = '/api/v1/event/removeold/age/604800000'
-    Interval = 'midnight'
