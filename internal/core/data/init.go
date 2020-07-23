@@ -25,7 +25,6 @@ import (
 	"github.com/Circutor/edgex/internal/pkg/config"
 	"github.com/Circutor/edgex/internal/pkg/db"
 	"github.com/Circutor/edgex/internal/pkg/db/bolt"
-	"github.com/Circutor/edgex/internal/pkg/db/mongo"
 	"github.com/Circutor/edgex/internal/pkg/telemetry"
 	"github.com/Circutor/edgex/pkg/clients"
 	"github.com/Circutor/edgex/pkg/clients/logger"
@@ -36,7 +35,6 @@ import (
 var Configuration *ConfigurationStruct
 var dbClient interfaces.DBClient
 var LoggingClient logger.LoggingClient
-var once sync.Once
 
 var chEvents chan interface{} //A channel for "domain events" sourced from event operations
 
@@ -94,8 +92,6 @@ func Init() bool {
 
 	go telemetry.StartCpuUsageAverage()
 
-	go coredataDBSizeWatcher()
-
 	return true
 }
 
@@ -143,8 +139,6 @@ func connectToDatabase() error {
 // Return the dbClient interface
 func newDBClient(dbType string, config db.Configuration) (interfaces.DBClient, error) {
 	switch dbType {
-	case db.MongoDB:
-		return mongo.NewClient(config)
 	case db.BoltDB:
 		return bolt.NewClient(config)
 	default:
@@ -171,22 +165,4 @@ func setLoggingTarget() string {
 		return Configuration.Clients["Logging"].Url() + clients.ApiLoggingRoute
 	}
 	return Configuration.Logging.File
-}
-
-func coredataDBSizeWatcher() {
-	once.Do(func() {
-		max := 200000 //max readings in db
-		for {
-			recount, _ := dbClient.ReadingCount()
-			for recount > max {
-				ret := deleteFirstEvent()
-				if ret != nil {
-					break
-				}
-				recount, _ = dbClient.ReadingCount()
-			}
-			// Wait for 10s.
-			time.Sleep(10 * time.Second)
-		}
-	})
 }

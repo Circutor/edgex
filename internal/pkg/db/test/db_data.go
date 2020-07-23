@@ -16,23 +16,6 @@ import (
 	contract "github.com/Circutor/edgex/pkg/models"
 )
 
-func populateDbReadings(db interfaces.DBClient, count int) (string, error) {
-	var id string
-	for i := 0; i < count; i++ {
-		name := fmt.Sprintf("name%d", i)
-		r := contract.Reading{}
-		r.Name = name
-		r.Device = name
-		r.Value = name
-		var err error
-		id, err = db.AddReading(r)
-		if err != nil {
-			return id, err
-		}
-	}
-	return id, nil
-}
-
 func populateDbEvents(db interfaces.DBClient, count int, pushed int64) (string, error) {
 	var id string
 	for i := 0; i < count; i++ {
@@ -47,182 +30,6 @@ func populateDbEvents(db interfaces.DBClient, count int, pushed int64) (string, 
 		}
 	}
 	return id, nil
-}
-
-func testDBReadings(t *testing.T, db interfaces.DBClient) {
-	err := db.ScrubAllEvents()
-	if err != nil {
-		t.Fatalf("Error removing all readings: %v\n", err)
-	}
-
-	readings, err := db.Readings()
-	if err != nil {
-		t.Fatalf("Error getting readings %v", err)
-	}
-	if readings == nil {
-		t.Fatalf("Should return an empty array")
-	}
-	if len(readings) != 0 {
-		t.Fatalf("There should be 0 readings instead of %d", len(readings))
-	}
-
-	beforeTime := dbp.MakeTimestamp()
-	_, err = populateDbReadings(db, 100)
-	if err != nil {
-		t.Fatalf("Error populating db: %v\n", err)
-	}
-
-	// To have two readings with the same name
-	id, err := populateDbReadings(db, 10)
-	if err != nil {
-		t.Fatalf("Error populating db: %v\n", err)
-	}
-	afterTime := dbp.MakeTimestamp()
-
-	count, err := db.ReadingCount()
-	if err != nil {
-		t.Fatalf("Error getting readings count:  %v", err)
-	}
-	if count != 110 {
-		t.Fatalf("There should be 110 readings instead of %d", count)
-	}
-
-	readings, err = db.Readings()
-	if err != nil {
-		t.Fatalf("Error getting readings %v", err)
-	}
-	if len(readings) != 110 {
-		t.Fatalf("There should be 110 readings instead of %d", len(readings))
-	}
-	r3, err := db.ReadingById(id)
-	if err != nil {
-		t.Fatalf("Error getting reading by id %v", err)
-	}
-	if r3.Id != id {
-		t.Fatalf("Id does not match %s - %s", r3.Id, id)
-	}
-	_, err = db.ReadingById("INVALID")
-	if err == nil {
-		t.Fatalf("Reading should not be found")
-	}
-
-	readings, err = db.ReadingsByDeviceAndValueDescriptor("name1", "name1", 10)
-	if err != nil {
-		t.Fatalf("Error getting ReadingsByDeviceAndValueDescriptor: %v", err)
-	}
-	if len(readings) != 2 {
-		t.Fatalf("There should be 2 readings, not %d", len(readings))
-	}
-	readings, err = db.ReadingsByDeviceAndValueDescriptor("name1", "name1", 1)
-	if err != nil {
-		t.Fatalf("Error getting ReadingsByDeviceAndValueDescriptor: %v", err)
-	}
-	if len(readings) != 1 {
-		t.Fatalf("There should be 1 readings, not %d", len(readings))
-	}
-	readings, err = db.ReadingsByDeviceAndValueDescriptor("name20", "name20", 10)
-	if err != nil {
-		t.Fatalf("Error getting ReadingsByDeviceAndValueDescriptor: %v", err)
-	}
-	if len(readings) != 1 {
-		t.Fatalf("There should be 1 readings, not %d", len(readings))
-	}
-
-	readings, err = db.ReadingsByDevice("name1", 10)
-	if err != nil {
-		t.Fatalf("Error getting ReadingsByDevice: %v", err)
-	}
-	if len(readings) != 2 {
-		t.Fatalf("There should be 2 readings, not %d", len(readings))
-	}
-	readings, err = db.ReadingsByDevice("name1", 1)
-	if err != nil {
-		t.Fatalf("Error getting ReadingsByDevice: %v", err)
-	}
-	if len(readings) != 1 {
-		t.Fatalf("There should be 1 readings, not %d", len(readings))
-	}
-	readings, err = db.ReadingsByDevice("name20", 10)
-	if err != nil {
-		t.Fatalf("Error getting ReadingsByDevice: %v", err)
-	}
-	if len(readings) != 1 {
-		t.Fatalf("There should be 1 readings, not %d", len(readings))
-	}
-
-	readings, err = db.ReadingsByValueDescriptor("name1", 10)
-	if err != nil {
-		t.Fatalf("Error getting ReadingsByValueDescriptor: %v", err)
-	}
-	if len(readings) != 2 {
-		t.Fatalf("There should be 2 readings, not %d", len(readings))
-	}
-	readings, err = db.ReadingsByValueDescriptor("name1", 1)
-	if err != nil {
-		t.Fatalf("Error getting ReadingsByValueDescriptor: %v", err)
-	}
-	if len(readings) != 1 {
-		t.Fatalf("There should be 1 readings, not %d", len(readings))
-	}
-	readings, err = db.ReadingsByValueDescriptor("name20", 10)
-	if err != nil {
-		t.Fatalf("Error getting ReadingsByValueDescriptor: %v", err)
-	}
-	if len(readings) != 1 {
-		t.Fatalf("There should be 1 readings, not %d", len(readings))
-	}
-	readings, err = db.ReadingsByValueDescriptor("name", 10)
-	if err != nil {
-		t.Fatalf("Error getting ReadingsByValueDescriptor: %v", err)
-	}
-	if len(readings) != 0 {
-		t.Fatalf("There should be 0 readings, not %d", len(readings))
-	}
-
-	readings, err = db.ReadingsByCreationTime(beforeTime, afterTime, 200)
-	if err != nil {
-		t.Fatalf("Error getting ReadingsByCreationTime: %v", err)
-	}
-	if len(readings) != 110 {
-		t.Fatalf("There should be 110 readings, not %d", len(readings))
-	}
-	readings, err = db.ReadingsByCreationTime(beforeTime, afterTime, 100)
-	if err != nil {
-		t.Fatalf("Error getting ReadingsByCreationTime: %v", err)
-	}
-	if len(readings) != 100 {
-		t.Fatalf("There should be 100 readings, not %d", len(readings))
-	}
-
-	r := contract.Reading{}
-	r.Id = id
-	r.Name = "name"
-	err = db.UpdateReading(r)
-	if err != nil {
-		t.Fatalf("Error updating reading %v", err)
-	}
-	r2, err := db.ReadingById(r.Id)
-	if err != nil {
-		t.Fatalf("Error getting reading by id %v", err)
-	}
-	if r2.Name != r.Name {
-		t.Fatalf("Did not update reading correctly: %s %s", r.Name, r2.Name)
-	}
-
-	err = db.DeleteReadingById("INVALID")
-	if err == nil {
-		t.Fatalf("Reading should not be deleted")
-	}
-
-	err = db.DeleteReadingById(id)
-	if err != nil {
-		t.Fatalf("Reading should be deleted: %v", err)
-	}
-
-	err = db.UpdateReading(r)
-	if err == nil {
-		t.Fatalf("Update should return error")
-	}
 }
 
 func testDBEvents(t *testing.T, db interfaces.DBClient) {
@@ -438,7 +245,6 @@ func testDBEvents(t *testing.T, db interfaces.DBClient) {
 }
 
 func TestDataDB(t *testing.T, db interfaces.DBClient) {
-	testDBReadings(t, db)
 	testDBEvents(t, db)
 
 	db.CloseSession()
@@ -448,81 +254,8 @@ func TestDataDB(t *testing.T, db interfaces.DBClient) {
 }
 
 func BenchmarkDB(b *testing.B, db interfaces.DBClient) {
-
-	benchmarkReadings(b, db)
 	benchmarkEvents(b, db)
 	db.CloseSession()
-}
-
-func benchmarkReadings(b *testing.B, db interfaces.DBClient) {
-
-	// Remove previous events and readings
-	db.ScrubAllEvents()
-
-	b.Run("AddReading", func(b *testing.B) {
-		reading := contract.Reading{}
-		for i := 0; i < b.N; i++ {
-			reading.Name = "test" + strconv.Itoa(i)
-			reading.Device = "device" + strconv.Itoa(i/100)
-			_, err := db.AddReading(reading)
-			if err != nil {
-				b.Fatalf("Error add reading: %v", err)
-			}
-		}
-	})
-
-	// Remove previous events and readings
-	db.ScrubAllEvents()
-	// prepare to benchmark n readings
-	n := 1000
-	readings := make([]string, n)
-	reading := contract.Reading{}
-	for i := 0; i < n; i++ {
-		reading.Name = "test" + strconv.Itoa(i)
-		reading.Device = "device" + strconv.Itoa(i/100)
-		id, err := db.AddReading(reading)
-		if err != nil {
-			b.Fatalf("Error add reading: %v", err)
-		}
-		readings[i] = id
-	}
-
-	b.Run("Readings", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			_, err := db.Readings()
-			if err != nil {
-				b.Fatalf("Error readings: %v", err)
-			}
-		}
-	})
-
-	b.Run("ReadingCount", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			_, err := db.ReadingCount()
-			if err != nil {
-				b.Fatalf("Error reading count: %v", err)
-			}
-		}
-	})
-
-	b.Run("ReadingById", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			_, err := db.ReadingById(readings[i%len(readings)])
-			if err != nil {
-				b.Fatalf("Error reading by ID: %v", err)
-			}
-		}
-	})
-
-	b.Run("ReadingsByDevice", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			device := "device" + strconv.Itoa((i%len(readings))/100)
-			_, err := db.ReadingsByDevice(device, 100)
-			if err != nil {
-				b.Fatalf("Error reading by device: %v", err)
-			}
-		}
-	})
 }
 
 func benchmarkEvents(b *testing.B, db interfaces.DBClient) {
@@ -530,37 +263,15 @@ func benchmarkEvents(b *testing.B, db interfaces.DBClient) {
 	// Remove previous events and readings
 	db.ScrubAllEvents()
 
-	b.Run("AddEvent", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			device := fmt.Sprintf("device" + strconv.Itoa(i/100))
-			e := contract.Event{
-				Device: device,
-			}
-			for j := 0; j < 5; j++ {
-				r := contract.Reading{
-					Device: device,
-					Name:   fmt.Sprintf("name%d", j),
-				}
-				e.Readings = append(e.Readings, r)
-			}
-			_, err := db.AddEvent(e)
-			if err != nil {
-				b.Fatalf("Error add event: %v", err)
-			}
-		}
-	})
-
-	// Remove previous events and readings
-	db.ScrubAllEvents()
-	// prepare to benchmark n events (5 readings each)
-	n := 1000
+	// prepare to benchmark n events (15 readings each)
+	n := 10000
 	events := make([]string, n)
 	for i := 0; i < n; i++ {
 		device := fmt.Sprintf("device" + strconv.Itoa(i/100))
 		e := contract.Event{
 			Device: device,
 		}
-		for j := 0; j < 5; j++ {
+		for j := 0; j < 15; j++ {
 			r := contract.Reading{
 				Device: device,
 				Name:   fmt.Sprintf("name%d", j),
@@ -573,6 +284,26 @@ func benchmarkEvents(b *testing.B, db interfaces.DBClient) {
 		}
 		events[i] = id
 	}
+
+	b.Run("AddEvent", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			device := fmt.Sprintf("device" + strconv.Itoa(i/100))
+			e := contract.Event{
+				Device: device,
+			}
+			for j := 0; j < 15; j++ {
+				r := contract.Reading{
+					Device: device,
+					Name:   fmt.Sprintf("name%d", j),
+				}
+				e.Readings = append(e.Readings, r)
+			}
+			_, err := db.AddEvent(e)
+			if err != nil {
+				b.Fatalf("Error add event: %v", err)
+			}
+		}
+	})
 
 	b.Run("Events", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {

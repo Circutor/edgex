@@ -44,9 +44,6 @@ type DBClient interface {
 	// Get the number of events in Core Data
 	EventCount() (int, error)
 
-	// Get first event created
-	FirstEventCreated() (contract.Event, error)
-
 	// Get the number of events in Core Data for the device specified by id
 	EventCountByDeviceId(id string) (int, error)
 
@@ -74,10 +71,6 @@ type DBClient interface {
 	// Limit the number of results by limit
 	EventsByCreationTime(startTime, endTime int64, limit int) ([]contract.Event, error)
 
-	// Return a list of readings for a device filtered by the value descriptor and limited by the limit
-	// The readings are linked to the device through an event
-	ReadingsByDeviceAndValueDescriptor(deviceId, valueDescriptor string, limit int) ([]contract.Reading, error)
-
 	// Remove all the events that are older than the given age
 	// Return the number of events removed
 	//RemoveEventByAge(age int64) (int, error)
@@ -93,39 +86,4 @@ type DBClient interface {
 
 	// Delete all readings and events
 	ScrubAllEvents() error
-
-	// ********************* READING FUNCTIONS *************************
-	// Return a list of readings sorted by reading id
-	Readings() ([]contract.Reading, error)
-
-	// Post a new reading
-	AddReading(r contract.Reading) (string, error)
-
-	// Update a reading
-	// 404 - reading cannot be found
-	// 409 - Value descriptor doesn't exist
-	// 503 - unknown issues
-	UpdateReading(r contract.Reading) error
-
-	// Get a reading by ID
-	ReadingById(id string) (contract.Reading, error)
-
-	// Get the number of readings in core data
-	ReadingCount() (int, error)
-
-	// Delete a reading by ID
-	// 404 - can't find the reading with the given id
-	DeleteReadingById(id string) error
-
-	// Return a list of readings for the given device (id or name)
-	// 404 - meta data checking enabled and can't find the device
-	// Sort the list of readings on creation date
-	ReadingsByDevice(id string, limit int) ([]contract.Reading, error)
-
-	// Return a list of readings for the given value descriptor
-	// 413 - the number exceeds the current max limit
-	ReadingsByValueDescriptor(name string, limit int) ([]contract.Reading, error)
-
-	// Return a list of readings whos created time is between the start and end times
-	ReadingsByCreationTime(start, end int64, limit int) ([]contract.Reading, error)
 }

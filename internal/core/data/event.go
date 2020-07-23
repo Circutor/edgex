@@ -61,14 +61,6 @@ func deleteEventsByAge(age int64) (int, error) {
 	return count, nil
 }
 
-func deleteFirstEvent() error {
-	event, err := dbClient.FirstEventCreated()
-	if err != nil {
-		return err
-	}
-	return deleteEvent(event)
-}
-
 func getEvents(limit int) ([]contract.Event, error) {
 	var err error
 	var events []contract.Event
@@ -148,16 +140,7 @@ func deleteEventById(id string) error {
 
 // Delete the event and readings
 func deleteEvent(e contract.Event) error {
-	for _, reading := range e.Readings {
-		if err := deleteReadingById(reading.Id); err != nil {
-			return err
-		}
-	}
-	if err := dbClient.DeleteEventById(e.ID); err != nil {
-		return err
-	}
-
-	return nil
+	return dbClient.DeleteEventById(e.ID)
 }
 
 func deleteAllEvents() error {
@@ -220,6 +203,34 @@ func getEventsByCreationTime(limit int, start int64, end int64) ([]contract.Even
 	}
 
 	return eventList, nil
+}
+
+func getReadingsByDeviceId(limit int, deviceId string, valueDescriptor string) ([]contract.Reading, error) {
+	eventList, err := dbClient.EventsForDevice(deviceId)
+	if err != nil {
+		LoggingClient.Error(err.Error())
+		return nil, err
+	}
+
+	// Only pick the readings who match the value descriptor
+	var readings []contract.Reading
+	count := 0 // Make sure we stay below the limit
+	for _, event := range eventList {
+		if count >= limit {
+			break
+		}
+		for _, reading := range event.Readings {
+			if count >= limit {
+				break
+			}
+			if reading.Name == valueDescriptor {
+				readings = append(readings, reading)
+				count += 1
+			}
+		}
+	}
+
+	return readings, nil
 }
 
 func deleteEvents(deviceId string) (int, error) {
