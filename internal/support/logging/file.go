@@ -57,7 +57,7 @@ func (fl *fileLog) add(le models.LogEntry) error {
 	if stat.Size() > fl.maxBytes {
 		fl.out.Close()
 
-		for i := fl.logsCount - 2; i > 0; i-- {
+		for i := fl.logsCount - 1; i > 0; i-- {
 			oldFileName := fmt.Sprintf("%s.%d", fl.filename, i)
 			newFileName := fmt.Sprintf("%s.%d", fl.filename, i+1)
 
