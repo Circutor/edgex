@@ -13,6 +13,8 @@ Timeout = 5000
 
 [Logging]
 File = './logs/edgex.log'
+MaxBytes = 102400
+LogFiles = 5
 
 [Databases]
   [Databases.Primary]

@@ -78,56 +78,66 @@ func (fl *fileLog) add(le models.LogEntry) error {
 }
 
 func (fl *fileLog) remove(criteria matchCriteria) (int, error) {
-	tmpFilename := fl.filename + rmFileSuffix
-	tmpFile, err := os.OpenFile(tmpFilename, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		//fmt.Println("Error creating tmp log file: ", tmpFilename, err)
-		return 0, err
-	}
-
-	defer os.Remove(tmpFilename)
-
-	f, err := os.Open(fl.filename)
-	if err != nil {
-		fmt.Println("Error opening log file: ", fl.filename, err)
-		tmpFile.Close()
-		return 0, err
-	}
-	defer f.Close()
-	count := 0
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		var le models.LogEntry
-
-		line := scanner.Bytes()
-		err := json.Unmarshal(line, &le)
-		if err == nil {
-			if !criteria.match(le) {
-				tmpFile.Write(line)
-				tmpFile.Write([]byte("\n"))
-			} else {
-				count += 1
-			}
+	var allCount int
+	for i := fl.logsCount - 1; i > 0; i-- {
+		var logPartialFile string
+		if i > 0 {
+			logPartialFile = fmt.Sprintf("%s.%d", fl.filename, i)
+		} else {
+			logPartialFile = fl.filename
 		}
-	}
 
-	tmpFile.Close()
-	if count != 0 {
-		err = os.Rename(tmpFilename, fl.filename)
+		tmpFilename := logPartialFile + rmFileSuffix
+		tmpFile, err := os.OpenFile(tmpFilename, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
-			//fmt.Printf("Error renaming %s to %s: %v", tmpFilename, fl.filename, err)
+			//fmt.Println("Error creating tmp log file: ", tmpFilename, err)
 			return 0, err
 		}
 
-		// Close old file to open the new one when writing next log
-		if fl.out != nil {
-			fl.out.Close()
-			fl.out = nil
+		defer os.Remove(tmpFilename)
+
+		count := 0
+		f, err := os.Open(logPartialFile)
+		if err != nil {
+			fmt.Println("Error opening log file: ", logPartialFile, err)
+			tmpFile.Close()
+			return 0, err
+		}
+		defer f.Close()
+		scanner := bufio.NewScanner(f)
+		for scanner.Scan() {
+			var le models.LogEntry
+
+			line := scanner.Bytes()
+			err := json.Unmarshal(line, &le)
+			if err == nil {
+				if !criteria.match(le) {
+					tmpFile.Write(line)
+					tmpFile.Write([]byte("\n"))
+				} else {
+					count += 1
+				}
+			}
 		}
 
-	}
+		tmpFile.Close()
+		if count != 0 {
+			err = os.Rename(tmpFilename, logPartialFile)
+			if err != nil {
+				//fmt.Printf("Error renaming %s to %s: %v", tmpFilename, fl.filename, err)
+				return 0, err
+			}
 
-	return count, nil
+			// Close old file to open the new one when writing next log
+			if fl.out != nil {
+				fl.out.Close()
+				fl.out = nil
+			}
+
+		}
+		allCount += count
+	}
+	return allCount, nil
 }
 
 func (fl *fileLog) find(criteria matchCriteria) ([]models.LogEntry, error) {
@@ -141,11 +151,11 @@ func (fl *fileLog) find(criteria matchCriteria) ([]models.LogEntry, error) {
 		} else {
 			logPartialFile = fl.filename
 		}
-		f, err := os.Open(logPartialFile)
-		if err != nil {
+		f, _ := os.Open(logPartialFile)
+		/*if err != nil {
 			//fmt.Println("Error opening log file: ", fl.filename, err)
 			return nil, err
-		}
+		}*/
 		scanner := bufio.NewScanner(f)
 		for scanner.Scan() {
 			var le models.LogEntry

@@ -59,6 +59,8 @@ func (s ServiceInfo) Url() string {
 type LoggingInfo struct {
 	EnableRemote bool
 	File         string
+	MaxBytes     int64
+	LogFiles     int
 }
 
 // MessageQueueInfo provides parameters related to connecting to a message queue

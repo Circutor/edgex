@@ -88,7 +88,7 @@ func initializeConfiguration(useProfile string) (*ConfigurationStruct, error) {
 func getPersistence() error {
 	switch Configuration.Writable.Persistence {
 	case PersistenceFile:
-		dbClient = &fileLog{filename: Configuration.Logging.File}
+		dbClient = &fileLog{filename: Configuration.Logging.File, maxBytes: Configuration.Logging.MaxBytes, logsCount: Configuration.Logging.LogFiles}
 	case PersistenceDB:
 		// TODO: Integrate db layer with internal/pkg/db/ types so we can support other databases
 		ms, err := connectToMongo()
