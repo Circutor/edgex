@@ -57,7 +57,7 @@ func (fl *fileLog) add(le models.LogEntry) error {
 	if stat.Size() > fl.maxBytes {
 		fl.out.Close()
 
-		for i := fl.logsCount - 1; i > 0; i-- {
+		for i := fl.logsCount - 2; i > 0; i-- {
 			oldFileName := fmt.Sprintf("%s.%d", fl.filename, i)
 			newFileName := fmt.Sprintf("%s.%d", fl.filename, i+1)
 
@@ -79,7 +79,7 @@ func (fl *fileLog) add(le models.LogEntry) error {
 
 func (fl *fileLog) remove(criteria matchCriteria) (int, error) {
 	var allCount int
-	for i := fl.logsCount - 1; i > 0; i-- {
+	for i := fl.logsCount - 1; i >= 0; i-- {
 		var logPartialFile string
 		if i > 0 {
 			logPartialFile = fmt.Sprintf("%s.%d", fl.filename, i)
@@ -90,8 +90,7 @@ func (fl *fileLog) remove(criteria matchCriteria) (int, error) {
 		tmpFilename := logPartialFile + rmFileSuffix
 		tmpFile, err := os.OpenFile(tmpFilename, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
-			//fmt.Println("Error creating tmp log file: ", tmpFilename, err)
-			return 0, err
+			continue
 		}
 
 		defer os.Remove(tmpFilename)
@@ -99,9 +98,7 @@ func (fl *fileLog) remove(criteria matchCriteria) (int, error) {
 		count := 0
 		f, err := os.Open(logPartialFile)
 		if err != nil {
-			fmt.Println("Error opening log file: ", logPartialFile, err)
-			tmpFile.Close()
-			return 0, err
+			continue
 		}
 		defer f.Close()
 		scanner := bufio.NewScanner(f)
@@ -115,7 +112,7 @@ func (fl *fileLog) remove(criteria matchCriteria) (int, error) {
 					tmpFile.Write(line)
 					tmpFile.Write([]byte("\n"))
 				} else {
-					count += 1
+					count++
 				}
 			}
 		}
@@ -124,8 +121,7 @@ func (fl *fileLog) remove(criteria matchCriteria) (int, error) {
 		if count != 0 {
 			err = os.Rename(tmpFilename, logPartialFile)
 			if err != nil {
-				//fmt.Printf("Error renaming %s to %s: %v", tmpFilename, fl.filename, err)
-				return 0, err
+				continue
 			}
 
 			// Close old file to open the new one when writing next log
@@ -144,7 +140,7 @@ func (fl *fileLog) find(criteria matchCriteria) ([]models.LogEntry, error) {
 	var logs []models.LogEntry
 	var err error
 	// Here we should make a for to include all files in logs
-	for i := fl.logsCount - 1; i > 0; i-- {
+	for i := fl.logsCount - 1; i >= 0; i-- {
 		var logPartialFile string
 		if i > 0 {
 			logPartialFile = fmt.Sprintf("%s.%d", fl.filename, i)
@@ -152,10 +148,9 @@ func (fl *fileLog) find(criteria matchCriteria) ([]models.LogEntry, error) {
 			logPartialFile = fl.filename
 		}
 		f, _ := os.Open(logPartialFile)
-		/*if err != nil {
-			//fmt.Println("Error opening log file: ", fl.filename, err)
-			return nil, err
-		}*/
+		if err != nil {
+			continue
+		}
 		scanner := bufio.NewScanner(f)
 		for scanner.Scan() {
 			var le models.LogEntry
