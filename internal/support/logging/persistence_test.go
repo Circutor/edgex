@@ -78,7 +78,7 @@ func TestFileFind(t *testing.T) {
 	// Remove test log when test ends
 	defer os.Remove(testFilename)
 
-	fl := fileLog{filename: testFilename}
+	fl := fileLog{filename: testFilename, maxBytes: 102400, logsCount: 5}
 	testPersistenceFind(t, &fl)
 }
 
@@ -144,6 +144,6 @@ func TestFileRemove(t *testing.T) {
 	// Remove test log when test ends
 	defer os.Remove(testFilename)
 
-	fl := fileLog{filename: testFilename}
+	fl := fileLog{filename: testFilename, maxBytes: 102400, logsCount: 5}
 	testPersistenceRemove(t, &fl)
 }
