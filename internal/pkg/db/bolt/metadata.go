@@ -23,6 +23,8 @@ import (
 	bolt "go.etcd.io/bbolt"
 )
 
+const profilesLimit = 1000
+
 /* ----------------------------- Device ---------------------------------- */
 func (bc *BoltClient) AddDevice(d models.Device) (string, error) {
 	// Check if the name exist
@@ -249,7 +251,15 @@ func (bc *BoltClient) AddDeviceProfile(dp models.DeviceProfile) (string, error) 
 	if err == nil {
 		return "", db.ErrNotUnique
 	}
-
+	//here check len profiles
+	profiles, err := bc.GetAllDeviceProfiles()
+	if err == nil {
+		return "", db.ErrFailedReadProf
+	}
+	if len(profiles) > profilesLimit {
+		return "", db.ErrProfLimitExceed
+	}
+	//here check len commands / also we have to chek in update?
 	for i := 0; i < len(dp.Commands); i++ {
 		if newId, errs := bc.AddCommand(dp.Commands[i]); errs != nil {
 			return "", errs

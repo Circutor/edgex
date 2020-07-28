@@ -52,6 +52,8 @@ var (
 	ErrCommandStillInUse   = errors.New("Command is still in use by device profiles")
 	ErrSlugEmpty           = errors.New("Slug is nil or empty")
 	ErrNameEmpty           = errors.New("Name is required")
+	ErrFailedReadProf      = errors.New("Could not read profiles form database")
+	ErrProfLimitExceed     = errors.New("Could not add profile, profiles limit exceeded")
 )
 
 type Configuration struct {
