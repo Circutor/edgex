@@ -203,9 +203,10 @@ func (reg registrationInfo) processEvent(event *models.Event) {
 }
 
 func registrationLoop(reg *registrationInfo) {
+	var timerPush *time.Timer
 	LoggingClient.Info(fmt.Sprintf("registration loop started: %s", reg.registration.Name))
 	if Configuration.Writable.MarkPushed {
-		timerPush := time.NewTimer(pushEventsTimer * time.Second)
+		timerPush = time.NewTimer(pushEventsTimer * time.Second)
 	}
 	for {
 		select {
