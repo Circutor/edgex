@@ -191,7 +191,7 @@ func (reg registrationInfo) processEvent(event *models.Event) {
 		encrypted = reg.encrypt.Transform(compressed)
 	}
 
-	if reg.sender.Send(encrypted, event) {
+	if reg.sender.Send(encrypted, event) && Configuration.Writable.MarkPushed {
 		id := event.ID
 		err := ec.MarkPushed(id, context.Background())
 		if err != nil {
@@ -204,7 +204,9 @@ func (reg registrationInfo) processEvent(event *models.Event) {
 
 func registrationLoop(reg *registrationInfo) {
 	LoggingClient.Info(fmt.Sprintf("registration loop started: %s", reg.registration.Name))
-	timerPush := time.NewTimer(pushEventsTimer * time.Second)
+	if Configuration.Writable.MarkPushed {
+		timerPush := time.NewTimer(pushEventsTimer * time.Second)
+	}
 	for {
 		select {
 		case event := <-reg.chEvent:
