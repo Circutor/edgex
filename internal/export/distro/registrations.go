@@ -203,11 +203,8 @@ func (reg registrationInfo) processEvent(event *models.Event) {
 }
 
 func registrationLoop(reg *registrationInfo) {
-	var timerPush *time.Timer
 	LoggingClient.Info(fmt.Sprintf("registration loop started: %s", reg.registration.Name))
-	if Configuration.Writable.MarkPushed {
-		timerPush = time.NewTimer(pushEventsTimer * time.Second)
-	}
+	timerPush := time.NewTimer(pushEventsTimer * time.Second)
 	for {
 		select {
 		case event := <-reg.chEvent:
@@ -230,22 +227,24 @@ func registrationLoop(reg *registrationInfo) {
 				}
 			}
 		case <-timerPush.C:
-			events, err := ec.Events(context.Background())
-			if err != nil {
-				LoggingClient.Error(fmt.Sprintf("Failed getting events to send non-pushed %s", err.Error()))
-			}
-			LoggingClient.Info("Pushing unpushed events")
-			nPushed := 0
-			for i := range events {
-				if events[i].Pushed == 0 {
-					LoggingClient.Info("Unpushed event found, pushing...")
-					correlationID := uuid.New()
-					ev := models.Event{CorrelationId: correlationID.String(), Event: events[i]}
-					reg.processEvent(&ev)
-					nPushed++
+			if Configuration.Writable.MarkPushed {
+				events, err := ec.Events(context.Background())
+				if err != nil {
+					LoggingClient.Error(fmt.Sprintf("Failed getting events to send non-pushed %s", err.Error()))
 				}
-				if nPushed >= 100 {
-					break
+				LoggingClient.Info("Pushing unpushed events")
+				nPushed := 0
+				for i := range events {
+					if events[i].Pushed == 0 {
+						LoggingClient.Info("Unpushed event found, pushing...")
+						correlationID := uuid.New()
+						ev := models.Event{CorrelationId: correlationID.String(), Event: events[i]}
+						reg.processEvent(&ev)
+						nPushed++
+					}
+					if nPushed >= 100 {
+						break
+					}
 				}
 			}
 			timerPush.Reset(pushEventsTimer * time.Second)
