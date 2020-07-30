@@ -286,7 +286,12 @@ func (bc *BoltClient) AddDeviceProfile(dp models.DeviceProfile) (string, error) 
 }
 
 func (bc *BoltClient) UpdateDeviceProfile(dp models.DeviceProfile) error {
-	if len(dp.Commands) > commandsLimit {
+	// Check maximum number of variables per profile is not exceeded
+	if len(dp.DeviceResources) > variablesLimit {
+		return db.ErrVarsLimitExceed
+	}
+	// Check maximum number of commands per profile is not exceeded
+	if len(dp.Resources) > commandsLimit {
 		return db.ErrCmdLimitExceed
 	}
 	dp.Modified = db.MakeTimestamp()
