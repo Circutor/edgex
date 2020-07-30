@@ -22,6 +22,7 @@ import (
 
 	"github.com/Circutor/edgex/internal/pkg/correlation/models"
 	contract "github.com/Circutor/edgex/pkg/models"
+	"github.com/google/uuid"
 )
 
 const (
@@ -189,10 +190,9 @@ func (reg registrationInfo) processEvent(event *models.Event) {
 		encrypted = reg.encrypt.Transform(compressed)
 	}
 
-	if reg.sender.Send(encrypted, event) && Configuration.Writable.MarkPushed {
+	if reg.sender.Send(encrypted, event) {
 		id := event.ID
 		err := ec.MarkPushed(id, context.Background())
-
 		if err != nil {
 			LoggingClient.Error(fmt.Sprintf("Failed to mark event as pushed : event ID = %s: %s", id, err))
 		}
@@ -203,6 +203,7 @@ func (reg registrationInfo) processEvent(event *models.Event) {
 
 func registrationLoop(reg *registrationInfo) {
 	LoggingClient.Info(fmt.Sprintf("registration loop started: %s", reg.registration.Name))
+	timerPush := time.NewTimer(300 * time.Second)
 	for {
 		select {
 		case event := <-reg.chEvent:
@@ -217,12 +218,32 @@ func registrationLoop(reg *registrationInfo) {
 			} else {
 				if reg.update(*newReg) {
 					LoggingClient.Info(fmt.Sprintf("Registration %s updated: OK", reg.registration.Name))
+					//checkForUnsentEvents()
 				} else {
 					LoggingClient.Info(fmt.Sprintf("Registration %s updated: OK, terminating goroutine", reg.registration.Name))
 					reg.deleteFlag = true
 					return
 				}
 			}
+		case <-timerPush.C:
+			events, err := ec.Events(context.Background())
+			if err != nil {
+				LoggingClient.Error(fmt.Sprintf("Failed getting events to send non-pushed %s", err.Error()))
+			}
+			LoggingClient.Info("Pushing unpushed events")
+			//LoggingClient.Info("%v", events)
+			for i := range events {
+				LoggingClient.Info("%v", events[i])
+				if events[i].Pushed == 0 {
+					LoggingClient.Info("Dis unpushed!!!")
+					LoggingClient.Info("%v", events[i])
+					//correlationID := correlation.FromContext(context.Background())
+					correlationID := uuid.New()
+					ev := models.Event{correlationID.String(), events[i]}
+					reg.processEvent(&ev)
+				}
+			}
+			timerPush.Reset(300 * time.Second)
 		}
 	}
 }
