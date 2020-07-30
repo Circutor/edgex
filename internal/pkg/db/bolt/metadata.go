@@ -23,7 +23,9 @@ import (
 	bolt "go.etcd.io/bbolt"
 )
 
-const profilesLimit = 1000
+const profilesLimit = 30
+const commandsLimit = 100
+const variablesLimit = 1000
 
 /* ----------------------------- Device ---------------------------------- */
 func (bc *BoltClient) AddDevice(d models.Device) (string, error) {
@@ -251,7 +253,7 @@ func (bc *BoltClient) AddDeviceProfile(dp models.DeviceProfile) (string, error) 
 	if err == nil {
 		return "", db.ErrNotUnique
 	}
-	//here check len profiles
+	// Check maximum number of profiles is not exceeded
 	profiles, err := bc.GetAllDeviceProfiles()
 	if err == nil {
 		return "", db.ErrFailedReadProf
@@ -259,7 +261,14 @@ func (bc *BoltClient) AddDeviceProfile(dp models.DeviceProfile) (string, error) 
 	if len(profiles) > profilesLimit {
 		return "", db.ErrProfLimitExceed
 	}
-	//here check len commands / also we have to chek in update?
+	// Check maximum number of variables per profile is not exceeded
+	if len(dp.DeviceResources) > variablesLimit {
+		return "", db.ErrVarsLimitExceed
+	}
+	// Check maximum number of commands per profile is not exceeded
+	if len(dp.Resources) > commandsLimit {
+		return "", db.ErrCmdLimitExceed
+	}
 	for i := 0; i < len(dp.Commands); i++ {
 		if newId, errs := bc.AddCommand(dp.Commands[i]); errs != nil {
 			return "", errs
@@ -277,6 +286,9 @@ func (bc *BoltClient) AddDeviceProfile(dp models.DeviceProfile) (string, error) 
 }
 
 func (bc *BoltClient) UpdateDeviceProfile(dp models.DeviceProfile) error {
+	if len(dp.Commands) > commandsLimit {
+		return db.ErrCmdLimitExceed
+	}
 	dp.Modified = db.MakeTimestamp()
 	bdp := boltDeviceProfile{DeviceProfile: dp}
 	return bc.update(db.DeviceProfile, bdp, bdp.Id)

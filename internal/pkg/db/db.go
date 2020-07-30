@@ -54,6 +54,8 @@ var (
 	ErrNameEmpty           = errors.New("Name is required")
 	ErrFailedReadProf      = errors.New("Could not read profiles form database")
 	ErrProfLimitExceed     = errors.New("Could not add profile, profiles limit exceeded")
+	ErrVarsLimitExceed     = errors.New("Could not add profile, variables per profile limit exceeded")
+	ErrCmdLimitExceed      = errors.New("Could not add profile, commands per profile limit exceeded")
 )
 
 type Configuration struct {
