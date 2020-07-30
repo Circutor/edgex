@@ -24,8 +24,9 @@ import (
 )
 
 const profilesLimit = 30
-const commandsLimit = 100
 const variablesLimit = 1000
+const commandsLimit = 100
+const varsPerCmdLimit = 75
 
 /* ----------------------------- Device ---------------------------------- */
 func (bc *BoltClient) AddDevice(d models.Device) (string, error) {
@@ -269,6 +270,10 @@ func (bc *BoltClient) AddDeviceProfile(dp models.DeviceProfile) (string, error) 
 	if len(dp.Resources) > commandsLimit {
 		return "", db.ErrCmdLimitExceed
 	}
+	// Check maximum number of variables per command is not exceeded
+	if (len(dp.Resources[0].Get) + len(dp.Resources[0].Set)) > varsPerCmdLimit {
+		return "", db.ErrVarPerCmdLimitExceed
+	}
 	for i := 0; i < len(dp.Commands); i++ {
 		if newId, errs := bc.AddCommand(dp.Commands[i]); errs != nil {
 			return "", errs
@@ -293,6 +298,10 @@ func (bc *BoltClient) UpdateDeviceProfile(dp models.DeviceProfile) error {
 	// Check maximum number of commands per profile is not exceeded
 	if len(dp.Resources) > commandsLimit {
 		return db.ErrCmdLimitExceed
+	}
+	// Check maximum number of variables per command is not exceeded
+	if (len(dp.Resources[0].Get) + len(dp.Resources[0].Set)) > varsPerCmdLimit {
+		return db.ErrVarPerCmdLimitExceed
 	}
 	dp.Modified = db.MakeTimestamp()
 	bdp := boltDeviceProfile{DeviceProfile: dp}
