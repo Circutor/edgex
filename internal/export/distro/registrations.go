@@ -26,8 +26,9 @@ import (
 )
 
 const (
-	awsMQTTPort         int    = 8883
-	awsThingUpdateTopic string = "$aws/things/%s/shadow/update"
+	awsMQTTPort         int           = 8883
+	awsThingUpdateTopic string        = "$aws/things/%s/shadow/update"
+	pushEventsTimer     time.Duration = 300
 )
 
 var registrationChanges chan contract.NotifyUpdate = make(chan contract.NotifyUpdate, 2)
@@ -203,7 +204,7 @@ func (reg registrationInfo) processEvent(event *models.Event) {
 
 func registrationLoop(reg *registrationInfo) {
 	LoggingClient.Info(fmt.Sprintf("registration loop started: %s", reg.registration.Name))
-	timerPush := time.NewTimer(300 * time.Second)
+	timerPush := time.NewTimer(pushEventsTimer * time.Second)
 	for {
 		select {
 		case event := <-reg.chEvent:
@@ -231,19 +232,20 @@ func registrationLoop(reg *registrationInfo) {
 				LoggingClient.Error(fmt.Sprintf("Failed getting events to send non-pushed %s", err.Error()))
 			}
 			LoggingClient.Info("Pushing unpushed events")
-			//LoggingClient.Info("%v", events)
+			nPushed := 0
 			for i := range events {
-				LoggingClient.Info("%v", events[i])
 				if events[i].Pushed == 0 {
-					LoggingClient.Info("Dis unpushed!!!")
-					LoggingClient.Info("%v", events[i])
-					//correlationID := correlation.FromContext(context.Background())
+					LoggingClient.Info("Unpushed event found, pushing...")
 					correlationID := uuid.New()
-					ev := models.Event{correlationID.String(), events[i]}
+					ev := models.Event{CorrelationId: correlationID.String(), Event: events[i]}
 					reg.processEvent(&ev)
+					nPushed++
+				}
+				if nPushed >= 100 {
+					break
 				}
 			}
-			timerPush.Reset(300 * time.Second)
+			timerPush.Reset(pushEventsTimer * time.Second)
 		}
 	}
 }
