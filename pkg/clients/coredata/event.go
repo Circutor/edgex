@@ -28,6 +28,7 @@ import (
 
 type EventClient interface {
 	Events(ctx context.Context) ([]models.Event, error)
+	EventsUnpushed(ctx context.Context) ([]models.Event, error)
 	Event(id string, ctx context.Context) (models.Event, error)
 	EventCount(ctx context.Context) (int, error)
 	EventCountForDevice(deviceId string, ctx context.Context) (int, error)
@@ -77,6 +78,25 @@ func (e *EventRestClient) requestEvent(url string, ctx context.Context) (models.
 // Get a list of all events
 func (e *EventRestClient) Events(ctx context.Context) ([]models.Event, error) {
 	return e.requestEventSlice(e.url, ctx)
+}
+
+// Get a list of all unpushed events
+func (e *EventRestClient) EventsUnpushed(ctx context.Context) ([]models.Event, error) {
+	allEvents, err := e.requestEventSlice(e.url, ctx)
+	if err != nil {
+		return []models.Event{}, err
+	}
+
+	unpushedEvents := make([]models.Event, 0)
+	for i := range allEvents {
+		if allEvents[i].Pushed == 0 {
+			unpushedEvents = append(unpushedEvents, allEvents[i])
+		}
+		if len(unpushedEvents) >= 100 {
+			break
+		}
+	}
+	return unpushedEvents, nil
 }
 
 // Get the event by id
