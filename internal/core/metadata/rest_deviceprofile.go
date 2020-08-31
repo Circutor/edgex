@@ -26,6 +26,11 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
+const profilesLimit = 30
+const variablesLimit = 1000
+const commandsLimit = 100
+const varsPerCmdLimit = 75
+
 func restGetAllDeviceProfiles(w http.ResponseWriter, _ *http.Request) {
 	res, err := dbClient.GetAllDeviceProfiles()
 	if err != nil {
@@ -70,6 +75,32 @@ func restAddDeviceProfile(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Check maximum number of profiles is not exceeded
+	profiles, err := dbClient.GetAllDeviceProfiles()
+	if err == nil {
+		http.Error(w, db.ErrFailedReadProf.Error(), http.StatusBadRequest)
+		return
+	}
+	if len(profiles) > profilesLimit {
+		http.Error(w, db.ErrProfLimitExceed.Error(), http.StatusBadRequest)
+		return
+	}
+	// Check maximum number of variables per profile is not exceeded
+	if len(dp.DeviceResources) > variablesLimit {
+		http.Error(w, db.ErrVarsLimitExceed.Error(), http.StatusBadRequest)
+		return
+	}
+	// Check maximum number of commands per profile is not exceeded
+	if len(dp.Resources) > commandsLimit {
+		http.Error(w, db.ErrCmdLimitExceed.Error(), http.StatusBadRequest)
+		return
+	}
+	// Check maximum number of variables per command is not exceeded
+	if (len(dp.Resources[0].Get) + len(dp.Resources[0].Set)) > varsPerCmdLimit {
+		http.Error(w, db.ErrVarPerCmdLimitExceed.Error(), http.StatusBadRequest)
+		return
+	}
+
 	id, err := dbClient.AddDeviceProfile(dp)
 	if err != nil {
 		if err == db.ErrNotUnique {
@@ -109,6 +140,22 @@ func restUpdateDeviceProfile(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
+	}
+
+	// Check maximum number of variables per profile is not exceeded
+	if len(to.DeviceResources) > variablesLimit {
+		http.Error(w, db.ErrVarsLimitExceed.Error(), http.StatusBadRequest)
+		return
+	}
+	// Check maximum number of commands per profile is not exceeded
+	if len(to.Resources) > commandsLimit {
+		http.Error(w, db.ErrCmdLimitExceed.Error(), http.StatusBadRequest)
+		return
+	}
+	// Check maximum number of variables per command is not exceeded
+	if (len(to.Resources[0].Get) + len(to.Resources[0].Set)) > varsPerCmdLimit {
+		http.Error(w, db.ErrVarPerCmdLimitExceed.Error(), http.StatusBadRequest)
+		return
 	}
 
 	// Update the device profile fields based on the passed JSON
