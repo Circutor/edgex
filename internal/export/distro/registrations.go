@@ -228,7 +228,7 @@ func registrationLoop(reg *registrationInfo) {
 			}
 		case <-timerPush.C:
 			if Configuration.Writable.MarkPushed {
-				events, err := ec.EventsUnpushed(context.Background())
+				events, err := ec.EventsUnpushed(context.Background(), 100)
 				if err != nil {
 					LoggingClient.Error(fmt.Sprintf("Failed getting events to send non-pushed %s", err.Error()))
 				}
