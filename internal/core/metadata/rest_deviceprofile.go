@@ -26,10 +26,20 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-const profilesLimit = 30
-const variablesLimit = 1000
-const commandsLimit = 100
-const varsPerCmdLimit = 75
+const (
+	profilesLimit   = 30
+	variablesLimit  = 1000
+	commandsLimit   = 100
+	varsPerCmdLimit = 75
+)
+
+var (
+	ErrFailedReadProf       = errors.New("Could not read profiles form database")
+	ErrProfLimitExceed      = errors.New("Could not add profile, profiles limit exceeded")
+	ErrVarsLimitExceed      = errors.New("Could not add profile, variables per profile limit exceeded")
+	ErrCmdLimitExceed       = errors.New("Could not add profile, commands per profile limit exceeded")
+	ErrVarPerCmdLimitExceed = errors.New("Could not add profile, variables per commands limit exceeded")
+)
 
 func restGetAllDeviceProfiles(w http.ResponseWriter, _ *http.Request) {
 	res, err := dbClient.GetAllDeviceProfiles()
@@ -78,27 +88,29 @@ func restAddDeviceProfile(w http.ResponseWriter, r *http.Request) {
 	// Check maximum number of profiles is not exceeded
 	profiles, err := dbClient.GetAllDeviceProfiles()
 	if err == nil {
-		http.Error(w, db.ErrFailedReadProf.Error(), http.StatusBadRequest)
+		http.Error(w, ErrFailedReadProf.Error(), http.StatusBadRequest)
 		return
 	}
 	if len(profiles) > profilesLimit {
-		http.Error(w, db.ErrProfLimitExceed.Error(), http.StatusBadRequest)
+		http.Error(w, ErrProfLimitExceed.Error(), http.StatusBadRequest)
 		return
 	}
 	// Check maximum number of variables per profile is not exceeded
 	if len(dp.DeviceResources) > variablesLimit {
-		http.Error(w, db.ErrVarsLimitExceed.Error(), http.StatusBadRequest)
+		http.Error(w, ErrVarsLimitExceed.Error(), http.StatusBadRequest)
 		return
 	}
 	// Check maximum number of commands per profile is not exceeded
 	if len(dp.Resources) > commandsLimit {
-		http.Error(w, db.ErrCmdLimitExceed.Error(), http.StatusBadRequest)
+		http.Error(w, ErrCmdLimitExceed.Error(), http.StatusBadRequest)
 		return
 	}
 	// Check maximum number of variables per command is not exceeded
-	if (len(dp.Resources[0].Get) + len(dp.Resources[0].Set)) > varsPerCmdLimit {
-		http.Error(w, db.ErrVarPerCmdLimitExceed.Error(), http.StatusBadRequest)
-		return
+	for _, resource := range dp.Resources {
+		if (len(resource.Get) + len(resource.Set)) > varsPerCmdLimit {
+			http.Error(w, ErrVarPerCmdLimitExceed.Error(), http.StatusBadRequest)
+			return
+		}
 	}
 
 	id, err := dbClient.AddDeviceProfile(dp)
@@ -144,18 +156,20 @@ func restUpdateDeviceProfile(w http.ResponseWriter, r *http.Request) {
 
 	// Check maximum number of variables per profile is not exceeded
 	if len(to.DeviceResources) > variablesLimit {
-		http.Error(w, db.ErrVarsLimitExceed.Error(), http.StatusBadRequest)
+		http.Error(w, ErrVarsLimitExceed.Error(), http.StatusBadRequest)
 		return
 	}
 	// Check maximum number of commands per profile is not exceeded
 	if len(to.Resources) > commandsLimit {
-		http.Error(w, db.ErrCmdLimitExceed.Error(), http.StatusBadRequest)
+		http.Error(w, ErrCmdLimitExceed.Error(), http.StatusBadRequest)
 		return
 	}
 	// Check maximum number of variables per command is not exceeded
-	if (len(to.Resources[0].Get) + len(to.Resources[0].Set)) > varsPerCmdLimit {
-		http.Error(w, db.ErrVarPerCmdLimitExceed.Error(), http.StatusBadRequest)
-		return
+	for _, resource := range to.Resources {
+		if (len(resource.Get) + len(resource.Set)) > varsPerCmdLimit {
+			http.Error(w, ErrVarPerCmdLimitExceed.Error(), http.StatusBadRequest)
+			return
+		}
 	}
 
 	// Update the device profile fields based on the passed JSON
