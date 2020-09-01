@@ -185,6 +185,16 @@ func putEventOnQueue(e contract.Event, ctx context.Context) {
 	}
 }
 
+func getUnspushedEventsLimit(limit int) ([]contract.Event, error) {
+	eventList, err := dbClient.EventsUnpushedLimit(limit)
+	if err != nil {
+		LoggingClient.Error(err.Error())
+		return nil, err
+	}
+
+	return eventList, nil
+}
+
 func getEventsByDeviceIdLimit(limit int, deviceId string) ([]contract.Event, error) {
 	eventList, err := dbClient.EventsForDeviceLimit(deviceId, limit)
 	if err != nil {

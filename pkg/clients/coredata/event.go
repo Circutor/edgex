@@ -82,21 +82,7 @@ func (e *EventRestClient) Events(ctx context.Context) ([]models.Event, error) {
 
 // Get a list of all unpushed events
 func (e *EventRestClient) EventsUnpushed(ctx context.Context, nUnpushed int) ([]models.Event, error) {
-	allEvents, err := e.requestEventSlice(e.url, ctx)
-	if err != nil {
-		return []models.Event{}, err
-	}
-
-	unpushedEvents := make([]models.Event, 0)
-	for i := range allEvents {
-		if allEvents[i].Pushed == 0 {
-			unpushedEvents = append(unpushedEvents, allEvents[i])
-		}
-		if len(unpushedEvents) >= nUnpushed {
-			break
-		}
-	}
-	return unpushedEvents, nil
+	return e.requestEventSlice(e.url+"/unpushed/"+strconv.Itoa(nUnpushed), ctx)
 }
 
 // Get the event by id

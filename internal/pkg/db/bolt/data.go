@@ -193,6 +193,17 @@ func (bc *BoltClient) EventsPushed() ([]contract.Event, error) {
 	}, -1)
 }
 
+// Get a list of events based on the device id and limit
+func (bc *BoltClient) EventsUnpushedLimit(limit int) ([]contract.Event, error) {
+	return bc.getEvents(func(encoded []byte) bool {
+		value := jsoniter.Get(encoded, "pushed").ToInt64()
+		if value == 0 {
+			return true
+		}
+		return false
+	}, limit)
+}
+
 // Delete all of the readings and all of the events
 func (bc *BoltClient) ScrubAllEvents() error {
 	bc.scrubAll(db.EventsCollection)

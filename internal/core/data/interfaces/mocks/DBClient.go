@@ -267,6 +267,12 @@ func (_m *DBClient) EventsPushed() ([]models.Event, error) {
 	return r0, r1
 }
 
+// EventsUnpushedLimit provides a mock function with given fields: limit
+// ** Empty mock and no test associated due to the fact that EventsPushed already checks the pushed query
+func (_m *DBClient) EventsUnpushedLimit(limit int) ([]models.Event, error) {
+	return []models.Event{}, nil
+}
+
 // EventsWithLimit provides a mock function with given fields: limit
 func (_m *DBClient) EventsWithLimit(limit int) ([]models.Event, error) {
 	ret := _m.Called(limit)

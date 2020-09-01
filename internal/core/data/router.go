@@ -51,6 +51,7 @@ func LoadRestRoutes() *mux.Router {
 	e.HandleFunc("/scruball", scrubAllHandler).Methods(http.MethodDelete)
 	e.HandleFunc("/count", eventCountHandler).Methods(http.MethodGet)
 	e.HandleFunc("/count/{deviceId}", eventCountByDeviceIdHandler).Methods(http.MethodGet)
+	e.HandleFunc("/unpushed/{limit:[0-9]+}", getUnpushedEventsHandler).Methods(http.MethodGet)
 	e.HandleFunc("/{id}", getEventByIdHandler).Methods(http.MethodGet)
 	e.HandleFunc("/id/{id}", eventIdHandler).Methods(http.MethodDelete, http.MethodPut)
 	e.HandleFunc("/device/{deviceId}/{limit:[0-9]+}", getEventByDeviceHandler).Methods(http.MethodGet)
@@ -274,6 +275,40 @@ func scrubAllHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	encode(true, w)
+}
+
+// Get unpushed events
+// Returns the events that are still unpushed to export for all devices sorted by creation date and limited by 'limit'
+// {limit} - the limit of events
+// api/v1/event/unpushed/{limit}
+func getUnpushedEventsHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	vars := mux.Vars(r)
+	limit := vars["limit"]
+
+	// Convert limit to int
+	limitNum, err := strconv.Atoi(limit)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		LoggingClient.Error("Error converting to integer: " + err.Error())
+		return
+	}
+
+	err = checkMaxLimit(limitNum)
+	if err != nil {
+		http.Error(w, maxExceededString, http.StatusRequestEntityTooLarge)
+		return
+	}
+
+	eventList, err := getUnspushedEventsLimit(limitNum)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	encode(eventList, w)
 }
 
 //GET
