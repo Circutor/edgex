@@ -34,11 +34,11 @@ const (
 )
 
 var (
-	ErrFailedReadProf       = errors.New("Could not read profiles form database")
-	ErrProfLimitExceed      = errors.New("Could not add profile, profiles limit exceeded")
-	ErrVarsLimitExceed      = errors.New("Could not add profile, variables per profile limit exceeded")
-	ErrCmdLimitExceed       = errors.New("Could not add profile, commands per profile limit exceeded")
-	ErrVarPerCmdLimitExceed = errors.New("Could not add profile, variables per commands limit exceeded")
+	ErrFailedReadProf       = errors.New("Could not read profiles from database")
+	ErrProfLimitExceed      = errors.New("Profiles limit exceeded")
+	ErrVarsLimitExceed      = errors.New("Variables per profile limit exceeded")
+	ErrCmdLimitExceed       = errors.New("Commands per profile limit exceeded")
+	ErrVarPerCmdLimitExceed = errors.New("Variables per commands limit exceeded")
 )
 
 func restGetAllDeviceProfiles(w http.ResponseWriter, _ *http.Request) {
