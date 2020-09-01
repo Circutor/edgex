@@ -219,7 +219,6 @@ func registrationLoop(reg *registrationInfo) {
 			} else {
 				if reg.update(*newReg) {
 					LoggingClient.Info(fmt.Sprintf("Registration %s updated: OK", reg.registration.Name))
-					//checkForUnsentEvents()
 				} else {
 					LoggingClient.Info(fmt.Sprintf("Registration %s updated: OK, terminating goroutine", reg.registration.Name))
 					reg.deleteFlag = true
