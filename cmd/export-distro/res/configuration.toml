@@ -1,5 +1,5 @@
 [Writable]
-MarkPushed = false
+MarkPushed = true
 LogLevel = 'INFO'
 
 [Service]

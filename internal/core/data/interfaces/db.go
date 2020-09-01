@@ -58,6 +58,9 @@ type DBClient interface {
 	// 503 - Unexpected problems
 	DeleteEventById(id string) error
 
+	// Get a list of events that haven't been pushed yet to export/server based on the limit
+	EventsUnpushedLimit(limit int) ([]contract.Event, error)
+
 	// Get a list of events based on the device id and limit
 	EventsForDeviceLimit(id string, limit int) ([]contract.Event, error)
 

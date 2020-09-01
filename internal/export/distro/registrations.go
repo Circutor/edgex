@@ -22,11 +22,13 @@ import (
 
 	"github.com/Circutor/edgex/internal/pkg/correlation/models"
 	contract "github.com/Circutor/edgex/pkg/models"
+	"github.com/google/uuid"
 )
 
 const (
-	awsMQTTPort         int    = 8883
-	awsThingUpdateTopic string = "$aws/things/%s/shadow/update"
+	awsMQTTPort         int           = 8883
+	awsThingUpdateTopic string        = "$aws/things/%s/shadow/update"
+	pushEventsTimer     time.Duration = 300
 )
 
 var registrationChanges chan contract.NotifyUpdate = make(chan contract.NotifyUpdate, 2)
@@ -192,7 +194,6 @@ func (reg registrationInfo) processEvent(event *models.Event) {
 	if reg.sender.Send(encrypted, event) && Configuration.Writable.MarkPushed {
 		id := event.ID
 		err := ec.MarkPushed(id, context.Background())
-
 		if err != nil {
 			LoggingClient.Error(fmt.Sprintf("Failed to mark event as pushed : event ID = %s: %s", id, err))
 		}
@@ -203,6 +204,7 @@ func (reg registrationInfo) processEvent(event *models.Event) {
 
 func registrationLoop(reg *registrationInfo) {
 	LoggingClient.Info(fmt.Sprintf("registration loop started: %s", reg.registration.Name))
+	timerPush := time.NewTimer(pushEventsTimer * time.Second)
 	for {
 		select {
 		case event := <-reg.chEvent:
@@ -223,6 +225,21 @@ func registrationLoop(reg *registrationInfo) {
 					return
 				}
 			}
+		case <-timerPush.C:
+			if Configuration.Writable.MarkPushed {
+				events, err := ec.EventsUnpushed(context.Background(), 100)
+				if err != nil {
+					LoggingClient.Error(fmt.Sprintf("Failed getting events to send non-pushed %s", err.Error()))
+				}
+
+				LoggingClient.Info("Pushing unpushed events")
+				for i := range events {
+					correlationID := uuid.New()
+					ev := models.Event{CorrelationId: correlationID.String(), Event: events[i]}
+					reg.processEvent(&ev)
+				}
+			}
+			timerPush.Reset(pushEventsTimer * time.Second)
 		}
 	}
 }

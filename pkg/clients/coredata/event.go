@@ -28,6 +28,7 @@ import (
 
 type EventClient interface {
 	Events(ctx context.Context) ([]models.Event, error)
+	EventsUnpushed(ctx context.Context, nUnpushed int) ([]models.Event, error)
 	Event(id string, ctx context.Context) (models.Event, error)
 	EventCount(ctx context.Context) (int, error)
 	EventCountForDevice(deviceId string, ctx context.Context) (int, error)
@@ -77,6 +78,11 @@ func (e *EventRestClient) requestEvent(url string, ctx context.Context) (models.
 // Get a list of all events
 func (e *EventRestClient) Events(ctx context.Context) ([]models.Event, error) {
 	return e.requestEventSlice(e.url, ctx)
+}
+
+// Get a list of all unpushed events
+func (e *EventRestClient) EventsUnpushed(ctx context.Context, nUnpushed int) ([]models.Event, error) {
+	return e.requestEventSlice(e.url+"/unpushed/"+strconv.Itoa(nUnpushed), ctx)
 }
 
 // Get the event by id
