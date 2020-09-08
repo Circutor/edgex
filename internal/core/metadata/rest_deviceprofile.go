@@ -27,12 +27,15 @@ import (
 )
 
 const (
+	profilesLimit   = 30
 	variablesLimit  = 1000
 	commandsLimit   = 100
 	varsPerCmdLimit = 75
 )
 
 var (
+	ErrFailedReadProf       = errors.New("Could not read profiles from database")
+	ErrProfLimitExceed      = errors.New("Profiles limit exceeded")
 	ErrVarsLimitExceed      = errors.New("Variables per profile limit exceeded")
 	ErrCmdLimitExceed       = errors.New("Commands per profile limit exceeded")
 	ErrVarPerCmdLimitExceed = errors.New("Variables per commands limit exceeded")
@@ -82,6 +85,16 @@ func restAddDeviceProfile(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Check maximum number of profiles is not exceeded
+	profiles, err := dbClient.GetAllDeviceProfiles()
+	if err != nil {
+		http.Error(w, ErrFailedReadProf.Error(), http.StatusBadRequest)
+		return
+	}
+	if len(profiles) > profilesLimit {
+		http.Error(w, ErrProfLimitExceed.Error(), http.StatusBadRequest)
+		return
+	}
 	// Check maximum number of variables per profile is not exceeded
 	if len(dp.DeviceResources) > variablesLimit {
 		http.Error(w, ErrVarsLimitExceed.Error(), http.StatusBadRequest)
@@ -486,6 +499,33 @@ func addDeviceProfileYaml(data []byte, w http.ResponseWriter) {
 		}
 	}
 
+	// Check maximum number of profiles is not exceeded
+	profiles, err := dbClient.GetAllDeviceProfiles()
+	if err != nil {
+		http.Error(w, ErrFailedReadProf.Error(), http.StatusBadRequest)
+		return
+	}
+	if len(profiles) > profilesLimit {
+		http.Error(w, ErrProfLimitExceed.Error(), http.StatusBadRequest)
+		return
+	}
+	// Check maximum number of variables per profile is not exceeded
+	if len(dp.DeviceResources) > variablesLimit {
+		http.Error(w, ErrVarsLimitExceed.Error(), http.StatusBadRequest)
+		return
+	}
+	// Check maximum number of commands per profile is not exceeded
+	if len(dp.Resources) > commandsLimit {
+		http.Error(w, ErrCmdLimitExceed.Error(), http.StatusBadRequest)
+		return
+	}
+	// Check maximum number of variables per command is not exceeded
+	for _, resource := range dp.Resources {
+		if (len(resource.Get) + len(resource.Set)) > varsPerCmdLimit {
+			http.Error(w, ErrVarPerCmdLimitExceed.Error(), http.StatusBadRequest)
+			return
+		}
+	}
 	id, err := dbClient.AddDeviceProfile(dp)
 	if err != nil {
 		if err == db.ErrNotUnique {
