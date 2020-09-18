@@ -190,7 +190,7 @@ func (af azureFormatter) Format(event *contract.Event) []byte {
 		return []byte{}
 	}
 	am.ConnDevID = event.Device
-	am.UserID = string(event.Origin)
+	am.UserID = fmt.Sprint(event.Origin)
 	data, err := json.Marshal(event)
 	if err != nil {
 		LoggingClient.Error(fmt.Sprintf("Error parsing Event data: %s", err))
@@ -302,7 +302,7 @@ func (af biotFormatter) Format(event *contract.Event) []byte {
 		return []byte{}
 	}
 	bm.TpId = event.Device
-	bm.TId = string(event.Origin)
+	bm.TId = fmt.Sprint(event.Origin)
 	rawdata, err := json.Marshal(event)
 	if err != nil {
 		LoggingClient.Error(fmt.Sprintf("error parsing Event data to BIoTMessage : %s", err))
