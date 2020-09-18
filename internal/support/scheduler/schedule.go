@@ -470,7 +470,7 @@ func execute(context *IntervalContext, wg *sync.WaitGroup) error {
 		params := strings.TrimSpace(intervalAction.Parameters)
 
 		if len(params) > 0 {
-			req.Header.Set(ContentLengthKey, string(len(params)))
+			req.Header.Set(ContentLengthKey, fmt.Sprint(len(params)))
 		}
 
 		if err != nil {
