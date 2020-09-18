@@ -177,23 +177,29 @@ func addReg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if reg.Format == "AWS_JSON" || reg.Format == "IOTCORE_JSON" {
-		err = checkPair(reg.Addressable.Password, reg.Addressable.Certificate)
-		if err != nil {
-			LoggingClient.Error(err.Error())
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	}
-
-	if reg.Addressable.Password != "" {
-		encKey, _ := Encrypt(reg.Addressable.Password)
-		reg.Addressable.Password = encKey
-	}
-
 	if reg.Addressable.Certificate != "" {
+		if reg.Format == "AWS_JSON" || reg.Format == "IOTCORE_JSON" {
+			err = checkCertificate(reg.Addressable.Certificate)
+			if err != nil {
+				LoggingClient.Error(err.Error())
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
 		encCert, _ := Encrypt(reg.Addressable.Certificate)
 		reg.Addressable.Certificate = encCert
+	}
+	if reg.Addressable.Password != "" {
+		if reg.Format == "AWS_JSON" || reg.Format == "IOTCORE_JSON" {
+			err = checkKey(reg.Addressable.Password)
+			if err != nil {
+				LoggingClient.Error(err.Error())
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
+		encKey, _ := Encrypt(reg.Addressable.Password)
+		reg.Addressable.Password = encKey
 	}
 
 	id, err := dbClient.AddRegistration(reg)
@@ -409,16 +415,6 @@ func updateReg(w http.ResponseWriter, r *http.Request) {
 		}
 		encKey, _ := Encrypt(toReg.Addressable.Password)
 		toReg.Addressable.Password = encKey
-	}
-
-	if toReg.Addressable.Password != "" {
-		encKey, _ := Encrypt(toReg.Addressable.Password)
-		toReg.Addressable.Password = encKey
-	}
-
-	if toReg.Addressable.Certificate != "" {
-		encCert, _ := Encrypt(toReg.Addressable.Certificate)
-		toReg.Addressable.Certificate = encCert
 	}
 
 	err = dbClient.UpdateRegistration(toReg)
