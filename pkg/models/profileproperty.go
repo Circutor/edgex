@@ -18,8 +18,28 @@ import "encoding/json"
 
 type ProfileProperty struct {
 	Value     PropertyValue `json:"value"`
-	Units     Units         `json:"units"`
-	MediaType string        `json:"mediaType,omitempty"`
+	Units     Units         `json:"units" yaml:"units,omitempty"`
+	MediaType string        `json:"mediaType" yaml:"mediaType,omitempty"`
+}
+
+// Custom marshaling to make empty strings null
+func (p ProfileProperty) MarshalJSON() ([]byte, error) {
+	test := struct {
+		Value     PropertyValue `json:"value"`
+		Units     *Units        `json:"units,omitempty"`
+		MediaType *string       `json:"mediaType,omitempty"`
+	}{}
+
+	// Empty strings are null
+	test.Value = p.Value
+	if p.Units.Type != "" || p.Units.ReadWrite != "" || p.Units.DefaultValue != "" {
+		test.Units = &p.Units
+	}
+	if p.MediaType != "" {
+		test.MediaType = &p.MediaType
+	}
+
+	return json.Marshal(test)
 }
 
 /*

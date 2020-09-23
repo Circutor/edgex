@@ -232,11 +232,13 @@ func registrationLoop(reg *registrationInfo) {
 					LoggingClient.Error(fmt.Sprintf("Failed getting events to send non-pushed %s", err.Error()))
 				}
 
-				LoggingClient.Info("Pushing unpushed events")
-				for i := range events {
-					correlationID := uuid.New()
-					ev := models.Event{CorrelationId: correlationID.String(), Event: events[i]}
-					reg.processEvent(&ev)
+				if len(events) != 0 {
+					LoggingClient.Info("Pushing unpushed events")
+					for i := range events {
+						correlationID := uuid.New()
+						ev := models.Event{CorrelationId: correlationID.String(), Event: events[i]}
+						reg.processEvent(&ev)
+					}
 				}
 			}
 			timerPush.Reset(pushEventsTimer * time.Second)
