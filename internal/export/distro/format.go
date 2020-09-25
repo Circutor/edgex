@@ -106,7 +106,11 @@ func (dexmajsonTr dexmaJSONFormatter) Format(event *contract.Event) []byte {
 	var values []Value
 
 	for _, reading := range event.Readings {
-		value.P = transformDexmaParam(reading.Name)
+		var err error
+		value.P, err = strconv.Atoi(reading.Value)
+		if err != nil {
+			value.P = transformDexmaParam(reading.Name)
+		}
 		value.V, _ = strconv.Atoi(reading.Value)
 		if value.P == 0 {
 			LoggingClient.Error(fmt.Sprintf("Error on Dexma parameter name: %s", reading.Name))
