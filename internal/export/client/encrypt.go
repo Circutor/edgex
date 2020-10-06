@@ -99,7 +99,7 @@ func getShadow() (string, error) {
 	hwCfg3 := string(hwCfg[2:6])
 	hwCfg4 := string(hwCfg[6:10])
 
-	newShadow := fmt.Sprintf("%s%s%s%s", hwCfg1, hwCfg3, hwCfg2, hwCfg4)
+	newShadow := hwCfg1 + hwCfg3 + hwCfg2 + hwCfg4
 
 	return newShadow, nil
 }
