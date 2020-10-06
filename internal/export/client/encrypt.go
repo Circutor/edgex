@@ -22,9 +22,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"os"
-
-	"github.com/BurntSushi/toml"
 )
 
 // Encrypt string to base64 crypto using AES
@@ -88,38 +85,21 @@ func Decrypt(cryptoText string) (text string, err error) {
 }
 
 func getShadow() (string, error) {
-	_, err := os.Stat("/etc/shadow.toml")
-	if err != nil {
-		if os.IsNotExist(err) {
-			return "", fmt.Errorf("Shadow file not found: %v", err)
-		}
-	}
-
-	contents, err := ioutil.ReadFile("/etc/shadow.toml")
-	if err != nil {
-		return "", fmt.Errorf("Failed to read shadow file: %v", err)
-	}
-	var psk struct {
-		Shadow string
-	}
-	err = toml.Unmarshal(contents, &psk)
-	if err != nil {
-		return "", fmt.Errorf("Failed to unmarshal shadow file: %v", err)
-	}
-
 	hwCfg, err := ioutil.ReadFile("/sys/fsl_otp/HW_OCOTP_CFG0")
 	if err != nil {
 		return "", fmt.Errorf("Failed to read first HW UniqueID: %v", err)
 	}
-	hwCfg0 := string(hwCfg[2:10])
+	hwCfg1 := string(hwCfg[2:6])
+	hwCfg2 := string(hwCfg[6:10])
 
 	hwCfg, err = ioutil.ReadFile("/sys/fsl_otp/HW_OCOTP_CFG1")
 	if err != nil {
 		return "", fmt.Errorf("Failed to read second HW UniqueID: %v", err)
 	}
-	hwCfg1 := string(hwCfg[2:10])
+	hwCfg3 := string(hwCfg[2:6])
+	hwCfg4 := string(hwCfg[6:10])
 
-	newShadow := fmt.Sprintf("%s_%s_%s", hwCfg0, psk.Shadow, hwCfg1)
+	newShadow := hwCfg1 + hwCfg3 + hwCfg2 + hwCfg4
 
 	return newShadow, nil
 }
