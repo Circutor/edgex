@@ -32,7 +32,7 @@ const (
 	TestIntervalStart        = "20000101T000000"
 	TestIntervalEnd          = ""
 	TestIntervalFrequency    = "P1D"
-	TestIntervalCron         = "5 * * * *"
+	TestIntervalCron         = "55 23 31 12 *"
 	TestIntervalRunOnce      = true
 	TestIntervalUpdatingName = "midnight-2"
 
@@ -113,7 +113,7 @@ func TestRet(t *testing.T) {
 	}
 
 	//cron
-	next := testIntervalContext.StartTime.Add(5 * time.Minute)
+	next := time.Date(time.Now().Year(), 12, 31, 23, 55, 00, 0, time.Local)
 	testIntervalContext.Reset(testInterval)
 	if testIntervalContext.NextTime != next {
 		t.Errorf(TestUnexpectedMsgFormatTimeVal, testIntervalContext.NextTime, next)
