@@ -206,9 +206,10 @@ func updateDeviceFields(from models.Device, to *models.Device) error {
 	if len(from.Protocols) > 0 {
 		to.Protocols = from.Protocols
 	}
-	if len(from.AutoEvents) > 0 {
-		to.AutoEvents = from.AutoEvents
-	}
+
+	// As autoevents are optional, we also accept them to be empty
+	to.AutoEvents = from.AutoEvents
+
 	if from.AdminState != "" {
 		to.AdminState = from.AdminState
 	}
