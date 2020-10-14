@@ -206,9 +206,12 @@ func updateDeviceFields(from models.Device, to *models.Device) error {
 	if len(from.Protocols) > 0 {
 		to.Protocols = from.Protocols
 	}
-	if len(from.AutoEvents) > 0 {
+
+	// As autoevents are optional, we also accept them to be empty (len = 0), as long as field is in received struct
+	if from.AutoEvents != nil {
 		to.AutoEvents = from.AutoEvents
 	}
+
 	if from.AdminState != "" {
 		to.AdminState = from.AdminState
 	}
