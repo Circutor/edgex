@@ -207,8 +207,10 @@ func updateDeviceFields(from models.Device, to *models.Device) error {
 		to.Protocols = from.Protocols
 	}
 
-	// As autoevents are optional, we also accept them to be empty
-	to.AutoEvents = from.AutoEvents
+	// As autoevents are optional, we also accept them to be empty (len = 0), as long as field is in received struct
+	if from.AutoEvents != nil {
+		to.AutoEvents = from.AutoEvents
+	}
 
 	if from.AdminState != "" {
 		to.AdminState = from.AdminState
