@@ -82,7 +82,7 @@ func (reg *registrationInfo) update(newReg contract.Registration) bool {
 		// TODO reg.format = distro.NewCsvFormat()
 	case contract.FormatThingsBoardJSON:
 		reg.format = thingsboardJSONFormatter{}
-	case "DEXMA_JSON":
+	case contract.FormatDEXMAJSON:
 		reg.format = dexmaJSONFormatter{}
 	case contract.FormatNOOP:
 		reg.format = noopFormatter{}
@@ -120,7 +120,7 @@ func (reg *registrationInfo) update(newReg contract.Registration) bool {
 		reg.sender = newIoTCoreSender(newReg.Addressable)
 	case contract.DestRest:
 		reg.sender = newHTTPSender(newReg.Addressable)
-	case "DEXMA_TOPIC":
+	case contract.DestDEXMAMQTT:
 		reg.sender = newHTTPDexmaSender(newReg.Addressable)
 	case contract.DestXMPP:
 		reg.sender = newXMPPSender(newReg.Addressable)

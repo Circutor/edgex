@@ -154,13 +154,7 @@ func addReg(w http.ResponseWriter, r *http.Request) {
 
 	fillRegister(&reg)
 
-	if reg.Format == "DEXMA_JSON" {
-		if reg.Name == "" {
-			LoggingClient.Error(fmt.Sprintf("Failed to validate registrations fields: %X. Error: Name is required", data))
-			http.Error(w, "Could not validate json fields", http.StatusBadRequest)
-			return
-		}
-	} else if valid, err := reg.Validate(); !valid {
+	if valid, err := reg.Validate(); !valid {
 		LoggingClient.Error(fmt.Sprintf("Failed to validate registrations fields: %X. Error: %s", data, err.Error()))
 		http.Error(w, "Could not validate json fields", http.StatusBadRequest)
 		return
@@ -178,7 +172,7 @@ func addReg(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if reg.Addressable.Certificate != "" {
-		if reg.Format == "AWS_JSON" || reg.Format == "IOTCORE_JSON" {
+		if reg.Format == models.FormatAWSJSON || reg.Format == models.FormatIoTCoreJSON {
 			err = checkCertificate(reg.Addressable.Certificate)
 			if err != nil {
 				LoggingClient.Error(err.Error())
@@ -190,7 +184,7 @@ func addReg(w http.ResponseWriter, r *http.Request) {
 		reg.Addressable.Certificate = encCert
 	}
 	if reg.Addressable.Password != "" {
-		if reg.Format == "AWS_JSON" || reg.Format == "IOTCORE_JSON" {
+		if reg.Format == models.FormatAWSJSON || reg.Format == models.FormatIoTCoreJSON {
 			err = checkKey(reg.Addressable.Password)
 			if err != nil {
 				LoggingClient.Error(err.Error())
@@ -249,30 +243,30 @@ func checkKey(keyRegister string) (err error) {
 
 func fillRegister(reg *models.Registration) (err error) {
 	switch reg.Format {
-	case "THINGSBOARD_JSON":
+	case models.FormatThingsBoardJSON:
 		reg.Addressable.Protocol = "TCP"
 		reg.Addressable.Publisher = "Circutor"
 		reg.Addressable.Topic = "v1/gateway/telemetry"
-		reg.Destination = "MQTT_TOPIC"
-	case "DEXMA_JSON":
+		reg.Destination = models.DestMQTT
+	case models.FormatDEXMAJSON:
 		reg.Addressable.Protocol = "HTTP"
 		reg.Addressable.HTTPMethod = "POST"
 		reg.Addressable.Topic = "readings"
-		reg.Destination = "DEXMA_TOPIC"
-	case "AZURE_JSON":
+		reg.Destination = models.DestDEXMAMQTT
+	case models.FormatAzureJSON:
 		reg.Addressable.Protocol = "tls"
 		reg.Addressable.User = "EDS-Cloud.azure-devices.net/" + reg.Addressable.Publisher
 		reg.Addressable.Topic = "devices/DeviceId/messages/events/"
-		reg.Destination = "AZURE_TOPIC"
-	case "AWS_JSON":
-		reg.Destination = "AWS_TOPIC"
-	case "IOTCORE_JSON":
+		reg.Destination = models.DestAzureMQTT
+	case models.FormatAWSJSON:
+		reg.Destination = models.DestAWSMQTT
+	case models.FormatIoTCoreJSON:
 		reg.Addressable.Protocol = "tls"
 		reg.Addressable.Path = ""
 		reg.Addressable.Address = "mqtt.googleapis.com"
 		reg.Addressable.Port = 8883
 		reg.Addressable.User = "unused"
-		reg.Destination = "IOTCORE_TOPIC"
+		reg.Destination = models.DestIotCoreMQTT
 	default:
 		err = errors.New("Not valid protocol")
 	}
@@ -378,13 +372,7 @@ func updateReg(w http.ResponseWriter, r *http.Request) {
 		toReg.Enable = fromReg.Enable
 	}
 
-	if toReg.Format == "DEXMA_JSON" && toReg.Destination == "DEXMA_TOPIC" {
-		if toReg.Name == "" {
-			LoggingClient.Error(fmt.Sprintf("Failed to validate registrations fields: %X. Error: Name is required", data))
-			http.Error(w, "Could not validate json fields", http.StatusBadRequest)
-			return
-		}
-	} else if valid, err := toReg.Validate(); !valid {
+	if valid, err := toReg.Validate(); !valid {
 		LoggingClient.Error(fmt.Sprintf("Failed to validate registrations fields: %X. Error: %s", data, err.Error()))
 		http.Error(w, "Could not validate json fields", http.StatusBadRequest)
 		return
@@ -392,7 +380,7 @@ func updateReg(w http.ResponseWriter, r *http.Request) {
 
 	if fromReg.Addressable.Certificate != "" {
 		toReg.Addressable.Certificate = fromReg.Addressable.Certificate
-		if toReg.Format == "AWS_JSON" || toReg.Format == "IOTCORE_JSON" {
+		if toReg.Format == models.FormatAWSJSON || toReg.Format == models.FormatIoTCoreJSON {
 			err = checkCertificate(toReg.Addressable.Certificate)
 			if err != nil {
 				LoggingClient.Error(err.Error())
@@ -405,7 +393,7 @@ func updateReg(w http.ResponseWriter, r *http.Request) {
 	}
 	if fromReg.Addressable.Password != "" {
 		toReg.Addressable.Password = fromReg.Addressable.Password
-		if toReg.Format == "AWS_JSON" || toReg.Format == "IOTCORE_JSON" {
+		if toReg.Format == models.FormatAWSJSON || toReg.Format == models.FormatIoTCoreJSON {
 			err = checkKey(toReg.Addressable.Password)
 			if err != nil {
 				LoggingClient.Error(err.Error())
