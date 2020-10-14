@@ -28,6 +28,7 @@ const (
 	DestRest        = "REST_ENDPOINT"
 	DestXMPP        = "XMPP_TOPIC"
 	DestAWSMQTT     = "AWS_TOPIC"
+	DestDEXMAMQTT   = "DEXMA_TOPIC"
 )
 
 // Compression algorithm types
@@ -45,6 +46,7 @@ const (
 	FormatIoTCoreJSON     = "IOTCORE_JSON"
 	FormatAzureJSON       = "AZURE_JSON"
 	FormatAWSJSON         = "AWS_JSON"
+	FormatDEXMAJSON       = "DEXMA_JSON"
 	FormatCSV             = "CSV"
 	FormatThingsBoardJSON = "THINGSBOARD_JSON"
 	FormatNOOP            = "NOOP"
@@ -145,6 +147,7 @@ func (reg Registration) Validate() (bool, error) {
 		reg.Format != FormatIoTCoreJSON &&
 		reg.Format != FormatAzureJSON &&
 		reg.Format != FormatAWSJSON &&
+		reg.Format != FormatDEXMAJSON &&
 		reg.Format != FormatCSV &&
 		reg.Format != FormatThingsBoardJSON &&
 		reg.Format != FormatNOOP {
@@ -156,6 +159,7 @@ func (reg Registration) Validate() (bool, error) {
 		reg.Destination != DestIotCoreMQTT &&
 		reg.Destination != DestAzureMQTT &&
 		reg.Destination != DestAWSMQTT &&
+		reg.Destination != DestDEXMAMQTT &&
 		reg.Destination != DestRest {
 		return false, fmt.Errorf("Destination invalid: %s", reg.Destination)
 	}
