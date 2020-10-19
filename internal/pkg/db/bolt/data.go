@@ -30,7 +30,7 @@ Has functions for interacting with the core data bolt database
 */
 
 const (
-	maxEvents = 50000
+	maxEvents = 20000
 )
 
 // ******************************* EVENTS **********************************
