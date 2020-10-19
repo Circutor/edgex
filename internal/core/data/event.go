@@ -216,31 +216,13 @@ func getEventsByCreationTime(limit int, start int64, end int64) ([]contract.Even
 }
 
 func getReadingsByDeviceId(limit int, deviceId string, valueDescriptor string) ([]contract.Reading, error) {
-	eventList, err := dbClient.EventsForDevice(deviceId)
+	readingList, err := dbClient.ReadingsForDeviceLimit(deviceId, valueDescriptor, limit)
 	if err != nil {
 		LoggingClient.Error(err.Error())
 		return nil, err
 	}
 
-	// Only pick the readings who match the value descriptor
-	var readings []contract.Reading
-	count := 0 // Make sure we stay below the limit
-	for _, event := range eventList {
-		if count >= limit {
-			break
-		}
-		for _, reading := range event.Readings {
-			if count >= limit {
-				break
-			}
-			if reading.Name == valueDescriptor {
-				readings = append(readings, reading)
-				count += 1
-			}
-		}
-	}
-
-	return readings, nil
+	return readingList, nil
 }
 
 func deleteEvents(deviceId string) (int, error) {

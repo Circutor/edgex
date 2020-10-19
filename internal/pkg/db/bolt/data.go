@@ -136,6 +136,50 @@ func (bc *BoltClient) DeleteEventById(id string) error {
 	return bc.deleteById(id, db.EventsCollection)
 }
 
+// Get a list of readings based on the device id, the value descriptor and limit
+func (bc *BoltClient) ReadingsForDeviceLimit(ide string, vd string, limit int) ([]contract.Reading, error) {
+	readings := []contract.Reading{}
+	json := jsoniter.ConfigCompatibleWithStandardLibrary
+
+	// Check if limit is not 0
+	if limit == 0 {
+		return readings, nil
+	}
+	cnt := 0
+
+	err := bc.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(db.EventsCollection))
+		if b == nil {
+			return nil
+		}
+
+		c := b.Cursor()
+		for id, encoded := c.Last(); id != nil; id, encoded = c.Prev() {
+			value := jsoniter.Get(encoded, "device").ToString()
+			if value == ide {
+				event := contract.Event{}
+				err := json.Unmarshal(encoded, &event)
+				if err != nil {
+					return err
+				}
+
+				for _, reading := range event.Readings {
+					if reading.Name == vd {
+						readings = append([]contract.Reading{reading}, readings...)
+						cnt++
+						if cnt >= limit {
+							return nil
+						}
+						break
+					}
+				}
+			}
+		}
+		return nil
+	})
+	return readings, err
+}
+
 // Get a list of events based on the device id and limit
 func (bc *BoltClient) EventsForDeviceLimit(ide string, limit int) ([]contract.Event, error) {
 	return bc.getEvents(func(encoded []byte) bool {
@@ -226,27 +270,26 @@ func (bc *BoltClient) getEvents(fn func(encoded []byte) bool, limit int) ([]cont
 		if b == nil {
 			return nil
 		}
-		err := b.ForEach(func(id, encoded []byte) error {
+
+		c := b.Cursor()
+		for id, encoded := c.Last(); id != nil; id, encoded = c.Prev() {
 			if fn(encoded) == true {
 				event := contract.Event{}
 				err := json.Unmarshal(encoded, &event)
 				if err != nil {
 					return err
 				}
-				events = append(events, event)
+
+				events = append([]contract.Event{event}, events...)
 				if limit > 0 {
 					cnt++
 					if cnt >= limit {
-						return ErrLimReached
+						return nil
 					}
 				}
 			}
-			return nil
-		})
-		if err == ErrLimReached {
-			return nil
 		}
-		return err
+		return nil
 	})
 	return events, err
 }
