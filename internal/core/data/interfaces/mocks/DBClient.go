@@ -198,6 +198,12 @@ func (_m *DBClient) EventsForDevice(id string) ([]models.Event, error) {
 	return r0, r1
 }
 
+// Get a list of readings based on the device id, the value descriptor and limit
+func (_m *DBClient) ReadingsForDeviceLimit(ide string, vd string, limit int) ([]models.Reading, error) {
+	var r0 []models.Reading
+	return r0, nil
+}
+
 // EventsForDeviceLimit provides a mock function with given fields: id, limit
 func (_m *DBClient) EventsForDeviceLimit(id string, limit int) ([]models.Event, error) {
 	ret := _m.Called(id, limit)

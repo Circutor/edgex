@@ -17,7 +17,6 @@ package data
 import (
 	"context"
 	"fmt"
-	"math"
 	"strconv"
 	"sync"
 	"testing"
@@ -530,29 +529,6 @@ func TestGetEventsByCreationTimeDBThrowsError(t *testing.T) {
 
 	if expectedErr == nil {
 		t.Errorf("Should throw error")
-	}
-}
-
-func TestGetReadingsByDeviceId(t *testing.T) {
-	reset()
-	myMock := &dbMock.DBClient{}
-
-	myMock.On("EventsForDevice", mock.Anything).Return([]models.Event{{Readings: append(buildReadings(), buildReadings()...)}}, nil)
-
-	dbClient = myMock
-
-	expectedReadings, expectedNil := getReadingsByDeviceId(math.MaxInt32, "valid", "Pressure")
-
-	if expectedReadings == nil {
-		t.Errorf("Should return Readings")
-	}
-
-	if expectedNil != nil {
-		t.Errorf("Should not throw error")
-	}
-
-	if len(expectedReadings) != len(buildReadings()) {
-		t.Errorf("Returned %d readings, expected %d", len(expectedReadings), len(buildReadings()))
 	}
 }
 

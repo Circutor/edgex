@@ -30,7 +30,7 @@ Has functions for interacting with the core data bolt database
 */
 
 const (
-	maxEvents = 50000
+	maxEvents = 20000
 )
 
 // ******************************* EVENTS **********************************
@@ -136,6 +136,54 @@ func (bc *BoltClient) DeleteEventById(id string) error {
 	return bc.deleteById(id, db.EventsCollection)
 }
 
+// Get a list of readings based on the device id, the value descriptor and limit
+func (bc *BoltClient) ReadingsForDeviceLimit(ide string, vd string, limit int) ([]contract.Reading, error) {
+	readings := []contract.Reading{}
+	if limit > 0 {
+		readings = make([]contract.Reading, 0, limit)
+	}
+	json := jsoniter.ConfigCompatibleWithStandardLibrary
+
+	// Check if limit is not 0
+	if limit == 0 {
+		return readings, nil
+	}
+	cnt := 0
+
+	err := bc.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(db.EventsCollection))
+		if b == nil {
+			return nil
+		}
+
+		c := b.Cursor()
+		for id, encoded := c.Last(); id != nil; id, encoded = c.Prev() {
+			value := jsoniter.Get(encoded, "device").ToString()
+			if value == ide {
+				event := contract.Event{}
+				err := json.Unmarshal(encoded, &event)
+				if err != nil {
+					return err
+				}
+
+				for _, reading := range event.Readings {
+					if reading.Name == vd {
+						readings = append(readings, reading)
+						cnt++
+						if cnt >= limit {
+							return nil
+						}
+						break
+					}
+				}
+			}
+		}
+		return nil
+	})
+	reverseReadings(readings)
+	return readings, err
+}
+
 // Get a list of events based on the device id and limit
 func (bc *BoltClient) EventsForDeviceLimit(ide string, limit int) ([]contract.Event, error) {
 	return bc.getEvents(func(encoded []byte) bool {
@@ -213,6 +261,9 @@ func (bc *BoltClient) ScrubAllEvents() error {
 // Get events for the passed check
 func (bc *BoltClient) getEvents(fn func(encoded []byte) bool, limit int) ([]contract.Event, error) {
 	events := []contract.Event{}
+	if limit > 0 {
+		events = make([]contract.Event, 0, limit)
+	}
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
 
 	// Check if limit is not 0
@@ -226,27 +277,39 @@ func (bc *BoltClient) getEvents(fn func(encoded []byte) bool, limit int) ([]cont
 		if b == nil {
 			return nil
 		}
-		err := b.ForEach(func(id, encoded []byte) error {
+
+		c := b.Cursor()
+		for id, encoded := c.Last(); id != nil; id, encoded = c.Prev() {
 			if fn(encoded) == true {
 				event := contract.Event{}
 				err := json.Unmarshal(encoded, &event)
 				if err != nil {
 					return err
 				}
+
 				events = append(events, event)
 				if limit > 0 {
 					cnt++
 					if cnt >= limit {
-						return ErrLimReached
+						return nil
 					}
 				}
 			}
-			return nil
-		})
-		if err == ErrLimReached {
-			return nil
 		}
-		return err
+		return nil
 	})
+	reverseEvents(events)
 	return events, err
+}
+
+func reverseEvents(events []contract.Event) {
+	for left, right := 0, len(events)-1; left < right; left, right = left+1, right-1 {
+		events[left], events[right] = events[right], events[left]
+	}
+}
+
+func reverseReadings(readings []contract.Reading) {
+	for left, right := 0, len(readings)-1; left < right; left, right = left+1, right-1 {
+		readings[left], readings[right] = readings[right], readings[left]
+	}
 }
