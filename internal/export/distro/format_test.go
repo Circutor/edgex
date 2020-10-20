@@ -85,6 +85,7 @@ func TestDexmaJson(t *testing.T) {
 	eventIn := contract.Event{
 		Device: devID1,
 	}
+	eventIn.Readings = append(eventIn.Readings, contract.Reading{Device: devID1, Name: "401", Value: readingValue1})
 
 	djf := dexmaJSONFormatter{}
 	out := djf.Format(&eventIn)

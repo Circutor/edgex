@@ -107,7 +107,7 @@ func (dexmajsonTr dexmaJSONFormatter) Format(event *contract.Event) []byte {
 
 	for _, reading := range event.Readings {
 		var err error
-		value.P, err = strconv.Atoi(reading.Value)
+		value.P, err = strconv.Atoi(reading.Name)
 		if err != nil {
 			value.P = transformDexmaParam(reading.Name)
 		}
@@ -117,6 +117,9 @@ func (dexmajsonTr dexmaJSONFormatter) Format(event *contract.Event) []byte {
 		} else {
 			values = append(values, value)
 		}
+	}
+	if len(values) == 0 {
+		return nil
 	}
 
 	var devices []Device
