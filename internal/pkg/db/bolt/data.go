@@ -139,6 +139,9 @@ func (bc *BoltClient) DeleteEventById(id string) error {
 // Get a list of readings based on the device id, the value descriptor and limit
 func (bc *BoltClient) ReadingsForDeviceLimit(ide string, vd string, limit int) ([]contract.Reading, error) {
 	readings := []contract.Reading{}
+	if limit > 0 {
+		readings = make([]contract.Reading, 0, limit)
+	}
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
 
 	// Check if limit is not 0
@@ -165,7 +168,7 @@ func (bc *BoltClient) ReadingsForDeviceLimit(ide string, vd string, limit int) (
 
 				for _, reading := range event.Readings {
 					if reading.Name == vd {
-						readings = append([]contract.Reading{reading}, readings...)
+						readings = append(readings, reading)
 						cnt++
 						if cnt >= limit {
 							return nil
@@ -177,6 +180,7 @@ func (bc *BoltClient) ReadingsForDeviceLimit(ide string, vd string, limit int) (
 		}
 		return nil
 	})
+	reverseReadings(readings)
 	return readings, err
 }
 
@@ -257,6 +261,9 @@ func (bc *BoltClient) ScrubAllEvents() error {
 // Get events for the passed check
 func (bc *BoltClient) getEvents(fn func(encoded []byte) bool, limit int) ([]contract.Event, error) {
 	events := []contract.Event{}
+	if limit > 0 {
+		events = make([]contract.Event, 0, limit)
+	}
 	json := jsoniter.ConfigCompatibleWithStandardLibrary
 
 	// Check if limit is not 0
@@ -280,7 +287,7 @@ func (bc *BoltClient) getEvents(fn func(encoded []byte) bool, limit int) ([]cont
 					return err
 				}
 
-				events = append([]contract.Event{event}, events...)
+				events = append(events, event)
 				if limit > 0 {
 					cnt++
 					if cnt >= limit {
@@ -291,5 +298,18 @@ func (bc *BoltClient) getEvents(fn func(encoded []byte) bool, limit int) ([]cont
 		}
 		return nil
 	})
+	reverseEvents(events)
 	return events, err
+}
+
+func reverseEvents(events []contract.Event) {
+	for left, right := 0, len(events)-1; left < right; left, right = left+1, right-1 {
+		events[left], events[right] = events[right], events[left]
+	}
+}
+
+func reverseReadings(readings []contract.Reading) {
+	for left, right := 0, len(readings)-1; left < right; left, right = left+1, right-1 {
+		readings[left], readings[right] = readings[right], readings[left]
+	}
 }
