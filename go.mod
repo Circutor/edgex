@@ -8,6 +8,7 @@ require (
 	github.com/eclipse/paho.mqtt.golang v1.2.0
 	github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8
 	github.com/go-kit/kit v0.10.0
+	github.com/go-zeromq/zmq4 v0.13.0
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/context v1.1.1
 	github.com/gorilla/mux v1.7.4
@@ -23,7 +24,6 @@ require (
 	golang.org/x/sys v0.0.0-20200427175716-29b57079015a // indirect
 	gopkg.in/eapache/queue.v1 v1.1.0
 	gopkg.in/yaml.v2 v2.2.8
-	nanomsg.org/go-mangos v1.4.0
 )
 
 go 1.13

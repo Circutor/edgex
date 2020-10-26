@@ -14,18 +14,37 @@
 package messaging
 
 import (
+	"context"
+	"encoding/json"
+	"sync"
+
 	"github.com/Circutor/edgex/internal/pkg/correlation/models"
+	"github.com/go-zeromq/zmq4"
 )
 
-// Configuration struct for PubSub
-type PubSubConfiguration struct {
-	AddressPort string
+// ZeroMQ implementation of the event publisher
+type zeroMQEventPublisher struct {
+	publisher zmq4.Socket
+	mux       sync.Mutex
 }
 
-type EventPublisher interface {
-	SendEventMessage(e models.Event) error
+func newZeroMQEventPublisher(config PubSubConfiguration) EventPublisher {
+	newPublisher := zmq4.NewPub(context.Background())
+	newPublisher.Listen(config.AddressPort)
+
+	return &zeroMQEventPublisher{
+		publisher: newPublisher,
+	}
 }
 
-func NewEventPublisher(conf PubSubConfiguration) EventPublisher {
-	return newZeroMQEventPublisher(conf)
+func (zep *zeroMQEventPublisher) SendEventMessage(e models.Event) error {
+	s, err := json.Marshal(&e)
+	if err != nil {
+		return err
+	}
+	zep.mux.Lock()
+	defer zep.mux.Unlock()
+
+	msg := zmq4.NewMsg(s)
+	return zep.publisher.Send(msg)
 }

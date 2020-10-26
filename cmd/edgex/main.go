@@ -81,7 +81,7 @@ func main() {
 	loggingClient.Info("EdgeX started in: " + time.Since(start).String())
 
 	// There can be another receivers that can be initialiced here
-	distro.MangosReceiver(eventCh)
+	distro.ZeroMQReceiver(eventCh)
 	distro.Loop(errCh, eventCh)
 
 	// Destroy all clients
