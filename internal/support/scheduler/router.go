@@ -112,7 +112,7 @@ func intervalHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		encode(intervals, w)
 		break
-		// Post a new Interval
+	// Post a new Interval
 	case http.MethodPost:
 		var interval models.Interval
 		dec := json.NewDecoder(r.Body)

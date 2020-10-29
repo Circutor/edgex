@@ -7,6 +7,7 @@
 package scheduler
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -464,17 +465,24 @@ func execute(context *IntervalContext, wg *sync.WaitGroup) error {
 			return nil
 		}
 
-		req, err := http.NewRequest(httpMethod, executingUrl, nil)
-		req.Header.Set(ContentTypeKey, ContentTypeJsonValue)
-
 		params := strings.TrimSpace(intervalAction.Parameters)
 
+		var body []byte
 		if len(params) > 0 {
-			req.Header.Set(ContentLengthKey, fmt.Sprint(len(params)))
+			body = []byte(params)
+		} else {
+			body = nil
 		}
 
+		req, err := http.NewRequest(httpMethod, executingUrl, bytes.NewBuffer(body))
 		if err != nil {
 			LoggingClient.Error("create new request occurs error : " + err.Error())
+			return nil
+		}
+
+		if len(params) > 0 {
+			req.Header.Set(ContentTypeKey, ContentTypeJsonValue)
+			req.Header.Set(ContentLengthKey, fmt.Sprint(len(params)))
 		}
 
 		client := &http.Client{
