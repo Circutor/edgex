@@ -22,7 +22,7 @@ case "$1" in
   start)
 	echo "Starting custom EdgeX Foundry"
 	start-stop-daemon -b -m -S -p $PIDFILE -x $DAEMON -- $DAEMONOPT
-	sleep 2
+	sleep 5
 	;;
   stop)
 	echo "Stoping custom EdgeX Foundry"
