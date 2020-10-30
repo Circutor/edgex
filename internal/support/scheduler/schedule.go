@@ -297,7 +297,7 @@ func (qc *QueueClient) AddIntervalActionToQueue(intervalAction contract.Interval
 
 	addIntervalActionOperation(interval, intervalAction)
 
-	LoggingClient.Info(fmt.Sprintf("added the intervalAction with id: %s to interal: %s into the queue", intervalActionId, intervalName))
+	LoggingClient.Info(fmt.Sprintf("added the intervalAction with id: %s to interval: %s into the queue", intervalActionId, intervalName))
 
 	return nil
 }
