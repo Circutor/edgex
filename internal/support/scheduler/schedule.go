@@ -233,28 +233,24 @@ func (qc *QueueClient) QueryIntervalActionByName(intervalActionName string) (con
 	intervalId, exists := intervalActionNameToIntervalMap[intervalActionName]
 	if !exists {
 		logMsg := fmt.Sprintf("scheduler could not find interval id with intervalAction name : %s", intervalActionName)
-		LoggingClient.Warn(logMsg)
 		return contract.IntervalAction{}, errors.New(logMsg)
 	}
 
 	intervalActionId, exists := intervalActionNameToIntervalActionIdMap[intervalActionName]
 	if !exists {
 		logMsg := fmt.Sprintf("scheduler could not find intervalAction id with intervalAction name : %s", intervalActionName)
-		LoggingClient.Warn(logMsg)
 		return contract.IntervalAction{}, errors.New(logMsg)
 	}
 
 	intervalContext, exists := intervalIdToContextMap[intervalId]
 	if !exists {
 		logMsg := fmt.Sprintf("scheduler could not find a interval context with interval id : %s", intervalId)
-		LoggingClient.Warn(logMsg)
 		return contract.IntervalAction{}, errors.New(logMsg)
 	}
 
 	intervalAction, exists := intervalContext.IntervalActionsMap[intervalActionId]
 	if !exists {
 		logMsg := fmt.Sprintf("scheduler could not find intervalAction with intervalAction id :  %s", intervalContext.Interval.ID)
-		LoggingClient.Warn(logMsg)
 		return contract.IntervalAction{}, errors.New(logMsg)
 	}
 
