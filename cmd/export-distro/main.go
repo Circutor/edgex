@@ -57,7 +57,7 @@ func main() {
 	listenForInterrupt(errs)
 
 	// There can be another receivers that can be initialiced here
-	distro.MangosReceiver(eventCh)
+	distro.ZeroMQReceiver(eventCh)
 	distro.Loop(errs, eventCh)
 
 	// Time it took to start service
