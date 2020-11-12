@@ -63,7 +63,7 @@ func (sender httpSender) Send(data []byte, event *models.Event) bool {
 			return false
 		}
 		defer response.Body.Close()
-		LoggingClient.Info(fmt.Sprintf("Pushed event correctly to %s, response: %s", strings.TrimRight(c.Request.URL.Host, ":"), response.Status), clients.CorrelationHeader, event.CorrelationId, internal.LogDurationKey, time.Since(begin).String())
+		LoggingClient.Info(fmt.Sprintf("Pushed event correctly to %s, response: %s", c.Request.URL.Host[:strings.Index(c.Request.URL.Host, ":")], response.Status), clients.CorrelationHeader, event.CorrelationId, internal.LogDurationKey, time.Since(begin).String())
 	default:
 		LoggingClient.Info(fmt.Sprintf("Unsupported method: %s", sender.method))
 		return false
