@@ -112,14 +112,14 @@ func (dexmajsonTr dexmaJSONFormatter) Format(event *contract.Event) []byte {
 			value.P = transformDexmaParam(reading.Name)
 		}
 		if value.P == 0 {
-			LoggingClient.Error(fmt.Sprintf("Error on Dexma parameter name: %s", reading.Name))
+			LoggingClient.Error(fmt.Sprintf("Error on Dexma parameter %s: invalid name", reading.Name))
 		} else {
 			value.V, err = strconv.ParseFloat(reading.Value, 64)
 			if err != nil {
-				LoggingClient.Error(fmt.Sprintf("Error on Dexma parameter %s: could not parse value", reading.Name))
-				continue
+				LoggingClient.Error(fmt.Sprintf("Error on Dexma parameter %s: could not parse value %s", reading.Name, reading.Value))
+			} else {
+				values = append(values, value)
 			}
-			values = append(values, value)
 		}
 	}
 	if len(values) == 0 {
