@@ -13,6 +13,8 @@ import (
 	"github.com/Circutor/edgex/pkg/models"
 )
 
+// Dexma device parameters list
+// https://docs.google.com/spreadsheets/d/1W97Yv9UWR9iwmXzknxSQSiIzjt4capmWuaZsAwNJD0g/pub?hl=en&hl=en&single=true&gid=0&output=html
 var DexmaParameterTable = []struct {
 	name    string
 	codenum int

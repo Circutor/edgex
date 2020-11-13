@@ -87,12 +87,12 @@ type dexmaJSONFormatter struct {
 }
 
 // Dexma JSON formatter
-//http://support.dexmatech.com/customer/en/portal/articles/1745389-http-json-api-data-insertion-
+// https://support.dexma.com/hc/es/articles/360013772759-API-de-inserci%C3%B3n
 func (dexmajsonTr dexmaJSONFormatter) Format(event *contract.Event) []byte {
 
 	type Value struct {
-		P int `json:"p"`
-		V int `json:"v"`
+		P int     `json:"p"`
+		V float64 `json:"v"`
 	}
 
 	type Device struct {
@@ -111,11 +111,15 @@ func (dexmajsonTr dexmaJSONFormatter) Format(event *contract.Event) []byte {
 		if err != nil {
 			value.P = transformDexmaParam(reading.Name)
 		}
-		value.V, _ = strconv.Atoi(reading.Value)
 		if value.P == 0 {
-			LoggingClient.Error(fmt.Sprintf("Error on Dexma parameter name: %s", reading.Name))
+			LoggingClient.Error(fmt.Sprintf("Error on Dexma parameter %s: invalid name", reading.Name))
 		} else {
-			values = append(values, value)
+			value.V, err = strconv.ParseFloat(reading.Value, 64)
+			if err != nil {
+				LoggingClient.Error(fmt.Sprintf("Error on Dexma parameter %s: could not parse value %s", reading.Name, reading.Value))
+			} else {
+				values = append(values, value)
+			}
 		}
 	}
 	if len(values) == 0 {
