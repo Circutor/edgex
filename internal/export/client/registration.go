@@ -244,7 +244,7 @@ func checkKey(keyRegister string) (err error) {
 func fillRegister(reg *models.Registration) (err error) {
 	switch reg.Format {
 	case models.FormatThingsBoardJSON:
-		reg.Addressable.Protocol = "TCP"
+		reg.Addressable.Protocol = "tls"
 		reg.Addressable.Publisher = "Circutor"
 		reg.Addressable.Topic = "v1/gateway/telemetry"
 		reg.Destination = models.DestMQTT
