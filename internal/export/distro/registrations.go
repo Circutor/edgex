@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/Circutor/edgex/internal/pkg/correlation/models"
+	clients "github.com/Circutor/edgex/pkg/clients/export/distro"
 	contract "github.com/Circutor/edgex/pkg/models"
 	"github.com/google/uuid"
 )
@@ -62,6 +63,14 @@ func newRegistrationInfo() *registrationInfo {
 }
 
 func (reg *registrationInfo) update(newReg contract.Registration) bool {
+	// In case new export is Prosume or after boot up, we have to start/stop Prosume client
+	if newReg.Destination == "PROSUME_TOPIC" && newReg.Enable != reg.registration.Enable {
+		if newReg.Enable {
+			clients.ProsumeClientExec(clients.ProsumeOpStart)
+		} else {
+			clients.ProsumeClientExec(clients.ProsumeOpStop)
+		}
+	}
 	reg.registration = newReg
 
 	reg.format = nil
@@ -84,6 +93,8 @@ func (reg *registrationInfo) update(newReg contract.Registration) bool {
 		reg.format = thingsboardJSONFormatter{}
 	case contract.FormatDEXMAJSON:
 		reg.format = dexmaJSONFormatter{}
+	case contract.FormatProsume:
+		reg.format = prosumeJSONFormatter{}
 	case contract.FormatNOOP:
 		reg.format = noopFormatter{}
 	default:
@@ -124,7 +135,8 @@ func (reg *registrationInfo) update(newReg contract.Registration) bool {
 		reg.sender = newHTTPDexmaSender(newReg.Addressable)
 	case contract.DestXMPP:
 		reg.sender = newXMPPSender(newReg.Addressable)
-
+	case contract.DestProsume:
+		reg.sender = newProsumeSender(newReg.Addressable)
 	default:
 		LoggingClient.Warn(fmt.Sprintf("Destination not supported: %s", newReg.Destination))
 		return false
@@ -177,6 +189,8 @@ func (reg registrationInfo) processEvent(event *models.Event) {
 
 	if reg.format == nil {
 		LoggingClient.Warn("registrationInfo with nil format")
+		return
+	} else if reg.registration.Destination == "PROSUME_TOPIC" && reg.registration.Addressable.Name != event.Device {
 		return
 	}
 	formatted := reg.format.Format(data)
@@ -263,6 +277,10 @@ func updateRunningRegistrations(running map[string]*registrationInfo,
 	case contract.NotifyUpdateDelete:
 		for k, v := range running {
 			if k == update.Name {
+				// In case export to delete is Prosume we stop client
+				if v.registration.Destination == "PROSUME_TOPIC" {
+					clients.ProsumeClientExec(clients.ProsumeOpStop)
+				}
 				v.chRegistration <- nil
 				delete(running, k)
 				return nil

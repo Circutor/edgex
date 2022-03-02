@@ -26,6 +26,7 @@ type jsonFormatter struct {
 // Azure IoT message feedback codes
 type feedbackCode int
 
+const scaleKilo = 0.001
 const (
 	none feedbackCode = iota
 )
@@ -133,6 +134,39 @@ func (dexmajsonTr dexmaJSONFormatter) Format(event *contract.Event) []byte {
 	b, err := json.Marshal(devices)
 	if err != nil {
 		LoggingClient.Error(fmt.Sprintf("Error parsing Dexma JSON. Error: %s", err.Error()))
+		return nil
+	}
+	return b
+}
+
+type prosumeJSONFormatter struct {
+}
+
+// Prosume JSON formatter
+// https://prosume.io
+func (prosumeJson prosumeJSONFormatter) Format(event *contract.Event) []byte {
+	var err error
+	type prosumeData struct {
+		Timestamp      int64   `json:"Timestamp"`
+		ImportedEnergy float64 `json:"Active_energy_imported_kWh"`
+		ExportedEnergy float64 `json:"Active_energy_exported_kWh"`
+	}
+
+	data := prosumeData{}
+	for _, reading := range event.Readings {
+		if strings.Contains(reading.Name, "ENERGY_P_CON_TOT_ABS") {
+			tempInt, _ := strconv.ParseUint(reading.Value, 10, 64)
+			data.ImportedEnergy = float64(tempInt) * scaleKilo
+			data.Timestamp = reading.Created
+		} else if strings.Contains(reading.Name, "ENERGY_P_GEN_TOT_ABS") {
+			tempInt, _ := strconv.ParseUint(reading.Value, 10, 64)
+			data.ExportedEnergy = float64(tempInt) * scaleKilo
+			data.Timestamp = reading.Created
+		}
+	}
+	b, err := json.Marshal(data)
+	if err != nil {
+		LoggingClient.Error(fmt.Sprintf("Error parsing Prosume JSON. Error: %s", err.Error()))
 		return nil
 	}
 	return b
