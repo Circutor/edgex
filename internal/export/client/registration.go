@@ -17,8 +17,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
+	"path"
+	"strings"
+	"time"
 
 	"github.com/Circutor/edgex/internal/pkg/db"
+	clients "github.com/Circutor/edgex/pkg/clients/export/distro"
 	"github.com/Circutor/edgex/pkg/models"
 	"github.com/gorilla/mux"
 )
@@ -30,6 +35,12 @@ const (
 	typeDestinations = "destinations"
 
 	applicationJson = "application/json; charset=utf-8"
+)
+
+const (
+	prosumeKeysPath = "/etc/prosume/prosume_keys.txt"
+	prosumeUserLen  = 64
+	prosumeSubIDLen = 66
 )
 
 func getRegByID(w http.ResponseWriter, r *http.Request) {
@@ -75,6 +86,7 @@ func getRegList(w http.ResponseWriter, r *http.Request) {
 		list = append(list, models.FormatAzureJSON)
 		list = append(list, models.FormatAWSJSON)
 		list = append(list, models.FormatThingsBoardJSON)
+		list = append(list, models.FormatProsume)
 		list = append(list, models.FormatNOOP)
 	case typeDestinations:
 		list = append(list, models.DestMQTT)
@@ -83,6 +95,7 @@ func getRegList(w http.ResponseWriter, r *http.Request) {
 		list = append(list, models.DestRest)
 		list = append(list, models.DestXMPP)
 		list = append(list, models.DestAWSMQTT)
+		list = append(list, models.DestProsume)
 	default:
 		LoggingClient.Error("Unknown type: " + t)
 		http.Error(w, "Unknown type: "+t, http.StatusBadRequest)
@@ -267,6 +280,14 @@ func fillRegister(reg *models.Registration) (err error) {
 		reg.Addressable.Port = 8883
 		reg.Addressable.User = "unused"
 		reg.Destination = models.DestIotCoreMQTT
+	case models.FormatProsume:
+		reg.Addressable.Path = path.Join(os.TempDir(), "prosume_export.json")
+		reg.Destination = models.DestProsume
+		// In case new export is to Prosume platform, we have to generate new user keys and start the client
+		reg.Addressable.User, err = prosumeOnBoarding()
+		if err != nil {
+			err = fmt.Errorf("Prosume export onboarding process failed: %s", err.Error())
+		}
 	default:
 		err = errors.New("Not valid protocol")
 	}
@@ -477,4 +498,43 @@ func notifyUpdatedRegistrations(update models.NotifyUpdate) {
 			LoggingClient.Error(fmt.Sprintf("error from distro: %s", err.Error()))
 		}
 	}()
+}
+
+func prosumeOnBoarding() (string, error) {
+	_, err := clients.ProsumeClientExec(clients.ProsumeOpStop)
+	if err != nil {
+		return "", err
+	}
+	time.Sleep(1 * time.Second)
+
+	user := make([]byte, prosumeUserLen)
+	subID := make([]byte, prosumeSubIDLen)
+
+	output, err := clients.ProsumeClientExec(clients.ProsumeOpGenerateKeys)
+	if err != nil {
+		return "", err
+	}
+
+	tmpString := output[(strings.Index(output, "Private key:  ") + len("Private key:  ")):]
+	copy(user, tmpString[:prosumeUserLen])
+
+	tmpString = output[(strings.Index(output, "Public  key:  ") + len("Public  key:  ")):]
+	copy(subID, tmpString[:prosumeSubIDLen])
+
+	file, err := os.Create(prosumeKeysPath)
+	if err != nil {
+		LoggingClient.Warn(fmt.Sprintf("Unable to create prosume keys file: %s", err.Error()))
+		return "", err
+	}
+	file.Write([]byte(fmt.Sprintf("username\n")))
+	file.Write([]byte(fmt.Sprintf("%s\n", user)))
+	file.Write([]byte(fmt.Sprintf("subid\n")))
+	file.Write([]byte(fmt.Sprintf("%s\n", subID)))
+
+	_, err = clients.ProsumeClientExec(clients.ProsumeOpStart)
+	if err != nil {
+		return "", err
+	}
+
+	return string(subID), err
 }
