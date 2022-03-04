@@ -64,7 +64,7 @@ func newRegistrationInfo() *registrationInfo {
 
 func (reg *registrationInfo) update(newReg contract.Registration) bool {
 	// In case new export is Prosume or after boot up, we have to start/stop Prosume client
-	if newReg.Destination == "PROSUME_TOPIC" && newReg.Enable != reg.registration.Enable {
+	if newReg.Destination == contract.DestProsume && newReg.Enable != reg.registration.Enable {
 		if newReg.Enable {
 			clients.ProsumeClientExec(clients.ProsumeOpStart)
 		} else {
@@ -190,7 +190,7 @@ func (reg registrationInfo) processEvent(event *models.Event) {
 	if reg.format == nil {
 		LoggingClient.Warn("registrationInfo with nil format")
 		return
-	} else if reg.registration.Destination == "PROSUME_TOPIC" && reg.registration.Addressable.Name != event.Device {
+	} else if reg.registration.Destination == contract.DestProsume && reg.registration.Addressable.Name != event.Device {
 		return
 	}
 	formatted := reg.format.Format(data)
@@ -278,7 +278,7 @@ func updateRunningRegistrations(running map[string]*registrationInfo,
 		for k, v := range running {
 			if k == update.Name {
 				// In case export to delete is Prosume we stop client
-				if v.registration.Destination == "PROSUME_TOPIC" {
+				if v.registration.Destination == contract.DestProsume {
 					clients.ProsumeClientExec(clients.ProsumeOpStop)
 				}
 				v.chRegistration <- nil

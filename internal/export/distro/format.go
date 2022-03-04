@@ -157,13 +157,22 @@ func (prosumeJson prosumeJSONFormatter) Format(event *contract.Event) []byte {
 		if strings.Contains(reading.Name, "ENERGY_P_CON_TOT_ABS") {
 			tempInt, _ := strconv.ParseUint(reading.Value, 10, 64)
 			data.ImportedEnergy = float64(tempInt) * scaleKilo
-			data.Timestamp = reading.Created
+			data.Timestamp = event.Created
 		} else if strings.Contains(reading.Name, "ENERGY_P_GEN_TOT_ABS") {
 			tempInt, _ := strconv.ParseUint(reading.Value, 10, 64)
 			data.ExportedEnergy = float64(tempInt) * scaleKilo
-			data.Timestamp = reading.Created
+			data.Timestamp = event.Created
 		}
 	}
+
+	if data.ImportedEnergy == 0 && data.ExportedEnergy == 0 {
+		return nil
+	}
+
+	if data.Timestamp == 0 {
+		data.Timestamp = time.Now().UnixNano() / int64(time.Millisecond)
+	}
+
 	b, err := json.Marshal(data)
 	if err != nil {
 		LoggingClient.Error(fmt.Sprintf("Error parsing Prosume JSON. Error: %s", err.Error()))
