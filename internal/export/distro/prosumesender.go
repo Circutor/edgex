@@ -51,6 +51,9 @@ func (sender prosumeSender) Send(newData []byte, event *models.Event) bool {
 		previousData := prosumeData{}
 		json.Unmarshal(fileData, &previousData)
 
+		if currentData.Timestamp <= previousData.Timestamp {
+			currentData.Timestamp = previousData.Timestamp
+		}
 		if currentData.ImportedEnergy <= previousData.ImportedEnergy {
 			currentData.ImportedEnergy = previousData.ImportedEnergy
 		}

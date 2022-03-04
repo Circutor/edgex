@@ -25,6 +25,7 @@ import (
 	"github.com/Circutor/edgex/internal/pkg/db"
 	clients "github.com/Circutor/edgex/pkg/clients/export/distro"
 	"github.com/Circutor/edgex/pkg/models"
+	contract "github.com/Circutor/edgex/pkg/models"
 	"github.com/gorilla/mux"
 )
 
@@ -173,15 +174,24 @@ func addReg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = dbClient.RegistrationByName(reg.Name)
-	if err == nil {
-		LoggingClient.Error("Name already taken: " + reg.Name)
-		http.Error(w, "Name already taken", http.StatusBadRequest)
-		return
-	} else if err != db.ErrNotFound {
+	allReg, err := dbClient.Registrations()
+	if err != nil {
 		LoggingClient.Error(fmt.Sprintf("Failed to query add registration. Error: %s", err.Error()))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	for i := range allReg {
+		if allReg[i].Name == reg.Name {
+			LoggingClient.Error("Name already taken: " + reg.Name)
+			http.Error(w, "Name already taken", http.StatusBadRequest)
+			return
+		}
+		if allReg[i].Destination == contract.DestProsume && reg.Destination == contract.DestProsume {
+			LoggingClient.Error("Prosume export already exists: " + reg.Name)
+			http.Error(w, "Prosume export already exists", http.StatusBadRequest)
+			return
+		}
 	}
 
 	if reg.Addressable.Certificate != "" {
