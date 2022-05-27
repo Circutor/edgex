@@ -325,8 +325,7 @@ func testDBAddressables(t *testing.T, db interfaces.DBClient) {
 	if len(addrs) != 100 {
 		t.Fatalf("There should be 100 addressables instead of %d", len(addrs))
 	}
-	a := models.Addressable{}
-	a, err = db.GetAddressableById(id)
+	a, err := db.GetAddressableById(id)
 	if err != nil {
 		t.Fatalf("Error getting addressable by id %v", err)
 	}

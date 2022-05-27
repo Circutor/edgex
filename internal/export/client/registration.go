@@ -278,8 +278,8 @@ func fillRegister(reg *models.Registration) (err error) {
 		reg.Destination = models.DestDEXMAMQTT
 	case models.FormatAzureJSON:
 		reg.Addressable.Protocol = "tls"
-		reg.Addressable.User = "EDS-Cloud.azure-devices.net/" + reg.Addressable.Publisher
-		reg.Addressable.Topic = "devices/DeviceId/messages/events/"
+		reg.Addressable.User = reg.Addressable.Address + "/" + reg.Addressable.Publisher
+		reg.Addressable.Topic = "devices/" + reg.Addressable.Publisher + "/messages/events/"
 		reg.Destination = models.DestAzureMQTT
 	case models.FormatAWSJSON:
 		reg.Destination = models.DestAWSMQTT

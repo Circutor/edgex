@@ -53,7 +53,6 @@ func NewClient(config db.Configuration) (MongoClient, error) {
 func (mc MongoClient) CloseSession() {
 	if mc.session != nil {
 		mc.session.Close()
-		mc.session = nil
 	}
 }
 
