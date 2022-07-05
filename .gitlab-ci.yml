@@ -1,3 +1,8 @@
+default:
+  tags:
+    - linux
+    - docker
+
 before_script:
     - echo "List files:" && ls -l
     - echo "User:" && whoami
@@ -7,36 +12,45 @@ before_script:
     - echo "Go version:" && go version
 
 stages:
-    - build
-    - test
     - lint
+    - test
+    - build
     - deploy
-
-build:
-    stage: build
-    script:
-        - echo "Building"
-        - make
-
-test:
-    stage: test
-    script:
-        - echo "Testing"
-        - make test
 
 lint:
     stage: lint
+    needs: []
+    image: "golangci/golangci-lint:v1.44-alpine"
     script:
         - echo "Linter"
         - golangci-lint version
         - golangci-lint linters
         - golangci-lint run
 
+test:
+    stage: test
+    needs: []
+    image: "golang:1.17"
+    script:
+        - echo "Testing"
+        - make test
+
+build:
+    stage: build
+    except:
+        - master
+    needs: []
+    image: 'circutor/golang:1.17'
+    script:
+        - echo "Building"
+        - make arm
+
 deploy:
     stage: deploy
     only:
-        refs:
-          - master
+        - master
+    needs: []
+    image: 'circutor/golang:1.17'
     script:
         - echo "Building to deploy"
         - make arm
@@ -47,5 +61,3 @@ deploy:
           - edgex
           - edgex.ipk
           - VERSION
-        expire_in: 1 month
-

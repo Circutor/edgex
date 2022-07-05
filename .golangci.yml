@@ -6,7 +6,6 @@ linters:
     - gofmt
     - goimports
     - ineffassign
-    - interfacer
     - staticcheck
   disable:
     - bodyclose
