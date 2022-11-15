@@ -88,6 +88,7 @@ func getRegList(w http.ResponseWriter, r *http.Request) {
 		list = append(list, models.FormatAWSJSON)
 		list = append(list, models.FormatThingsBoardJSON)
 		list = append(list, models.FormatProsume)
+		list = append(list, models.FormatMyCircutorJSON)
 		list = append(list, models.FormatNOOP)
 	case typeDestinations:
 		list = append(list, models.DestMQTT)
@@ -97,6 +98,7 @@ func getRegList(w http.ResponseWriter, r *http.Request) {
 		list = append(list, models.DestXMPP)
 		list = append(list, models.DestAWSMQTT)
 		list = append(list, models.DestProsume)
+		list = append(list, models.DestMyCircutor)
 	default:
 		LoggingClient.Error("Unknown type: " + t)
 		http.Error(w, "Unknown type: "+t, http.StatusBadRequest)
@@ -298,6 +300,13 @@ func fillRegister(reg *models.Registration) (err error) {
 		if err != nil {
 			err = fmt.Errorf("Prosume export onboarding process failed: %s", err.Error())
 		}
+	case models.FormatMyCircutorJSON:
+		reg.Addressable.Protocol = "tls"
+		reg.Addressable.Publisher = "Circutor"
+		reg.Addressable.Topic = "v1/devices/me/telemetry"
+		reg.Addressable.Path = "/ws/mqtt"
+		reg.Addressable.Port = 443
+		reg.Destination = models.DestMyCircutor
 	default:
 		err = errors.New("Not valid protocol")
 	}

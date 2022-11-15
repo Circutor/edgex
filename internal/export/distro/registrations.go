@@ -95,6 +95,8 @@ func (reg *registrationInfo) update(newReg contract.Registration) bool {
 		reg.format = dexmaJSONFormatter{}
 	case contract.FormatProsume:
 		reg.format = prosumeJSONFormatter{}
+	case contract.FormatMyCircutorJSON:
+		reg.format = myCircutorJSONFormatter{}
 	case contract.FormatNOOP:
 		reg.format = noopFormatter{}
 	default:
@@ -137,6 +139,8 @@ func (reg *registrationInfo) update(newReg contract.Registration) bool {
 		reg.sender = newXMPPSender(newReg.Addressable)
 	case contract.DestProsume:
 		reg.sender = newProsumeSender(newReg.Addressable)
+	case contract.DestMyCircutor:
+		reg.sender = newMyCircutorSender(newReg.Addressable)
 	default:
 		LoggingClient.Warn(fmt.Sprintf("Destination not supported: %s", newReg.Destination))
 		return false

@@ -30,7 +30,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-//Test methods
+// Test methods
 func TestEventCount(t *testing.T) {
 	reset()
 	myMock := &dbMock.DBClient{}

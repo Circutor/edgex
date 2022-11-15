@@ -30,6 +30,7 @@ const (
 	DestAWSMQTT     = "AWS_TOPIC"
 	DestDEXMAMQTT   = "DEXMA_TOPIC"
 	DestProsume     = "PROSUME_TOPIC"
+	DestMyCircutor  = "MYCIRCUTOR_TOPIC"
 )
 
 // Compression algorithm types
@@ -51,6 +52,7 @@ const (
 	FormatCSV             = "CSV"
 	FormatThingsBoardJSON = "THINGSBOARD_JSON"
 	FormatProsume         = "PROSUME_JSON"
+	FormatMyCircutorJSON  = "MYCIRCUTOR_JSON"
 	FormatNOOP            = "NOOP"
 )
 
@@ -153,6 +155,7 @@ func (reg Registration) Validate() (bool, error) {
 		reg.Format != FormatCSV &&
 		reg.Format != FormatThingsBoardJSON &&
 		reg.Format != FormatProsume &&
+		reg.Format != FormatMyCircutorJSON &&
 		reg.Format != FormatNOOP {
 		return false, fmt.Errorf("Format invalid: %s", reg.Format)
 	}
@@ -164,6 +167,7 @@ func (reg Registration) Validate() (bool, error) {
 		reg.Destination != DestAWSMQTT &&
 		reg.Destination != DestDEXMAMQTT &&
 		reg.Destination != DestProsume &&
+		reg.Destination != DestMyCircutor &&
 		reg.Destination != DestRest {
 		return false, fmt.Errorf("Destination invalid: %s", reg.Destination)
 	}

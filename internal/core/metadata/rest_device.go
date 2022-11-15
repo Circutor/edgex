@@ -422,12 +422,12 @@ func restGetDeviceById(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(res)
 }
 
-//Shouldn't need "rest" in any of these methods. Adding it here for consistency right now.
+// Shouldn't need "rest" in any of these methods. Adding it here for consistency right now.
 func restCheckForDevice(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	token := vars[ID] //referring to this as "token" for now since the source variable is double purposed
 
-	//Check for name first since we're using that meaning by default.
+	// Check for name first since we're using that meaning by default.
 	dev, err := dbClient.GetDeviceByName(token)
 	if err != nil {
 		if err != db.ErrNotFound {
@@ -439,7 +439,7 @@ func restCheckForDevice(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	//If lookup by name failed, see if we were passed the ID
+	// If lookup by name failed, see if we were passed the ID
 	if len(dev.Name) == 0 {
 		if dev, err = dbClient.GetDeviceById(token); err != nil {
 			LoggingClient.Error(err.Error())

@@ -3,7 +3,6 @@ module github.com/Circutor/edgex
 require (
 	bitbucket.org/bertimus9/systemstat v0.0.0-20180207000608-0eeff89b0690
 	github.com/BurntSushi/toml v0.3.1
-	github.com/Microsoft/go-winio v0.4.14 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/eclipse/paho.mqtt.golang v1.2.0
 	github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8
@@ -12,7 +11,6 @@ require (
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/context v1.1.1
 	github.com/gorilla/mux v1.7.4
-	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/json-iterator/go v1.1.9
 	github.com/mattn/go-xmpp v0.0.0-20200309091041-899ef71e80d2
 	github.com/pkg/errors v0.9.1
