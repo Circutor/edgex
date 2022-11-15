@@ -87,9 +87,9 @@ func (d *DeviceRestClient) requestDeviceSlice(url string, ctx context.Context) (
 	return dSlice, err
 }
 
-//Use the models.Event.Device property for the supplied token parameter.
-//The above property is currently double-purposed and needs to be refactored.
-//This call replaces the previous two calls necessary to lookup a device by id followed by name.
+// Use the models.Event.Device property for the supplied token parameter.
+// The above property is currently double-purposed and needs to be refactored.
+// This call replaces the previous two calls necessary to lookup a device by id followed by name.
 func (d *DeviceRestClient) CheckForDevice(token string, ctx context.Context) (models.Device, error) {
 	return d.requestDevice(d.url+"/check/"+token, ctx)
 }

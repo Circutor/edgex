@@ -311,10 +311,10 @@ func getUnpushedEventsHandler(w http.ResponseWriter, r *http.Request) {
 	encode(eventList, w)
 }
 
-//GET
-//Return the event specified by the event ID
-///api/v1/event/{id}
-//id - ID of the event to return
+// GET
+// Return the event specified by the event ID
+// /api/v1/event/{id}
+// id - ID of the event to return
 func getEventByIdHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Body != nil {
 		defer r.Body.Close()

@@ -19,7 +19,7 @@ import (
 	"encoding/json"
 )
 
-//TODO - this is ugly and I want to someday have two different structs of EMailChannel and RESTChannel
+// TODO - this is ugly and I want to someday have two different structs of EMailChannel and RESTChannel
 type Channel struct {
 	Type          ChannelType `json:"type,omitempty"`
 	MailAddresses []string    `json:"mailAddresses,omitempty"`

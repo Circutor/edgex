@@ -181,6 +181,47 @@ func (prosumeJson prosumeJSONFormatter) Format(event *contract.Event) []byte {
 	return b
 }
 
+type myCircutorJSONFormatter struct {
+}
+
+// MyCircutor JSON formatter
+// https://www.mycircutor.com
+func (circutorJson myCircutorJSONFormatter) Format(event *contract.Event) []byte {
+	var err error
+	type myCircutorData struct {
+		ID         string           `json:"id"`
+		Ts         string           `json:"ts"`
+		Telemetry  map[string]int64 `json:"telemetry"`
+		DeviceType string           `json:"deviceType"`
+	}
+
+	data := myCircutorData{}
+	data.ID = event.Device
+	if event.Origin == 0 {
+		data.Ts = time.Now().Format(time.RFC3339)
+	} else {
+		data.Ts = time.Unix(0, event.Origin*int64(time.Millisecond)).Format(time.RFC3339)
+	}
+
+	data.Telemetry = make(map[string]int64)
+	for _, reading := range event.Readings {
+		data.Telemetry[reading.Name], _ = strconv.ParseInt(reading.Value, 10, 64)
+	}
+
+	if len(event.Device) > 0 {
+		data.DeviceType = "DEVICE"
+	} else {
+		data.DeviceType = "GATEWAY"
+	}
+
+	b, err := json.Marshal(data)
+	if err != nil {
+		LoggingClient.Error(fmt.Sprintf("Error MyCircutor JSON. Error: %s", err.Error()))
+		return nil
+	}
+	return b
+}
+
 // Azure IoT Hub message
 // https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-devguide-messages-construct
 type connAuthMethod struct {

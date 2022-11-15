@@ -23,10 +23,10 @@ const (
 
 var server = flag.String("server", "talk.google.com:443", "server")
 
-//your gmail account, eg: xxx@gmail.com
+// your gmail account, eg: xxx@gmail.com
 var username = flag.String("username", "", "username")
 
-//your Gmail password
+// your Gmail password
 var password = flag.String("password", "", "password")
 var status = flag.String("status", "xa", "status")
 var statusMessage = flag.String("status-msg", "I for one welcome our new codebot overlords.", "status message")
@@ -34,7 +34,7 @@ var notls = flag.Bool("notls", false, "No TLS")
 var debug = flag.Bool("debug", false, "debug output")
 var session = flag.Bool("session", false, "use server session")
 
-//if you want to test, replace this value with `true`
+// if you want to test, replace this value with `true`
 var testFlag = false
 
 func getServerName(host string) string {

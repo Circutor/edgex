@@ -16,7 +16,7 @@ import (
 	contract "github.com/Circutor/edgex/pkg/models"
 )
 
-//TODO: Since this is a service-to-service client, it should be in /pkg/clients/export
+// TODO: Since this is a service-to-service client, it should be in /pkg/clients/export
 func getRegistrations() ([]contract.Registration, error) {
 	url := Configuration.Clients["Export"].Url() + clients.ApiRegistrationRoute
 	return getRegistrationsURL(url)
