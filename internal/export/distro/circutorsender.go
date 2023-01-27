@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/Circutor/edgex/internal/pkg/correlation/models"
 	contract "github.com/Circutor/edgex/pkg/models"
@@ -59,15 +60,14 @@ func newMyCircutorSender(addr contract.Addressable) sender {
 func (sender *myCircutorSender) Send(data []byte, event *models.Event) bool {
 	if !sender.client.IsConnected() {
 		LoggingClient.Info("Connecting to mqtt server")
-		if token := sender.client.Connect(); token.Wait() && token.Error() != nil {
+		if token := sender.client.Connect(); token.WaitTimeout(20*time.Second) && token.Error() != nil {
 			LoggingClient.Error(fmt.Sprintf("Could not connect to mqtt server, drop event. Error: %s", token.Error().Error()))
 			return false
 		}
 	}
 
 	token := sender.client.Publish(sender.topic, 0, false, data)
-	// FIXME: could be removed? set of tokens?
-	token.Wait()
+	token.WaitTimeout(20 * time.Second)
 	if token.Error() != nil {
 		LoggingClient.Error(token.Error().Error())
 		return false
