@@ -97,6 +97,8 @@ func (reg *registrationInfo) update(newReg contract.Registration) bool {
 		reg.format = prosumeJSONFormatter{}
 	case contract.FormatMyCircutorJSON:
 		reg.format = myCircutorJSONFormatter{}
+	case contract.FormatSentiloJSON:
+		reg.format = sentiloJSONFormatter{location: reg.registration.Addressable.Topic}
 	case contract.FormatNOOP:
 		reg.format = noopFormatter{}
 	default:
@@ -141,6 +143,8 @@ func (reg *registrationInfo) update(newReg contract.Registration) bool {
 		reg.sender = newProsumeSender(newReg.Addressable)
 	case contract.DestMyCircutor:
 		reg.sender = newMyCircutorSender(newReg.Addressable)
+	case contract.DestSentilo:
+		reg.sender = newSentiloSender(newReg.Addressable)
 	default:
 		LoggingClient.Warn(fmt.Sprintf("Destination not supported: %s", newReg.Destination))
 		return false

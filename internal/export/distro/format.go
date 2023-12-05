@@ -222,6 +222,61 @@ func (circutorJson myCircutorJSONFormatter) Format(event *contract.Event) []byte
 	return b
 }
 
+type sentiloJSONFormatter struct {
+	location string
+}
+
+// Sentilo JSON formatter
+// https://sentilo.readthedocs.io/en/latest/api_docs/general_model.html
+func (sentilo sentiloJSONFormatter) Format(event *contract.Event) []byte {
+	var err error
+
+	type observation struct {
+		Value     string `json:"value"`
+		Timestamp string `json:"timestamp"`
+	}
+
+	type sensor struct {
+		Sensor       string        `json:"sensor"`
+		Location     string        `json:"location"`
+		Observations []observation `json:"observations"`
+	}
+
+	type sensors struct {
+		Sensors []sensor `json:"sensors"`
+	}
+
+	data := sensors{}
+
+	data.Sensors = make([]sensor, len(event.Readings))
+	for i, reading := range event.Readings {
+		data.Sensors[i].Sensor = reading.Name
+		data.Sensors[i].Location = sentilo.location
+		data.Sensors[i].Observations = make([]observation, 1)
+		data.Sensors[i].Observations[0].Value = reading.Value
+		if event.Created != 0 {
+			t := time.Unix(0, event.Created*int64(time.Millisecond))
+			z, _ := t.Zone()
+			data.Sensors[i].Observations[0].Timestamp = fmt.Sprintf("%02d/%02d/%dT%02d:%02d:%02d%s\n", t.Day(), t.Month(), t.Year(), t.Hour(), t.Minute(), t.Second(), z)
+		} else if event.Origin != 0 {
+			t := time.Unix(0, event.Origin*int64(time.Millisecond))
+			z, _ := t.Zone()
+			data.Sensors[i].Observations[0].Timestamp = fmt.Sprintf("%02d/%02d/%dT%02d:%02d:%02d%s\n", t.Day(), t.Month(), t.Year(), t.Hour(), t.Minute(), t.Second(), z)
+		} else {
+			t := time.Now()
+			z, _ := t.Zone()
+			data.Sensors[i].Observations[0].Timestamp = fmt.Sprintf("%02d/%02d/%dT%02d:%02d:%02d%s\n", t.Day(), t.Month(), t.Year(), t.Hour(), t.Minute(), t.Second(), z)
+		}
+	}
+
+	b, err := json.Marshal(data)
+	if err != nil {
+		LoggingClient.Error(fmt.Sprintf("Error Sentilo JSON. Error: %s", err.Error()))
+		return nil
+	}
+	return b
+}
+
 // Azure IoT Hub message
 // https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-devguide-messages-construct
 type connAuthMethod struct {
