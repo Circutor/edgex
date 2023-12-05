@@ -307,6 +307,11 @@ func fillRegister(reg *models.Registration) (err error) {
 		reg.Addressable.Path = "/ws/mqtt"
 		reg.Addressable.Port = 443
 		reg.Destination = models.DestMyCircutor
+	case models.FormatSentiloJSON:
+		reg.Addressable.Protocol = "HTTP"
+		reg.Addressable.HTTPMethod = "PUT"
+		reg.Addressable.Path = "/data/" + reg.Addressable.User
+		reg.Destination = models.DestSentilo
 	default:
 		err = errors.New("Not valid protocol")
 	}
