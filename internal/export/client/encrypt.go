@@ -21,7 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
+	"os"
 )
 
 // Encrypt string to base64 crypto using AES
@@ -85,21 +85,15 @@ func Decrypt(cryptoText string) (text string, err error) {
 }
 
 func getShadow() (string, error) {
-	hwCfg, err := ioutil.ReadFile("/sys/fsl_otp/HW_OCOTP_CFG0")
+	serial, err := os.ReadFile("/etc/serialnum")
+
 	if err != nil {
-		return "", fmt.Errorf("Failed to read first HW UniqueID: %v", err)
+		return "6666666666666666", err
 	}
-	hwCfg1 := string(hwCfg[2:6])
-	hwCfg2 := string(hwCfg[6:10])
 
-	hwCfg, err = ioutil.ReadFile("/sys/fsl_otp/HW_OCOTP_CFG1")
-	if err != nil {
-		return "", fmt.Errorf("Failed to read second HW UniqueID: %v", err)
+	if len(serial) > 16 {
+		serial = serial[:16]
 	}
-	hwCfg3 := string(hwCfg[2:6])
-	hwCfg4 := string(hwCfg[6:10])
 
-	newShadow := hwCfg1 + hwCfg3 + hwCfg2 + hwCfg4
-
-	return newShadow, nil
+	return fmt.Sprintf("%16s", string(serial)), nil
 }
