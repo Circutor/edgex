@@ -8,7 +8,6 @@
 .PHONY: build arm clean test run
 
 GO=go
-IPKGEN=create_ipk.sh
 VERSION=$(shell cat ./VERSION)
 GOFLAGS=-ldflags "-X github.com/Circutor/edgex.Version=$(VERSION)"
 
@@ -60,8 +59,4 @@ test:
 
 run:
 	cd bin && ./edgex-launch.sh
-
-
-package:
-	bash ./$(IPKGEN) edgex $(VERSION)
 
