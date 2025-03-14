@@ -181,44 +181,51 @@ func (prosumeJson prosumeJSONFormatter) Format(event *contract.Event) []byte {
 	return b
 }
 
-type myCircutorJSONFormatter struct {
+type scoutJSONFormatter struct {
 }
 
-// MyCircutor JSON formatter
-// https://www.mycircutor.com
-func (circutorJson myCircutorJSONFormatter) Format(event *contract.Event) []byte {
-	var err error
-	type myCircutorData struct {
-		ID         string           `json:"id"`
-		Ts         string           `json:"ts"`
-		Telemetry  map[string]int64 `json:"telemetry"`
-		DeviceType string           `json:"deviceType"`
+// Scout JSON Formatter
+func (scoutJson scoutJSONFormatter) Format(event *contract.Event) []byte {
+	type Metrics map[string]float32
+
+	type Telemetry struct {
+		Time    string  `json:"ts"`
+		Metrics Metrics `json:"data"`
 	}
 
-	data := myCircutorData{}
-	data.ID = event.Device
-	if event.Origin == 0 {
-		data.Ts = time.Now().Format(time.RFC3339)
-	} else {
-		data.Ts = time.Unix(0, event.Origin*int64(time.Millisecond)).Format(time.RFC3339)
+	sendData := struct {
+		DeviceID  string      `json:"gateway_device_id"`
+		Telemetry []Telemetry `json:"metrics"`
+	}{
+		DeviceID:  event.Device,
+		Telemetry: make([]Telemetry, 0, len(event.Readings)),
 	}
 
-	data.Telemetry = make(map[string]int64)
-	for _, reading := range event.Readings {
-		data.Telemetry[reading.Name], _ = strconv.ParseInt(reading.Value, 10, 64)
+	ts := time.Now().Format(timeFormat)
+	if event.Created != 0 {
+		ts = time.Unix(0, event.Created*int64(time.Millisecond)).Format(timeFormat)
+	} else if event.Origin != 0 {
+		ts = time.Unix(0, event.Origin*int64(time.Millisecond)).Format(timeFormat)
 	}
 
-	if len(event.Device) > 0 {
-		data.DeviceType = "DEVICE"
-	} else {
-		data.DeviceType = "GATEWAY"
+	sendData.Telemetry = append(sendData.Telemetry, Telemetry{
+		Time:    ts,
+		Metrics: Metrics{},
+	})
+
+	for _, r := range event.Readings {
+		val, err := strconv.ParseFloat(r.Value, 32)
+		if err == nil {
+			sendData.Telemetry[0].Metrics[r.Name] = float32(val)
+		}
 	}
 
-	b, err := json.Marshal(data)
+	b, err := json.Marshal(sendData)
 	if err != nil {
-		LoggingClient.Error(fmt.Sprintf("Error MyCircutor JSON. Error: %s", err.Error()))
+		LoggingClient.Error(fmt.Sprintf("Error Scout JSON. Error: %s", err.Error()))
 		return nil
 	}
+
 	return b
 }
 

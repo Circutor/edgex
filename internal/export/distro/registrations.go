@@ -95,8 +95,8 @@ func (reg *registrationInfo) update(newReg contract.Registration) bool {
 		reg.format = dexmaJSONFormatter{}
 	case contract.FormatProsume:
 		reg.format = prosumeJSONFormatter{}
-	case contract.FormatMyCircutorJSON:
-		reg.format = myCircutorJSONFormatter{}
+	case contract.FormatScoutJSON:
+		reg.format = scoutJSONFormatter{}
 	case contract.FormatSentiloJSON:
 		reg.format = sentiloJSONFormatter{location: reg.registration.Addressable.Topic}
 	case contract.FormatNOOP:
@@ -141,8 +141,8 @@ func (reg *registrationInfo) update(newReg contract.Registration) bool {
 		reg.sender = newXMPPSender(newReg.Addressable)
 	case contract.DestProsume:
 		reg.sender = newProsumeSender(newReg.Addressable)
-	case contract.DestMyCircutor:
-		reg.sender = newMyCircutorSender(newReg.Addressable)
+	case contract.DestScout:
+		reg.sender = newScoutSender(newReg.Addressable)
 	case contract.DestSentilo:
 		reg.sender = newSentiloSender(newReg.Addressable)
 	default:
@@ -298,7 +298,7 @@ func updateRunningRegistrations(running map[string]*registrationInfo,
 	case contract.NotifyUpdateUpdate:
 		reg := getRegistrationByName(update.Name)
 		if reg == nil {
-			return fmt.Errorf("Could not find registration")
+			return fmt.Errorf("could not find registration")
 		}
 		for k, v := range running {
 			if k == update.Name {
@@ -306,11 +306,11 @@ func updateRunningRegistrations(running map[string]*registrationInfo,
 				return nil
 			}
 		}
-		return fmt.Errorf("Could not find running registration")
+		return fmt.Errorf("could not find running registration")
 	case contract.NotifyUpdateAdd:
 		reg := getRegistrationByName(update.Name)
 		if reg == nil {
-			return fmt.Errorf("Could not find registration")
+			return fmt.Errorf("could not find registration")
 		}
 		regInfo := newRegistrationInfo()
 		if regInfo.update(*reg) {
@@ -319,7 +319,7 @@ func updateRunningRegistrations(running map[string]*registrationInfo,
 		}
 		return nil
 	default:
-		return fmt.Errorf("Invalid update operation")
+		return fmt.Errorf("invalid update operation")
 	}
 }
 

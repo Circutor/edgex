@@ -55,8 +55,6 @@ func Retry(useProfile string, timeout int, wait *sync.WaitGroup, ch chan error) 
 	}
 	close(ch)
 	wait.Done()
-
-	return
 }
 
 func Init() bool {
