@@ -67,8 +67,6 @@ func metricsHandler(w http.ResponseWriter, _ *http.Request) {
 	s := telemetry.NewSystemUsage()
 
 	encode(s, w)
-
-	return
 }
 
 // Helper function for encoding things for returning from REST calls

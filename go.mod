@@ -7,11 +7,12 @@ require (
 	github.com/eclipse/paho.mqtt.golang v1.4.2
 	github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8
 	github.com/go-kit/kit v0.10.0
+	github.com/go-stomp/stomp v2.1.4+incompatible
 	github.com/go-zeromq/zmq4 v0.13.0
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/context v1.1.1
 	github.com/gorilla/mux v1.7.4
-	github.com/gorilla/websocket v1.5.0 // indirect
+	github.com/gorilla/websocket v1.5.0
 	github.com/json-iterator/go v1.1.9
 	github.com/mattn/go-xmpp v0.0.0-20200309091041-899ef71e80d2
 	github.com/pkg/errors v0.9.1
@@ -21,6 +22,7 @@ require (
 	go.etcd.io/bbolt v1.3.4
 	golang.org/x/net v0.5.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
+	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/eapache/queue.v1 v1.1.0
 	gopkg.in/yaml.v2 v2.2.8
 )

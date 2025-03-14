@@ -59,7 +59,7 @@ func TestHttpSender(t *testing.T) {
 				readMsg, _ := ioutil.ReadAll(r.Body)
 				r.Body.Close()
 
-				if bytes.Compare(readMsg, msg) != 0 {
+				if !bytes.Equal(readMsg, msg) {
 					t.Errorf("Invalid msg received %v, expected %v", readMsg, msg)
 
 				}
