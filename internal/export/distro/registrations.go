@@ -121,7 +121,9 @@ func (reg *registrationInfo) update(newReg contract.Registration) bool {
 		return false
 	}
 
-	reg.sender = nil
+	if newReg.Destination != contract.DestScout {
+		reg.sender = nil
+	}
 	switch newReg.Destination {
 	case contract.DestMQTT, contract.DestAzureMQTT:
 		reg.sender = newMqttSender(newReg.Addressable)
@@ -142,7 +144,10 @@ func (reg *registrationInfo) update(newReg contract.Registration) bool {
 	case contract.DestProsume:
 		reg.sender = newProsumeSender(newReg.Addressable)
 	case contract.DestScout:
-		reg.sender = newScoutSender(newReg.Addressable)
+		if !newReg.Enable {
+			destroyScoutSender(reg.sender)
+		}
+		reg.sender = newScoutSender(newReg.Addressable, newReg.Enable)
 	case contract.DestSentilo:
 		reg.sender = newSentiloSender(newReg.Addressable)
 	default:
