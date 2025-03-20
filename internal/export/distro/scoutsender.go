@@ -46,7 +46,7 @@ const (
 )
 
 // newScoutSender - create new Scout Stomp sender
-func newScoutSender(addr contract.Addressable) sender {
+func newScoutSender(addr contract.Addressable, enable bool) sender {
 	sender := scoutSender{
 		address: addr.Address,
 		host:    addr.Publisher,
@@ -62,11 +62,18 @@ func newScoutSender(addr contract.Addressable) sender {
 		},
 	}
 
-	if !sender.Connect() {
-		return nil
+	if enable {
+		sender.Connect()
 	}
 
 	return sender
+}
+
+// destroyScoutSender - delete old Scout Stomp sender
+func destroyScoutSender(oldSender sender) {
+	if old, ok := oldSender.(scoutSender); ok {
+		old.Disconnect()
+	}
 }
 
 func (sender *scoutSender) Connect() bool {
