@@ -130,8 +130,13 @@ func (sender *scoutSender) IsConnected() bool {
 }
 
 func (sender *scoutSender) Disconnect() {
-	_ = sender.stomp.Disconnect()
-	sender.ws.Close()
+	if sender.stomp != nil {
+		_ = sender.stomp.Disconnect()
+	}
+
+	if sender.ws != nil {
+		sender.ws.Close()
+	}
 
 	sender.stomp = nil
 	sender.ws = nil
