@@ -47,7 +47,7 @@ const (
 
 // newScoutSender - create new Scout Stomp sender
 func newScoutSender(addr contract.Addressable, enable bool) sender {
-	sender := scoutSender{
+	sender := &scoutSender{
 		address: addr.Address,
 		host:    addr.Publisher,
 		claimID: addr.User,
@@ -71,12 +71,13 @@ func newScoutSender(addr contract.Addressable, enable bool) sender {
 
 // destroyScoutSender - delete old Scout Stomp sender
 func destroyScoutSender(oldSender sender) {
-	if old, ok := oldSender.(scoutSender); ok {
+	if old, ok := oldSender.(*scoutSender); ok {
 		old.Disconnect()
 	}
 }
 
 func (sender *scoutSender) Connect() bool {
+	LoggingClient.Info("connecting to Scout")
 	if sender.IsConnected() {
 		LoggingClient.Error("already connected")
 		return false
@@ -93,7 +94,7 @@ func (sender *scoutSender) Connect() bool {
 	if err != nil {
 		ws.Close()
 
-		LoggingClient.Error(fmt.Sprintf("failed to connect to stomp: %v", err.Error()))
+		LoggingClient.Error(fmt.Sprintf("failed to connect to stomp: %v", err))
 		return false
 	}
 
@@ -101,24 +102,25 @@ func (sender *scoutSender) Connect() bool {
 	sender.ws = ws
 
 	if err = sender.sendConnectedEvent(); err != nil {
-		LoggingClient.Warn("Failed to send connected event", "error", err)
+		LoggingClient.Warn(fmt.Sprintf("failed to send connected event: %v", err))
 	}
 
 	if err = sender.sendDeviceAttributes(); err != nil {
-		LoggingClient.Warn("Failed to send device attributes", "error", err)
+		LoggingClient.Warn(fmt.Sprintf("failed to send devices attributes: %v", err))
 		sender.Disconnect()
 
 		return false
 	}
 
+	LoggingClient.Info("connected to Scout")
 	return true
 }
 
-func (sender scoutSender) Send(data []byte, event *models.Event) bool {
+func (sender *scoutSender) Send(data []byte, event *models.Event) bool {
 	destination := fmt.Sprintf(metricTopic, sender.claimID)
 
 	if err := sender.sendStomp(destination, metricType, data); err != nil {
-		LoggingClient.Error("failed to send telemetry", "error", err)
+		LoggingClient.Error(fmt.Sprintf("failed to send telemetry: %v", err))
 		return false
 	}
 
@@ -140,6 +142,8 @@ func (sender *scoutSender) Disconnect() {
 
 	sender.stomp = nil
 	sender.ws = nil
+
+	LoggingClient.Info("disconnected from Scout")
 }
 
 func (sender *scoutSender) sendDeviceAttributes() error {
@@ -209,6 +213,7 @@ func (sender *scoutSender) sendConnectedEvent() error {
 
 func (sender *scoutSender) sendStomp(destination string, messageType string, data []byte) error {
 	if !sender.IsConnected() {
+		LoggingClient.Info("not connected to Scout, trying to connect")
 		if !sender.Connect() {
 			return fmt.Errorf("failed to connect")
 		}
@@ -217,7 +222,9 @@ func (sender *scoutSender) sendStomp(destination string, messageType string, dat
 	headers := sender.defaultHeaders(messageType)
 
 	if err := sender.stomp.Send(destination, "application/json", data, headers...); err != nil {
-		return fmt.Errorf("failed to send telemetry: %w", err)
+		sender.Disconnect()
+
+		return fmt.Errorf("failed to send stomp data: %w", err)
 	}
 
 	return nil
