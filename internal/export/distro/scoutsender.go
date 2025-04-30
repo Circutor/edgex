@@ -1,8 +1,13 @@
+// Copyright (c) 2025 Circutor S.A. All rights reserved.
+
 package distro
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"sync"
 	"time"
 
 	"github.com/Circutor/edgex/internal/pkg/correlation/models"
@@ -30,11 +35,14 @@ type scoutSender struct {
 	deviceInfo scoutDeviceInfo
 	ws         *scoutWebsocket
 	stomp      *stomp.Conn
+	httpClient *http.Client
+	mutex      sync.Mutex
 }
 
 const (
-	timeFormat = "2006-01-02T15:04:05.000Z07:00"
-	mycVersion = "1.0"
+	contentTypeText = "text/plain"
+	timeFormat      = "2006-01-02T15:04:05.000Z07:00"
+	mycVersion      = "1.0"
 
 	attributeTopic = "/exchange/attributes/gateways.%s"
 	metricTopic    = "/exchange/metrics/gateways.%s"
@@ -47,6 +55,10 @@ const (
 
 // newScoutSender - create new Scout Stomp sender
 func newScoutSender(addr contract.Addressable, enable bool) sender {
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+
 	sender := &scoutSender{
 		address: addr.Address,
 		host:    addr.Publisher,
@@ -60,6 +72,11 @@ func newScoutSender(addr contract.Addressable, enable bool) sender {
 			SerialNumber:    system.GetSerialNumber(),
 			ConnectionMode:  "",
 		},
+		httpClient: &http.Client{
+			Timeout:   5 * time.Second,
+			Transport: tr,
+		},
+		mutex: sync.Mutex{},
 	}
 
 	if enable {
@@ -77,7 +94,11 @@ func destroyScoutSender(oldSender sender) {
 }
 
 func (sender *scoutSender) Connect() bool {
+	sender.mutex.Lock()
+	defer sender.mutex.Unlock()
+
 	LoggingClient.Info("connecting to Scout")
+
 	if sender.IsConnected() {
 		LoggingClient.Error("already connected")
 		return false
@@ -112,11 +133,17 @@ func (sender *scoutSender) Connect() bool {
 		return false
 	}
 
+	go sender.startReverseProxy()
+
 	LoggingClient.Info("connected to Scout")
+
 	return true
 }
 
 func (sender *scoutSender) Send(data []byte, event *models.Event) bool {
+	sender.mutex.Lock()
+	defer sender.mutex.Unlock()
+
 	destination := fmt.Sprintf(metricTopic, sender.claimID)
 
 	if err := sender.sendStomp(destination, metricType, data); err != nil {
@@ -132,6 +159,9 @@ func (sender *scoutSender) IsConnected() bool {
 }
 
 func (sender *scoutSender) Disconnect() {
+	sender.mutex.Lock()
+	defer sender.mutex.Unlock()
+
 	if sender.stomp != nil {
 		_ = sender.stomp.Disconnect()
 	}
