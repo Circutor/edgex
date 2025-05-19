@@ -20,6 +20,8 @@ import (
 	"net/http"
 	"time"
 
+	_ "net/http/pprof"
+
 	"github.com/Circutor/edgex/internal/pkg/correlation/models"
 	clients "github.com/Circutor/edgex/pkg/clients/export/distro"
 	contract "github.com/Circutor/edgex/pkg/models"
@@ -336,6 +338,8 @@ func Loop(errChan chan error, eventCh chan *models.Event) {
 		errChan <- http.ListenAndServe(p, httpServer())
 	}()
 
+	startProfile()
+
 	registrations := make(map[string]*registrationInfo)
 
 	allRegs, err := getRegistrations()
@@ -397,4 +401,27 @@ func Loop(errChan chan error, eventCh chan *models.Event) {
 			}
 		}
 	}
+}
+
+// Start starts the pprof server
+// In order to get a pprof sample, you need to run one of the following commands (or similar):
+// - curl http://localhost:6060/debug/pprof/heap > heap.pprof
+// - go tool pprof http://localhost:6060/debug/pprof/goroutine
+// - ...
+// And then you can analyze the heap.pprof file with the pprof tool:
+// - go tool pprof heap.pprof
+// - go tool pprof --trim_path=/builds/circutor/firmware/concentrator/cnc-service --source_path=/home/jduran/go/src/cnc cnc-service goroutine.pprof
+// For more information, please visit https://pkg.go.dev/net/http/pprof
+func startProfile() {
+	go func() {
+		server := &http.Server{
+			Addr:              "localhost:6060",
+			ReadHeaderTimeout: 3 * time.Second,
+		}
+
+		err := server.ListenAndServe()
+		if err != nil {
+			LoggingClient.Error("Could not start pprof server", "error", err)
+		}
+	}()
 }

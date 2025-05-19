@@ -42,7 +42,7 @@ type scoutSender struct {
 const (
 	contentTypeText = "text/plain"
 	timeFormat      = "2006-01-02T15:04:05.000Z07:00"
-	mycVersion      = "1.0"
+	mycVersion      = "1.1"
 
 	attributeTopic = "/exchange/attributes/gateways.%s"
 	metricTopic    = "/exchange/metrics/gateways.%s"
@@ -122,16 +122,8 @@ func (sender *scoutSender) Connect() bool {
 	sender.stomp = stompConn
 	sender.ws = ws
 
-	if err = sender.sendConnectedEvent(); err != nil {
-		LoggingClient.Warn(fmt.Sprintf("failed to send connected event: %v", err))
-	}
-
-	if err = sender.sendDeviceAttributes(); err != nil {
-		LoggingClient.Warn(fmt.Sprintf("failed to send devices attributes: %v", err))
-		sender.Disconnect()
-
-		return false
-	}
+	go sender.sendConnectedEvent()
+	go sender.sendDeviceAttributes()
 
 	go sender.startReverseProxy()
 
@@ -141,8 +133,13 @@ func (sender *scoutSender) Connect() bool {
 }
 
 func (sender *scoutSender) Send(data []byte, event *models.Event) bool {
-	sender.mutex.Lock()
-	defer sender.mutex.Unlock()
+	if !sender.IsConnected() {
+		LoggingClient.Info("not connected to Scout, trying to connect")
+		if !sender.Connect() {
+			LoggingClient.Error("failed to connect before sending telemetry")
+			return false
+		}
+	}
 
 	destination := fmt.Sprintf(metricTopic, sender.claimID)
 
@@ -176,7 +173,7 @@ func (sender *scoutSender) Disconnect() {
 	LoggingClient.Info("disconnected from Scout")
 }
 
-func (sender *scoutSender) sendDeviceAttributes() error {
+func (sender *scoutSender) sendDeviceAttributes() {
 	type Attributes map[string]string
 
 	d := struct {
@@ -192,19 +189,18 @@ func (sender *scoutSender) sendDeviceAttributes() error {
 
 	data, err := json.Marshal(d)
 	if err != nil {
-		return fmt.Errorf("failed to marshal attributes: %w", err)
+		LoggingClient.Warn("failed to marshal attributes: %w", err)
+		return
 	}
 
 	destination := fmt.Sprintf(attributeTopic, sender.claimID)
 
 	if err := sender.sendStomp(destination, attributeType, data); err != nil {
-		return fmt.Errorf("failed to send attributes: %w", err)
+		LoggingClient.Warn("failed to send attributes: %w", err)
 	}
-
-	return nil
 }
 
-func (sender *scoutSender) sendConnectedEvent() error {
+func (sender *scoutSender) sendConnectedEvent() {
 	type connectedEvent struct {
 		ID        string `json:"id"`
 		Type      string `json:"type"`
@@ -229,25 +225,20 @@ func (sender *scoutSender) sendConnectedEvent() error {
 
 	data, err := json.Marshal(d)
 	if err != nil {
-		return fmt.Errorf("failed to marshal connected event: %w", err)
+		LoggingClient.Warn("failed to marshal connected event: %w", err)
+		return
 	}
 
 	destination := fmt.Sprintf(eventTopic, sender.claimID)
 
 	if err := sender.sendStomp(destination, eventType, data); err != nil {
-		return fmt.Errorf("failed to send connected event: %w", err)
+		LoggingClient.Warn("failed to send connected event: %w", err)
 	}
-
-	return nil
 }
 
 func (sender *scoutSender) sendStomp(destination string, messageType string, data []byte) error {
-	if !sender.IsConnected() {
-		LoggingClient.Info("not connected to Scout, trying to connect")
-		if !sender.Connect() {
-			return fmt.Errorf("failed to connect")
-		}
-	}
+	sender.mutex.Lock()
+	defer sender.mutex.Unlock()
 
 	headers := sender.defaultHeaders(messageType)
 

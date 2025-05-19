@@ -30,7 +30,7 @@ const (
 	profilesLimit   = 30
 	variablesLimit  = 1000
 	commandsLimit   = 100
-	varsPerCmdLimit = 75
+	varsPerCmdLimit = 500
 )
 
 var (
