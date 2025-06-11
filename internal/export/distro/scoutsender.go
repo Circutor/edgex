@@ -42,7 +42,9 @@ type scoutSender struct {
 const (
 	contentTypeText = "text/plain"
 	timeFormat      = "2006-01-02T15:04:05.000Z07:00"
-	mycVersion      = "1.1"
+
+	mycVersion       = "1.0"
+	mycMetricVersion = "1.1"
 
 	attributeTopic = "/exchange/attributes/gateways.%s"
 	metricTopic    = "/exchange/metrics/gateways.%s"
@@ -252,8 +254,13 @@ func (sender *scoutSender) sendStomp(destination string, messageType string, dat
 }
 
 func (sender *scoutSender) defaultHeaders(messageType string) []func(frame *frame.Frame) error {
+	messageVersion := mycVersion
+	if messageType == metricType {
+		messageVersion = mycMetricVersion
+	}
+
 	return []func(*frame.Frame) error{
-		stomp.SendOpt.Header("myc-version", mycVersion),
+		stomp.SendOpt.Header("myc-version", messageVersion),
 		stomp.SendOpt.Header("myc-message-type", messageType),
 		stomp.SendOpt.Header("myc-fw-version", sender.deviceInfo.FirmwareVersion),
 		stomp.SendOpt.Header("myc-hw-version", "1.0"),
