@@ -218,6 +218,27 @@ func (scoutJson scoutJSONFormatter) Format(event *contract.Event) []byte {
 		if err == nil {
 			sendData.Telemetry[0].Metrics[r.Name] = float32(val)
 		}
+
+		if r.AvgValue != "" {
+			avgVal, err := strconv.ParseFloat(r.AvgValue, 32)
+			if err == nil {
+				sendData.Telemetry[0].Metrics[r.Name+"_AVG_10m"] = float32(avgVal)
+			}
+		}
+
+		if r.MaxValue != "" {
+			maxVal, err := strconv.ParseFloat(r.MaxValue, 32)
+			if err == nil {
+				sendData.Telemetry[0].Metrics[r.Name+"_MAX_10m"] = float32(maxVal)
+			}
+		}
+
+		if r.MinValue != "" {
+			minVal, err := strconv.ParseFloat(r.MinValue, 32)
+			if err == nil {
+				sendData.Telemetry[0].Metrics[r.Name+"_MIN_10m"] = float32(minVal)
+			}
+		}
 	}
 
 	b, err := json.Marshal(sendData)

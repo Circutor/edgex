@@ -16,8 +16,8 @@ import (
 )
 
 const (
-	messageTTL   = "420000" // 7 minutes for message TTL
-	queueExpires = "480000" // 8 minutes for queue auto-expiry
+	messageTTL   = "360000" // 6 minutes for message TTL
+	queueExpires = "420000" // 7 minutes for queue auto-expiry
 )
 
 func (sender *scoutSender) startReverseProxy() {
