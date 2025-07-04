@@ -37,6 +37,7 @@ type scoutSender struct {
 	stomp      *stomp.Conn
 	httpClient *http.Client
 	mutex      sync.Mutex
+	updater    *ScoutUpdater
 }
 
 const (
@@ -92,6 +93,7 @@ func newScoutSender(addr contract.Addressable, enable bool) sender {
 func destroyScoutSender(oldSender sender) {
 	if old, ok := oldSender.(*scoutSender); ok {
 		old.Disconnect()
+		old.updater.Close()
 	}
 }
 
@@ -128,6 +130,13 @@ func (sender *scoutSender) Connect() bool {
 	go sender.sendDeviceAttributes()
 
 	go sender.startReverseProxy()
+
+	if sender.updater != nil {
+		sender.updater.Close()
+		sender.updater = nil
+	}
+
+	sender.updater = NewScoutUpdater(sender.address, sender.host, sender.claimID, sender.token)
 
 	LoggingClient.Info("connected to Scout")
 
