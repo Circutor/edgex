@@ -193,12 +193,22 @@ func (scoutJson scoutJSONFormatter) Format(event *contract.Event) []byte {
 		Metrics Metrics `json:"data"`
 	}
 
+	type Event struct {
+		ID     string `json:"id"`
+		Type   string `json:"type"`
+		Time   string `json:"ts"`
+		Status string `json:"status"`
+		Index  string `json:"index"`
+	}
+
 	sendData := struct {
 		DeviceID  string      `json:"gateway_device_id"`
-		Telemetry []Telemetry `json:"metrics"`
+		Telemetry []Telemetry `json:"metrics,omitempty"`
+		Events    []Event     `json:"events,omitempty"`
 	}{
 		DeviceID:  event.Device,
 		Telemetry: make([]Telemetry, 0, len(event.Readings)),
+		Events:    make([]Event, 0, len(event.Readings)),
 	}
 
 	ts := time.Now().Format(timeFormat)
@@ -214,6 +224,34 @@ func (scoutJson scoutJSONFormatter) Format(event *contract.Event) []byte {
 	})
 
 	for _, r := range event.Readings {
+		if strings.HasPrefix(r.Name, "EVENT_") {
+			val := "OFF"
+			if r.Value == "true" {
+				val = "ON"
+			}
+
+			idx := "NONE"
+
+			spl := strings.Split(r.Name, ".")
+
+			if len(spl) >= 2 {
+				_, err := strconv.Atoi(spl[len(spl)-1])
+				if err == nil {
+					idx = spl[len(spl)-1]
+				}
+			}
+
+			sendData.Events = append(sendData.Events, Event{
+				ID:     event.ID,
+				Type:   strings.TrimSuffix(strings.TrimPrefix(r.Name, "EVENT_"), "."+idx),
+				Time:   ts,
+				Status: val,
+				Index:  idx,
+			})
+
+			continue
+		}
+
 		val, err := strconv.ParseFloat(r.Value, 32)
 		if err == nil {
 			sendData.Telemetry[0].Metrics[r.Name] = float32(val)
@@ -239,6 +277,10 @@ func (scoutJson scoutJSONFormatter) Format(event *contract.Event) []byte {
 				sendData.Telemetry[0].Metrics[r.Name+"_MIN_10m"] = float32(minVal)
 			}
 		}
+	}
+
+	if len(sendData.Telemetry[0].Metrics) == 0 {
+		sendData.Telemetry = nil
 	}
 
 	b, err := json.Marshal(sendData)

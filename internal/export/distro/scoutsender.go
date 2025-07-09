@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -153,8 +154,14 @@ func (sender *scoutSender) Send(data []byte, event *models.Event) bool {
 	}
 
 	destination := fmt.Sprintf(metricTopic, sender.claimID)
+	dataType := metricType
 
-	if err := sender.sendStomp(destination, metricType, data); err != nil {
+	if strings.HasPrefix(event.Readings[0].Name, "EVENT_") {
+		destination = fmt.Sprintf(eventTopic, sender.claimID)
+		dataType = eventType
+	}
+
+	if err := sender.sendStomp(destination, dataType, data); err != nil {
 		LoggingClient.Error(fmt.Sprintf("failed to send telemetry: %v", err))
 		return false
 	}
