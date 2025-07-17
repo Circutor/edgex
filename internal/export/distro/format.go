@@ -243,7 +243,7 @@ func (scoutJson scoutJSONFormatter) Format(event *contract.Event) []byte {
 
 			sendData.Events = append(sendData.Events, Event{
 				ID:     event.ID,
-				Type:   strings.TrimSuffix(strings.TrimPrefix(r.Name, "EVENT_"), "."+idx),
+				Type:   strings.TrimPrefix(r.Name, "EVENT_"),
 				Time:   ts,
 				Status: val,
 				Index:  idx,
