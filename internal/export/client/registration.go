@@ -98,6 +98,7 @@ func getRegList(w http.ResponseWriter, r *http.Request) {
 		list = append(list, models.DestXMPP)
 		list = append(list, models.DestAWSMQTT)
 		list = append(list, models.DestProsume)
+		list = append(list, models.DestMyCircutor)
 		list = append(list, models.DestScout)
 	default:
 		LoggingClient.Error("Unknown type: " + t)
@@ -300,6 +301,13 @@ func fillRegister(reg *models.Registration) (err error) {
 		if err != nil {
 			err = fmt.Errorf("Prosume export onboarding process failed: %s", err.Error())
 		}
+	case models.FormatMyCircutorJSON:
+		reg.Addressable.Protocol = "tls"
+		reg.Addressable.Publisher = "Circutor"
+		reg.Addressable.Topic = "v1/devices/me/telemetry"
+		reg.Addressable.Path = "/ws/mqtt"
+		reg.Addressable.Port = 443
+		reg.Destination = models.DestMyCircutor
 	case models.FormatScoutJSON:
 		reg.Addressable.Publisher = "pro"
 		reg.Destination = models.DestScout
