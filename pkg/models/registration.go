@@ -30,6 +30,7 @@ const (
 	DestAWSMQTT     = "AWS_TOPIC"
 	DestDEXMAMQTT   = "DEXMA_TOPIC"
 	DestProsume     = "PROSUME_TOPIC"
+	DestMyCircutor  = "MYCIRCUTOR_TOPIC"
 	DestScout       = "SCOUT_TOPIC"
 	DestSentilo     = "SENTILO_TOPIC"
 )
@@ -53,6 +54,7 @@ const (
 	FormatCSV             = "CSV"
 	FormatThingsBoardJSON = "THINGSBOARD_JSON"
 	FormatProsume         = "PROSUME_JSON"
+	FormatMyCircutorJSON  = "MYCIRCUTOR_JSON"
 	FormatScoutJSON       = "SCOUT_JSON"
 	FormatSentiloJSON     = "SENTILO_JSON"
 	FormatNOOP            = "NOOP"
@@ -157,6 +159,7 @@ func (reg Registration) Validate() (bool, error) {
 		reg.Format != FormatCSV &&
 		reg.Format != FormatThingsBoardJSON &&
 		reg.Format != FormatProsume &&
+		reg.Format != FormatMyCircutorJSON &&
 		reg.Format != FormatScoutJSON &&
 		reg.Format != FormatSentiloJSON &&
 		reg.Format != FormatNOOP {
@@ -170,6 +173,7 @@ func (reg Registration) Validate() (bool, error) {
 		reg.Destination != DestAWSMQTT &&
 		reg.Destination != DestDEXMAMQTT &&
 		reg.Destination != DestProsume &&
+		reg.Destination != DestMyCircutor &&
 		reg.Destination != DestScout &&
 		reg.Destination != DestSentilo &&
 		reg.Destination != DestRest {

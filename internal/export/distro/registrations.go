@@ -97,6 +97,8 @@ func (reg *registrationInfo) update(newReg contract.Registration) bool {
 		reg.format = dexmaJSONFormatter{}
 	case contract.FormatProsume:
 		reg.format = prosumeJSONFormatter{}
+	case contract.FormatMyCircutorJSON:
+		reg.format = myCircutorJSONFormatter{}
 	case contract.FormatScoutJSON:
 		reg.format = scoutJSONFormatter{}
 	case contract.FormatSentiloJSON:
@@ -145,6 +147,8 @@ func (reg *registrationInfo) update(newReg contract.Registration) bool {
 		reg.sender = newXMPPSender(newReg.Addressable)
 	case contract.DestProsume:
 		reg.sender = newProsumeSender(newReg.Addressable)
+	case contract.DestMyCircutor:
+		reg.sender = newMyCircutorSender(newReg.Addressable)
 	case contract.DestScout:
 		if !newReg.Enable {
 			destroyScoutSender(reg.sender)
