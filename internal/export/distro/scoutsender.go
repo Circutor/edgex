@@ -72,7 +72,7 @@ func newScoutSender(addr contract.Addressable, enable bool) sender {
 			DeviceID:        "MAIN",
 			FirmwareVersion: system.GetVersion(),
 			HardwareVersion: "1.0",
-			GatewayType:     "EDS-Cloud",
+			GatewayType:     "LINE_EDS_CLOUD",
 			SerialNumber:    system.GetSerialNumber(),
 			ConnectionMode:  "",
 		},
@@ -201,7 +201,7 @@ func (sender *scoutSender) sendDeviceAttributes() {
 			"SERIAL_NUMBER": sender.deviceInfo.SerialNumber,
 			"FW_VERSION":    sender.deviceInfo.FirmwareVersion,
 			"HW_VERSION":    "1.0",
-			"HW_MODEL":      "EDS-Cloud",
+			"HW_MODEL":      "LINE_EDS_CLOUD",
 		},
 	}
 
