@@ -29,16 +29,17 @@ type scoutDeviceInfo struct {
 }
 
 type scoutSender struct {
-	address    string
-	host       string
-	claimID    string
-	token      string
-	deviceInfo scoutDeviceInfo
-	ws         *scoutWebsocket
-	stomp      *stomp.Conn
-	httpClient *http.Client
-	mutex      sync.Mutex
-	updater    *ScoutUpdater
+	address          string
+	host             string
+	claimID          string
+	token            string
+	deviceInfo       scoutDeviceInfo
+	ws               *scoutWebsocket
+	stomp            *stomp.Conn
+	httpClient       *http.Client
+	mutex            sync.Mutex
+	updater          *ScoutUpdater
+	registrationName string
 }
 
 const (
@@ -58,16 +59,17 @@ const (
 )
 
 // newScoutSender - create new Scout Stomp sender
-func newScoutSender(addr contract.Addressable, enable bool) sender {
+func newScoutSender(addr contract.Addressable, enable bool, regName string) sender {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 
 	sender := &scoutSender{
-		address: addr.Address,
-		host:    addr.Publisher,
-		claimID: addr.User,
-		token:   addr.Password,
+		address:          addr.Address,
+		host:             addr.Publisher,
+		claimID:          addr.User,
+		token:            addr.Password,
+		registrationName: regName,
 		deviceInfo: scoutDeviceInfo{
 			DeviceID:        "MAIN",
 			FirmwareVersion: system.GetVersion(),
@@ -84,7 +86,7 @@ func newScoutSender(addr contract.Addressable, enable bool) sender {
 	}
 
 	if enable {
-		sender.Connect()
+		sender.Connect() // TODO: do this at init
 	}
 
 	return sender
@@ -151,6 +153,11 @@ func (sender *scoutSender) Send(data []byte, event *models.Event) bool {
 			LoggingClient.Error("failed to connect before sending telemetry")
 			return false
 		}
+	}
+
+	if event == nil || len(event.Readings) == 0 {
+		LoggingClient.Warn("no event or readings to send")
+		return false
 	}
 
 	destination := fmt.Sprintf(metricTopic, sender.claimID)
