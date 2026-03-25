@@ -36,6 +36,30 @@ const (
 
 var registrationChanges chan contract.NotifyUpdate = make(chan contract.NotifyUpdate, 2)
 
+type connectionStatusQuery struct {
+	responseChan chan []connectionStatusResponse
+}
+
+type connectionStatusResponse struct {
+	Connected bool   `json:"connected"`
+	Name      string `json:"name"`
+}
+
+var connectionStatusQueries chan connectionStatusQuery = make(chan connectionStatusQuery, 10)
+
+// GetRegistrationConnectionStatus queries the connection status of all registrations
+func GetRegistrationConnectionStatus() []connectionStatusResponse {
+	responseChan := make(chan []connectionStatusResponse)
+	query := connectionStatusQuery{
+		responseChan: responseChan,
+	}
+
+	connectionStatusQueries <- query
+	response := <-responseChan
+
+	return response
+}
+
 // RegistrationInfo - registration info
 type registrationInfo struct {
 	registration contract.Registration
@@ -153,7 +177,7 @@ func (reg *registrationInfo) update(newReg contract.Registration) bool {
 		if !newReg.Enable {
 			destroyScoutSender(reg.sender)
 		}
-		reg.sender = newScoutSender(newReg.Addressable, newReg.Enable)
+		reg.sender = newScoutSender(newReg.Addressable, newReg.Enable, newReg.Name)
 	case contract.DestSentilo:
 		reg.sender = newSentiloSender(newReg.Addressable)
 	default:
@@ -247,6 +271,11 @@ func (reg registrationInfo) processEvent(event *models.Event) {
 
 func registrationLoop(reg *registrationInfo) {
 	LoggingClient.Info(fmt.Sprintf("registration loop started: %s", reg.registration.Name))
+
+	if reg.registration.Destination == contract.DestScout && reg.registration.Enable {
+		reg.sender.Send(nil, nil) // If registration is to Scout, we will open connection immediately.
+	}
+
 	timerPush := time.NewTimer(pushEventsTimer * time.Second)
 	for {
 		select {
@@ -403,6 +432,25 @@ func Loop(errChan chan error, eventCh chan *models.Event) {
 					reg.chEvent <- event
 				}
 			}
+
+		case query := <-connectionStatusQueries:
+			response := make([]connectionStatusResponse, 0)
+
+			for regName, info := range registrations {
+				if info.registration.Destination != contract.DestScout {
+					continue
+				}
+
+				newReg := connectionStatusResponse{Name: regName, Connected: false}
+				if scoutSender, ok := info.sender.(*scoutSender); ok {
+					newReg.Connected = scoutSender.IsConnected()
+				}
+
+				response = append(response, newReg)
+
+			}
+
+			query.responseChan <- response
 		}
 	}
 }

@@ -69,6 +69,18 @@ func metricsHandler(w http.ResponseWriter, _ *http.Request) {
 	encode(s, w)
 }
 
+func getRegistrationConnectedStatus(w http.ResponseWriter, _ *http.Request) {
+	connectedList := GetRegistrationConnectionStatus()
+
+	response := struct {
+		ConnectedList []connectionStatusResponse `json:"connectedList"`
+	}{
+		ConnectedList: connectedList,
+	}
+
+	encode(response, w)
+}
+
 // Helper function for encoding things for returning from REST calls
 func encode(i interface{}, w http.ResponseWriter) {
 	w.Header().Add("Content-Type", "application/json")
@@ -97,6 +109,9 @@ func httpServer() http.Handler {
 	r.HandleFunc(clients.ApiMetricsRoute, metricsHandler).Methods(http.MethodGet)
 
 	r.HandleFunc(clients.ApiNotifyRegistrationRoute, replyNotifyRegistrations).Methods(http.MethodPut)
+
+	// Registration connection status
+	r.HandleFunc(clients.ApiScoutConnectionRoute, getRegistrationConnectedStatus).Methods(http.MethodGet)
 
 	r.Use(correlation.ManageHeader)
 	r.Use(correlation.OnResponseComplete)

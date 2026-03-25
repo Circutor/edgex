@@ -35,6 +35,8 @@ type AutoEvent struct {
 	MinValue bool `json:"minValue,omitempty"`
 	// MaxValue selects if we are to store and send the maximum value read for the frequency integration period from the selected resource
 	MaxValue bool `json:"maxValue,omitempty"`
+	// Export indicates whether the auto-generated event should be exported automatically without an associated rule
+	Export bool `json:"export,omitempty"`
 }
 
 /*
