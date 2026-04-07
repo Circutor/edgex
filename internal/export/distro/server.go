@@ -81,6 +81,38 @@ func getRegistrationConnectedStatus(w http.ResponseWriter, _ *http.Request) {
 	encode(response, w)
 }
 
+func sendScoutEvent(w http.ResponseWriter, r *http.Request) {
+	// Parse query parameters
+	queryParams := r.URL.Query()
+	status := queryParams.Get("status")
+	eventType := queryParams.Get("eventType")
+
+	// Validate required parameters
+	if status == "" {
+		LoggingClient.Error("Missing 'status' parameter")
+		w.WriteHeader(http.StatusBadRequest)
+		io.WriteString(w, "Missing 'status' parameter")
+		return
+	}
+
+	if eventType == "" {
+		LoggingClient.Error("Missing 'eventType' parameter")
+		w.WriteHeader(http.StatusBadRequest)
+		io.WriteString(w, "Missing 'eventType' parameter")
+		return
+	}
+
+	if !SendScoutEventToRegistration(status, eventType) {
+		LoggingClient.Error("Failed to send event to Scout registration")
+		w.WriteHeader(http.StatusNotFound)
+		io.WriteString(w, "No valid Scout registration found to send event")
+		return
+	}
+
+	LoggingClient.Info("Event sent successfully to Scout registration")
+	w.WriteHeader(http.StatusOK)
+}
+
 // Helper function for encoding things for returning from REST calls
 func encode(i interface{}, w http.ResponseWriter) {
 	w.Header().Add("Content-Type", "application/json")
@@ -112,6 +144,9 @@ func httpServer() http.Handler {
 
 	// Registration connection status
 	r.HandleFunc(clients.ApiScoutConnectionRoute, getRegistrationConnectedStatus).Methods(http.MethodGet)
+
+	// Request to send a scout event
+	r.HandleFunc(clients.ApiScoutEventRoute, sendScoutEvent).Methods(http.MethodPost)
 
 	r.Use(correlation.ManageHeader)
 	r.Use(correlation.OnResponseComplete)
