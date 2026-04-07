@@ -47,6 +47,14 @@ type connectionStatusResponse struct {
 
 var connectionStatusQueries chan connectionStatusQuery = make(chan connectionStatusQuery, 10)
 
+type sendEventQuery struct {
+	status       string
+	eventType    string
+	responseChan chan bool
+}
+
+var sendEventQueries chan sendEventQuery = make(chan sendEventQuery, 10)
+
 // GetRegistrationConnectionStatus queries the connection status of all registrations
 func GetRegistrationConnectionStatus() []connectionStatusResponse {
 	responseChan := make(chan []connectionStatusResponse)
@@ -55,6 +63,22 @@ func GetRegistrationConnectionStatus() []connectionStatusResponse {
 	}
 
 	connectionStatusQueries <- query
+	response := <-responseChan
+
+	return response
+}
+
+// SendScoutEventToRegistration sends a generic event to the first found registration with destination Scout.
+// returns true if the event was sent to at least one registration, false otherwise
+func SendScoutEventToRegistration(status, eventType string) bool {
+	responseChan := make(chan bool)
+	query := sendEventQuery{
+		status:       status,
+		eventType:    eventType,
+		responseChan: responseChan,
+	}
+
+	sendEventQueries <- query
 	response := <-responseChan
 
 	return response
@@ -272,11 +296,9 @@ func (reg registrationInfo) processEvent(event *models.Event) {
 func registrationLoop(reg *registrationInfo) {
 	LoggingClient.Info(fmt.Sprintf("registration loop started: %s", reg.registration.Name))
 
-	if reg.registration.Destination == contract.DestScout && reg.registration.Enable {
-		reg.sender.Send(nil, nil) // If registration is to Scout, we will open connection immediately.
-	}
-
+	timerRegistration := time.NewTimer(time.Second * 10)
 	timerPush := time.NewTimer(pushEventsTimer * time.Second)
+
 	for {
 		select {
 		case event := <-reg.chEvent:
@@ -314,6 +336,14 @@ func registrationLoop(reg *registrationInfo) {
 				}
 			}
 			timerPush.Reset(pushEventsTimer * time.Second)
+		case <-timerRegistration.C:
+			if reg.registration.Destination == contract.DestScout && reg.registration.Enable {
+				if scoutSender, ok := reg.sender.(*scoutSender); ok {
+					if !scoutSender.IsConnected() {
+						scoutSender.Connect()
+					}
+				}
+			}
 		}
 	}
 }
@@ -447,10 +477,24 @@ func Loop(errChan chan error, eventCh chan *models.Event) {
 				}
 
 				response = append(response, newReg)
-
 			}
 
 			query.responseChan <- response
+
+		case eventQuery := <-sendEventQueries:
+			LoggingClient.Info("send event query started")
+
+			success := false
+			for _, info := range registrations {
+				if info.registration.Destination == contract.DestScout {
+					if scoutSender, ok := info.sender.(*scoutSender); ok {
+						scoutSender.sendScoutEvent(eventQuery.status, eventQuery.eventType)
+						success = true
+					}
+				}
+			}
+
+			eventQuery.responseChan <- success
 		}
 	}
 }

@@ -42,6 +42,15 @@ type scoutSender struct {
 	registrationName string
 }
 
+type scoutEvent struct {
+	ID        string            `json:"id"`
+	Type      string            `json:"type"`
+	Timestamp string            `json:"ts"`
+	Status    string            `json:"status,omitempty"`
+	Index     string            `json:"index,omitempty"`
+	Info      map[string]string `json:"info,omitempty"`
+}
+
 const (
 	contentTypeText = "text/plain"
 	timeFormat      = "2006-01-02T15:04:05.000Z07:00"
@@ -86,7 +95,7 @@ func newScoutSender(addr contract.Addressable, enable bool, regName string) send
 	}
 
 	if enable {
-		sender.Connect() // TODO: do this at init
+		sender.Connect() // TODO: do this later! On boot the connection may not be available, we will try to reconnect later
 	}
 
 	return sender
@@ -129,7 +138,7 @@ func (sender *scoutSender) Connect() bool {
 	sender.stomp = stompConn
 	sender.ws = ws
 
-	go sender.sendConnectedEvent()
+	go sender.sendScoutEvent("INFO", "EXPORT_CONNECTED")
 	go sender.sendDeviceAttributes()
 
 	go sender.startReverseProxy()
@@ -225,45 +234,46 @@ func (sender *scoutSender) sendDeviceAttributes() {
 	}
 }
 
-func (sender *scoutSender) sendConnectedEvent() {
-	type connectedEvent struct {
-		ID        string `json:"id"`
-		Type      string `json:"type"`
-		Timestamp string `json:"ts"`
-		Status    string `json:"status"`
-	}
-
+func (sender *scoutSender) sendScoutEvent(status string, eventType string) {
 	d := struct {
-		GatewayID string           `json:"gateway_device_id"`
-		Events    []connectedEvent `json:"events"`
+		GatewayID string       `json:"gateway_device_id"`
+		Events    []scoutEvent `json:"events"`
 	}{
 		GatewayID: sender.deviceInfo.DeviceID,
-		Events: []connectedEvent{
+		Events: []scoutEvent{
 			{
 				ID:        uuid.New().String(),
-				Type:      "EXPORT_CONNECTED",
+				Type:      eventType,
 				Timestamp: time.Now().Format(timeFormat),
-				Status:    "INFO",
+				Status:    status,
 			},
 		},
 	}
 
 	data, err := json.Marshal(d)
 	if err != nil {
-		LoggingClient.Warn("failed to marshal connected event: %w", err)
+		LoggingClient.Warn("failed to marshal Scout event: %w", err)
 		return
 	}
 
 	destination := fmt.Sprintf(eventTopic, sender.claimID)
 
 	if err := sender.sendStomp(destination, eventType, data); err != nil {
-		LoggingClient.Warn("failed to send connected event: %w", err)
+		LoggingClient.Warn("failed to send Scout event:", "error", err.Error())
 	}
 }
 
 func (sender *scoutSender) sendStomp(destination string, messageType string, data []byte) error {
 	sender.mutex.Lock()
 	defer sender.mutex.Unlock()
+
+	if sender.stomp == nil {
+		return fmt.Errorf("stomp connection is not established")
+	}
+
+	if !sender.IsConnected() && !sender.Connect() {
+		return fmt.Errorf("failed to connect to Scout before sending data")
+	}
 
 	headers := sender.defaultHeaders(messageType)
 

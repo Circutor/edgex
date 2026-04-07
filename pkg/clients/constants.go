@@ -36,6 +36,7 @@ const (
 	ApiProvisionWatcherRoute   = "/api/v1/provisionwatcher"
 	ApiRegistrationRoute       = "/api/v1/registration"
 	ApiScoutConnectionRoute    = "/api/v1/scout/connected"
+	ApiScoutEventRoute         = "/api/v1/scout/sendevent"
 	ApiRegistrationByNameRoute = ApiRegistrationRoute + "/name"
 	ApiSubscriptionRoute       = "/api/v1/subscription"
 	ApiTransmissionRoute       = "/api/v1/transmission"
