@@ -48,8 +48,8 @@ type connectionStatusResponse struct {
 var connectionStatusQueries chan connectionStatusQuery = make(chan connectionStatusQuery, 10)
 
 type sendEventQuery struct {
-	status       string
-	eventType    string
+	ruleName     string
+	offTime      int
 	responseChan chan bool
 }
 
@@ -70,11 +70,11 @@ func GetRegistrationConnectionStatus() []connectionStatusResponse {
 
 // SendScoutEventToRegistration sends a generic event to the first found registration with destination Scout.
 // returns true if the event was sent to at least one registration, false otherwise
-func SendScoutEventToRegistration(status, eventType string) bool {
+func SendScoutEventToRegistration(name string, offTime int) bool {
 	responseChan := make(chan bool)
 	query := sendEventQuery{
-		status:       status,
-		eventType:    eventType,
+		ruleName:     name,
+		offTime:      offTime,
 		responseChan: responseChan,
 	}
 
@@ -296,7 +296,7 @@ func (reg registrationInfo) processEvent(event *models.Event) {
 func registrationLoop(reg *registrationInfo) {
 	LoggingClient.Info(fmt.Sprintf("registration loop started: %s", reg.registration.Name))
 
-	timerRegistration := time.NewTimer(time.Second * 10)
+	tickerRegistration := time.NewTicker(time.Second * 10)
 	timerPush := time.NewTimer(pushEventsTimer * time.Second)
 
 	for {
@@ -336,7 +336,7 @@ func registrationLoop(reg *registrationInfo) {
 				}
 			}
 			timerPush.Reset(pushEventsTimer * time.Second)
-		case <-timerRegistration.C:
+		case <-tickerRegistration.C:
 			if reg.registration.Destination == contract.DestScout && reg.registration.Enable {
 				if scoutSender, ok := reg.sender.(*scoutSender); ok {
 					if !scoutSender.IsConnected() {
@@ -430,6 +430,10 @@ func Loop(errChan chan error, eventCh chan *models.Event) {
 		}
 	}
 
+	// Create a map containing each rule and its expiration time
+	registrationMap := make(map[string]time.Time)
+	registrationCheckTicker := time.NewTicker(time.Second)
+
 	LoggingClient.Info("Starting registration loop")
 	for {
 		select {
@@ -482,19 +486,49 @@ func Loop(errChan chan error, eventCh chan *models.Event) {
 			query.responseChan <- response
 
 		case eventQuery := <-sendEventQueries:
-			LoggingClient.Info("send event query started")
+			newTime := time.Now().Add(time.Duration(eventQuery.offTime) * time.Second)
+			if _, ok := registrationMap[eventQuery.ruleName]; ok { // If the rule already exists, it has not expired so there is no need to send event
+				registrationMap[eventQuery.ruleName] = newTime // just update the expiration time and return
+				eventQuery.responseChan <- true
+
+				continue
+			}
+
+			// If the rule does not exist or has expired, we send the activation event and set its expiration time
+			registrationMap[eventQuery.ruleName] = newTime
 
 			success := false
 			for _, info := range registrations {
-				if info.registration.Destination == contract.DestScout {
-					if scoutSender, ok := info.sender.(*scoutSender); ok {
-						scoutSender.sendScoutEvent(eventQuery.status, eventQuery.eventType)
-						success = true
-					}
+				if info.registration.Destination != contract.DestScout {
+					continue
+				}
+
+				if scoutSender, ok := info.sender.(*scoutSender); ok {
+					scoutSender.sendScoutEvent("ON", eventQuery.ruleName)
+					success = true
 				}
 			}
 
 			eventQuery.responseChan <- success
+
+		case <-registrationCheckTicker.C:
+			for ruleName, expirationTime := range registrationMap {
+				if time.Now().Before(expirationTime) {
+					continue
+				}
+
+				for _, info := range registrations {
+					if info.registration.Destination != contract.DestScout {
+						continue
+					}
+
+					if scoutSender, ok := info.sender.(*scoutSender); ok {
+						scoutSender.sendScoutEvent("OFF", ruleName)
+					}
+				}
+				// We delete the rule so next time the event is received we will send an "ON" event
+				delete(registrationMap, ruleName)
+			}
 		}
 	}
 }
