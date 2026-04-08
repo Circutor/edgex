@@ -12,6 +12,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 
 	"github.com/Circutor/edgex/internal/pkg/correlation"
 	"github.com/Circutor/edgex/internal/pkg/telemetry"
@@ -84,32 +85,41 @@ func getRegistrationConnectedStatus(w http.ResponseWriter, _ *http.Request) {
 func sendScoutEvent(w http.ResponseWriter, r *http.Request) {
 	// Parse query parameters
 	queryParams := r.URL.Query()
-	status := queryParams.Get("status")
-	eventType := queryParams.Get("eventType")
+	name := queryParams.Get("name")
+	offTime := queryParams.Get("offTime")
+	offTimeInt := 0
+	var err error
 
 	// Validate required parameters
-	if status == "" {
-		LoggingClient.Error("Missing 'status' parameter")
+	if name == "" {
+		LoggingClient.Error("Missing 'name' parameter")
 		w.WriteHeader(http.StatusBadRequest)
-		io.WriteString(w, "Missing 'status' parameter")
+		io.WriteString(w, "Missing 'name' parameter")
 		return
 	}
 
-	if eventType == "" {
-		LoggingClient.Error("Missing 'eventType' parameter")
+	if offTime == "" {
+		LoggingClient.Error("Missing 'offTime' parameter")
 		w.WriteHeader(http.StatusBadRequest)
-		io.WriteString(w, "Missing 'eventType' parameter")
+		io.WriteString(w, "Missing 'offTime' parameter")
 		return
 	}
 
-	if !SendScoutEventToRegistration(status, eventType) {
+	// Validate offTime is a valid integer
+	if offTimeInt, err = strconv.Atoi(offTime); err != nil {
+		LoggingClient.Error("Invalid 'offTime' parameter: " + err.Error())
+		w.WriteHeader(http.StatusBadRequest)
+		io.WriteString(w, "Invalid 'offTime' parameter: "+err.Error())
+		return
+	}
+
+	if !SendScoutEventToRegistration(name, offTimeInt) {
 		LoggingClient.Error("Failed to send event to Scout registration")
 		w.WriteHeader(http.StatusNotFound)
 		io.WriteString(w, "No valid Scout registration found to send event")
 		return
 	}
 
-	LoggingClient.Info("Event sent successfully to Scout registration")
 	w.WriteHeader(http.StatusOK)
 }
 
