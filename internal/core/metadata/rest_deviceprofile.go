@@ -16,6 +16,7 @@ package metadata
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -23,6 +24,7 @@ import (
 	"github.com/Circutor/edgex/internal/pkg/db"
 	"github.com/Circutor/edgex/pkg/models"
 	"github.com/gorilla/mux"
+	"github.com/sigurn/crc16"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -62,6 +64,8 @@ func restGetAllDeviceProfiles(w http.ResponseWriter, _ *http.Request) {
 
 func restAddDeviceProfile(w http.ResponseWriter, r *http.Request) {
 	var dp models.DeviceProfile
+
+	LoggingClient.Info("Received request to add device profile")
 
 	if err := json.NewDecoder(r.Body).Decode(&dp); err != nil {
 		LoggingClient.Error(err.Error())
@@ -112,6 +116,8 @@ func restAddDeviceProfile(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+
+	dp.IsOfficial = false // Requests via direct API will always be user defined profiles
 
 	id, err := dbClient.AddDeviceProfile(dp)
 	if err != nil {
@@ -483,6 +489,22 @@ func addDeviceProfileYaml(data []byte, w http.ResponseWriter) {
 		return
 	}
 
+	marshaledProfile, err := yaml.Marshal(dp)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusServiceUnavailable)
+		LoggingClient.Error(err.Error())
+		return
+	}
+
+	crc16checksum := crc16.Checksum(marshaledProfile, crc16.MakeTable(crc16.CRC16_MODBUS))
+	// LoggingClient.Info(fmt.Sprintf("Calculated CRC16 checksum for profile is %x", crc16checksum)) uncomment for debugging
+
+	if dp.Checksum != fmt.Sprintf("%x", crc16checksum) {
+		LoggingClient.Info("Checksum does not match the profile content")
+	} else {
+		dp.IsOfficial = true
+	}
+
 	// Check if there are duplicate names in the device profile command list
 	for _, c1 := range dp.Commands {
 		count := 0
@@ -526,6 +548,10 @@ func addDeviceProfileYaml(data []byte, w http.ResponseWriter) {
 			return
 		}
 	}
+
+	// dp.IsOfficial = verifyOfficialChecksum(dp)
+	LoggingClient.Info(fmt.Sprintf("Device Profile is official: %t", dp.IsOfficial))
+
 	id, err := dbClient.AddDeviceProfile(dp)
 	if err != nil {
 		if err == db.ErrNotUnique {

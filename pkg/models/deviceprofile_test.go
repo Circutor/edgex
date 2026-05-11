@@ -71,6 +71,7 @@ func TestDeviceProfile_String(t *testing.T) {
 				",\"name\":\"" + TestProfileName + "\"" +
 				",\"manufacturer\":\"" + TestManufacturer + "\"" +
 				",\"model\":\"" + TestModel + "\"" +
+				",\"isOfficial\":false" +
 				",\"labels\":" + fmt.Sprint(string(labelSlice)) +
 				",\"deviceResources\":[" + TestDeviceResource.String() + "]" +
 				",\"resources\":[" + TestProfileResource.String() + "]" +
