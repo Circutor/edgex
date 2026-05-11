@@ -30,6 +30,8 @@ type DeviceProfile struct {
 	Name            string            `json:"name" yaml:"name,omitempty"`                 // Non-database identifier (must be unique)
 	Manufacturer    string            `json:"manufacturer" yaml:"manufacturer,omitempty"` // Manufacturer of the device
 	Model           string            `json:"model" yaml:"model,omitempty"`               // Model of the device
+	IsOfficial      bool              `json:"isOfficial" yaml:"isOfficial,omitempty"`     // Whether the device profile is an official profile or a user defined profile
+	Checksum        string            `json:"checksum" yaml:"checksum,omitempty"`         // Checksum of the device profile used to determine if the profile is official
 	Labels          []string          `json:"labels" yaml:"labels,flow,omitempty"`        // Labels used to search for groups of profiles
 	DeviceResources []DeviceResource  `json:"deviceResources" yaml:"deviceResources,omitempty"`
 	Resources       []ProfileResource `json:"resources" yaml:"resources,omitempty"`
@@ -44,6 +46,7 @@ func (dp DeviceProfile) MarshalJSON() ([]byte, error) {
 		Name            *string           `json:"name,omitempty"`         // Non-database identifier (must be unique)
 		Manufacturer    *string           `json:"manufacturer,omitempty"` // Manufacturer of the device
 		Model           *string           `json:"model,omitempty"`        // Model of the device
+		IsOfficial      *bool             `json:"isOfficial,omitempty"`   // Whether the device profile is an official profile or a user defined profile
 		Labels          []string          `json:"labels,omitempty"`       // Labels used to search for groups of profiles
 		DeviceResources []DeviceResource  `json:"deviceResources,omitempty"`
 		Resources       []ProfileResource `json:"resources,omitempty"`
@@ -51,6 +54,7 @@ func (dp DeviceProfile) MarshalJSON() ([]byte, error) {
 	}{
 		Labels:          dp.Labels,
 		DescribedObject: dp.DescribedObject,
+		IsOfficial:      &dp.IsOfficial,
 	}
 
 	// Empty strings are null

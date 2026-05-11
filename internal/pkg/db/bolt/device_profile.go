@@ -38,6 +38,7 @@ func (bdp boltDeviceProfile) MarshalJSON() ([]byte, error) {
 		Name                   string                   `json:"name"`             // Non-database identifier (must be unique)
 		Manufacturer           string                   `json:"manufacturer"`     // Manufacturer of the device
 		Model                  string                   `json:"model"`            // Model of the device
+		IsOfficial             bool                     `json:"isOfficial"`       // Whether the device profile is an official profile or a user defined profile
 		Labels                 []string                 `json:"labels,omitempty"` // Labels used to search for groups of profiles
 		DeviceResources        []models.DeviceResource  `json:"deviceResources,omitempty"`
 		Resources              []models.ProfileResource `json:"resources,omitempty"`
@@ -48,6 +49,7 @@ func (bdp boltDeviceProfile) MarshalJSON() ([]byte, error) {
 		Name:            bdp.Name,
 		Manufacturer:    bdp.Manufacturer,
 		Model:           bdp.Model,
+		IsOfficial:      bdp.IsOfficial,
 		Labels:          bdp.Labels,
 		DeviceResources: bdp.DeviceResources,
 		Resources:       bdp.Resources,
@@ -63,6 +65,7 @@ func (bdp *boltDeviceProfile) UnmarshalJSON(data []byte) error {
 		Name                   string                   `json:"name"`             // Non-database identifier (must be unique)
 		Manufacturer           string                   `json:"manufacturer"`     // Manufacturer of the device
 		Model                  string                   `json:"model"`            // Model of the device
+		IsOfficial             bool                     `json:"isOfficial"`       // Whether the device profile is an official profile or a user defined profile
 		Labels                 []string                 `json:"labels,omitempty"` // Labels used to search for groups of profiles
 		DeviceResources        []models.DeviceResource  `json:"deviceResources,omitempty"`
 		Resources              []models.ProfileResource `json:"resources,omitempty"`
@@ -80,6 +83,7 @@ func (bdp *boltDeviceProfile) UnmarshalJSON(data []byte) error {
 	bdp.Name = decoded.Name
 	bdp.Manufacturer = decoded.Manufacturer
 	bdp.Model = decoded.Model
+	bdp.IsOfficial = decoded.IsOfficial
 	bdp.Labels = decoded.Labels
 	bdp.DeviceResources = decoded.DeviceResources
 	bdp.Resources = decoded.Resources
