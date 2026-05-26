@@ -33,7 +33,7 @@ type Event struct {
 	Created    int64     `json:"created" codec:"omitempty"`
 	Modified   int64     `json:"modified" codec:"omitempty"`
 	Origin     int64     `json:"origin" codec:"omitempty"`
-	Restricted bool      `json:"-" codec:"omitempty"`
+	Restricted bool      `json:"restricted" codec:"omitempty"`
 	Readings   []Reading `json:"readings" codec:"omitempty"` // List of readings
 }
 
@@ -53,18 +53,20 @@ func encodeAsCBOR(e Event) ([]byte, error) {
 // Custom marshaling to make empty strings null
 func (e Event) MarshalJSON() ([]byte, error) {
 	test := struct {
-		ID       *string   `json:"id,omitempty"`
-		Pushed   int64     `json:"pushed,omitempty"`
-		Device   *string   `json:"device,omitempty"` // Device identifier (name or id)
-		Created  int64     `json:"created,omitempty"`
-		Modified int64     `json:"modified,omitempty"`
-		Origin   int64     `json:"origin,omitempty"`
-		Readings []Reading `json:"readings,omitempty"` // List of readings
+		ID         *string   `json:"id,omitempty"`
+		Pushed     int64     `json:"pushed,omitempty"`
+		Device     *string   `json:"device,omitempty"` // Device identifier (name or id)
+		Created    int64     `json:"created,omitempty"`
+		Modified   int64     `json:"modified,omitempty"`
+		Origin     int64     `json:"origin,omitempty"`
+		Restricted bool      `json:"restricted,omitempty"`
+		Readings   []Reading `json:"readings,omitempty"` // List of readings
 	}{
-		Pushed:   e.Pushed,
-		Created:  e.Created,
-		Modified: e.Modified,
-		Origin:   e.Origin,
+		Pushed:     e.Pushed,
+		Created:    e.Created,
+		Modified:   e.Modified,
+		Origin:     e.Origin,
+		Restricted: e.Restricted,
 	}
 
 	// Empty strings are null
