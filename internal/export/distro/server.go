@@ -7,12 +7,14 @@
 package distro
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/Circutor/edgex/internal/pkg/correlation"
 	"github.com/Circutor/edgex/internal/pkg/telemetry"
@@ -88,7 +90,11 @@ func sendScoutEvent(w http.ResponseWriter, r *http.Request) {
 	name := queryParams.Get("name")
 	offTime := queryParams.Get("offTime")
 	offTimeInt := 0
+	trigger := queryParams.Get("trigger")
+	triggerValues := ""
 	var err error
+
+	LoggingClient.Info(fmt.Sprintf("Received request to send scout event with name: %s", name))
 
 	// Validate required parameters
 	if name == "" {
@@ -113,7 +119,22 @@ func sendScoutEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !SendScoutEventToRegistration(name, offTimeInt) {
+	defer r.Body.Close()
+	b, err := ioutil.ReadAll(r.Body)
+
+	if b != nil && err == nil && trigger != "" {
+		LoggingClient.Info(fmt.Sprintf("Received event with body: %s", string(b)))
+		// Here we need to extract from the JSON body the value that corresponds with the "trigger" key
+		listOfTriggers := strings.Split(trigger, ",")
+		triggerValues = extractTriggers(listOfTriggers, b)
+		if triggerValues == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			io.WriteString(w, fmt.Sprintf("Failed to extract value for trigger %s from body", trigger))
+			return
+		}
+	}
+
+	if !SendScoutEventToRegistration(name, offTimeInt, triggerValues) {
 		LoggingClient.Error("Failed to send event to Scout registration")
 		w.WriteHeader(http.StatusNotFound)
 		io.WriteString(w, "No valid Scout registration found to send event")
@@ -121,6 +142,56 @@ func sendScoutEvent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func extractTriggers(keys []string, data []byte) string {
+	if len(keys) == 0 || len(data) == 0 {
+		return ""
+	}
+
+	finalString := ""
+
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.UseNumber()
+
+	payload := map[string]interface{}{}
+	if err := decoder.Decode(&payload); err != nil {
+		return ""
+	}
+
+	for _, key := range keys {
+		value, exists := payload[key]
+		if !exists || value == nil {
+			continue // There could be keys that are not present in the kuiper payload
+		}
+
+		valueString := ""
+
+		switch v := value.(type) {
+		case string:
+			valueString = v
+		case json.Number:
+			valueString = v.String()
+		case float64:
+			valueString = strconv.FormatFloat(v, 'f', -1, 64)
+		case float32:
+			valueString = strconv.FormatFloat(float64(v), 'f', -1, 32)
+		case int:
+			valueString = strconv.Itoa(v)
+		case int64:
+			valueString = strconv.FormatInt(v, 10)
+		default:
+			return ""
+		}
+
+		finalString += fmt.Sprintf("%s=%s,", key, valueString)
+	}
+
+	if finalString == "" {
+		return ""
+	}
+
+	return "[" + finalString[:len(finalString)-1] + "]"
 }
 
 // Helper function for encoding things for returning from REST calls
