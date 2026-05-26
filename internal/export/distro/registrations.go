@@ -50,6 +50,7 @@ var connectionStatusQueries chan connectionStatusQuery = make(chan connectionSta
 type sendEventQuery struct {
 	ruleName     string
 	offTime      int
+	body         string
 	responseChan chan bool
 }
 
@@ -70,11 +71,12 @@ func GetRegistrationConnectionStatus() []connectionStatusResponse {
 
 // SendScoutEventToRegistration sends a generic event to the first found registration with destination Scout.
 // returns true if the event was sent to at least one registration, false otherwise
-func SendScoutEventToRegistration(name string, offTime int) bool {
+func SendScoutEventToRegistration(name string, offTime int, body string) bool {
 	responseChan := make(chan bool)
 	query := sendEventQuery{
 		ruleName:     name,
 		offTime:      offTime,
+		body:         body,
 		responseChan: responseChan,
 	}
 
@@ -458,12 +460,15 @@ func Loop(errChan chan error, eventCh chan *models.Event) {
 			}
 
 		case event := <-eventCh:
-			for k, reg := range registrations {
-				if reg.deleteFlag {
-					delete(registrations, k)
-				} else {
-					// TODO only sent event if it is not blocking
-					reg.chEvent <- event
+			if !event.Restricted {
+				for k, reg := range registrations {
+					if reg.deleteFlag {
+						delete(registrations, k)
+					} else {
+						// TODO only sent event if it is not blocking
+						LoggingClient.Info(fmt.Sprintf("Sending event %s to registration: %s", event.ID, reg.registration.Name))
+						reg.chEvent <- event
+					}
 				}
 			}
 
@@ -506,7 +511,13 @@ func Loop(errChan chan error, eventCh chan *models.Event) {
 				if scoutSender, ok := info.sender.(*scoutSender); ok {
 					scoutSender.sendScoutEvent("ON", eventQuery.ruleName)
 					success = true
+
+					if len(eventQuery.body) > 0 {
+						LoggingClient.Info(fmt.Sprintf("Sending event with body to scout: %s", eventQuery.body))
+						scoutSender.sendScoutEvent(eventQuery.body, eventQuery.ruleName)
+					}
 				}
+
 			}
 
 			eventQuery.responseChan <- success

@@ -27,13 +27,14 @@ import (
  * Event struct to hold event data
  */
 type Event struct {
-	ID       string    `json:"id" codec:"omitempty"`
-	Pushed   int64     `json:"pushed" codec:"omitempty"`
-	Device   string    `json:"device" codec:"omitempty"` // Device identifier (name or id)
-	Created  int64     `json:"created" codec:"omitempty"`
-	Modified int64     `json:"modified" codec:"omitempty"`
-	Origin   int64     `json:"origin" codec:"omitempty"`
-	Readings []Reading `json:"readings" codec:"omitempty"` // List of readings
+	ID         string    `json:"id" codec:"omitempty"`
+	Pushed     int64     `json:"pushed" codec:"omitempty"`
+	Device     string    `json:"device" codec:"omitempty"` // Device identifier (name or id)
+	Created    int64     `json:"created" codec:"omitempty"`
+	Modified   int64     `json:"modified" codec:"omitempty"`
+	Origin     int64     `json:"origin" codec:"omitempty"`
+	Restricted bool      `json:"-" codec:"omitempty"`
+	Readings   []Reading `json:"readings" codec:"omitempty"` // List of readings
 }
 
 func encodeAsCBOR(e Event) ([]byte, error) {
