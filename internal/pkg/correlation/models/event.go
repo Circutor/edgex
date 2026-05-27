@@ -30,12 +30,13 @@ type Event struct {
 // satisfy the Filter, Format interfaces.
 func (e Event) ToContract() *contract.Event {
 	event := contract.Event{
-		ID:       e.ID,
-		Pushed:   e.Pushed,
-		Device:   e.Device,
-		Created:  e.Created,
-		Modified: e.Modified,
-		Origin:   e.Origin,
+		ID:         e.ID,
+		Pushed:     e.Pushed,
+		Device:     e.Device,
+		Created:    e.Created,
+		Modified:   e.Modified,
+		Origin:     e.Origin,
+		Restricted: e.Restricted,
 	}
 
 	for _, r := range e.Readings {
@@ -53,12 +54,14 @@ func (e Event) MarshalJSON() ([]byte, error) {
 		Created       int64              `json:"created,omitempty"`
 		Modified      int64              `json:"modified,omitempty"`
 		Origin        int64              `json:"origin,omitempty"`
+		Restricted    bool               `json:"restricted"`
 		Readings      []contract.Reading `json:"readings,omitempty"` // List of readings
 	}{
-		Pushed:   e.Pushed,
-		Created:  e.Created,
-		Modified: e.Modified,
-		Origin:   e.Origin,
+		Pushed:     e.Pushed,
+		Created:    e.Created,
+		Modified:   e.Modified,
+		Origin:     e.Origin,
+		Restricted: e.Restricted,
 	}
 
 	// Empty strings are null

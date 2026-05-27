@@ -59,7 +59,7 @@ func (e Event) MarshalJSON() ([]byte, error) {
 		Created    int64     `json:"created,omitempty"`
 		Modified   int64     `json:"modified,omitempty"`
 		Origin     int64     `json:"origin,omitempty"`
-		Restricted bool      `json:"restricted,omitempty"`
+		Restricted bool      `json:"restricted"`
 		Readings   []Reading `json:"readings,omitempty"` // List of readings
 	}{
 		Pushed:     e.Pushed,

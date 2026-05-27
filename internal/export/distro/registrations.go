@@ -460,7 +460,7 @@ func Loop(errChan chan error, eventCh chan *models.Event) {
 			}
 
 		case event := <-eventCh:
-			LoggingClient.Info(fmt.Sprintf("Received event %s, has restriction: %t", event.ID, event.Restricted))
+			LoggingClient.Info(fmt.Sprintf("Received event %s, is restricted: %t", event.String(), event.Restricted))
 			if !event.Restricted {
 				for k, reg := range registrations {
 					if reg.deleteFlag {

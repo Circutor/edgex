@@ -20,7 +20,7 @@ import (
 	"testing"
 )
 
-var TestEvent = Event{Pushed: 123, Created: 123, Origin: 123, Modified: 123, Readings: []Reading{TestReading}}
+var TestEvent = Event{Pushed: 123, Created: 123, Origin: 123, Modified: 123, Restricted: false, Readings: []Reading{TestReading}}
 
 func TestEvent_MarshalJSON(t *testing.T) {
 	var emptyEvent = Event{}
@@ -61,6 +61,7 @@ func TestEvent_String(t *testing.T) {
 				",\"created\":" + strconv.FormatInt(TestEvent.Created, 10) +
 				",\"modified\":" + strconv.FormatInt(TestEvent.Modified, 10) +
 				",\"origin\":" + strconv.FormatInt(TestEvent.Origin, 10) +
+				",\"restricted\":false" +
 				",\"readings\":[" + TestReading.String() + "]" +
 				"}"},
 	}
