@@ -60,5 +60,7 @@ func parseEvent(str string) *models.Event {
 		LoggingClient.Warn("Failed to parse event")
 		return nil
 	}
+
+	LoggingClient.Info(fmt.Sprintf("Parsed event: %s with original contents %s", event.ID, str))
 	return &event
 }
