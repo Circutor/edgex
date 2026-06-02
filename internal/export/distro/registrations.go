@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	_ "net/http/pprof"
@@ -460,14 +461,15 @@ func Loop(errChan chan error, eventCh chan *models.Event) {
 			}
 
 		case event := <-eventCh:
-			LoggingClient.Info(fmt.Sprintf("Received event %s, is restricted: %t", event.String(), event.Restricted))
-			if !event.Restricted {
+			if event.Restricted {
+				// Mark as pushed in order to remove it from the list of events to push
+				ec.MarkPushed(event.ID, context.Background())
+			} else {
 				for k, reg := range registrations {
 					if reg.deleteFlag {
 						delete(registrations, k)
 					} else {
 						// TODO only sent event if it is not blocking
-						LoggingClient.Info(fmt.Sprintf("Sending event %s to registration: %s", event.ID, reg.registration.Name))
 						reg.chEvent <- event
 					}
 				}
@@ -510,13 +512,13 @@ func Loop(errChan chan error, eventCh chan *models.Event) {
 				}
 
 				if scoutSender, ok := info.sender.(*scoutSender); ok {
-					scoutSender.sendScoutEvent("ON", eventQuery.ruleName)
+					infos := []string{"EVENT_CUSTOM_NAME=" + eventQuery.ruleName}
+					if len(eventQuery.body) > 0 {
+						infos = append(infos, strings.Split(eventQuery.body, ",")...)
+					}
+					scoutSender.sendScoutEvent("ON", "ALARM_DEVICE", infos)
 					success = true
 
-					if len(eventQuery.body) > 0 {
-						LoggingClient.Info(fmt.Sprintf("Sending event with body to scout: %s", eventQuery.body))
-						scoutSender.sendScoutEvent(eventQuery.body, eventQuery.ruleName)
-					}
 				}
 
 			}
@@ -535,7 +537,8 @@ func Loop(errChan chan error, eventCh chan *models.Event) {
 					}
 
 					if scoutSender, ok := info.sender.(*scoutSender); ok {
-						scoutSender.sendScoutEvent("OFF", ruleName)
+						infos := []string{"EVENT_CUSTOM_NAME=" + ruleName}
+						scoutSender.sendScoutEvent("OFF", "ALARM_DEVICE", infos)
 					}
 				}
 				// We delete the rule so next time the event is received we will send an "ON" event

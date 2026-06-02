@@ -138,7 +138,7 @@ func (sender *scoutSender) Connect() bool {
 	sender.stomp = stompConn
 	sender.ws = ws
 
-	go sender.sendScoutEvent("INFO", "EXPORT_CONNECTED")
+	go sender.sendScoutEvent("INFO", "EXPORT_CONNECTED", nil)
 	go sender.sendDeviceAttributes()
 
 	go sender.startReverseProxy()
@@ -234,7 +234,7 @@ func (sender *scoutSender) sendDeviceAttributes() {
 	}
 }
 
-func (sender *scoutSender) sendScoutEvent(status string, eventType string) {
+func (sender *scoutSender) sendScoutEvent(status string, eventType string, infos []string) {
 	d := struct {
 		GatewayID string       `json:"gateway_device_id"`
 		Events    []scoutEvent `json:"events"`
@@ -248,6 +248,16 @@ func (sender *scoutSender) sendScoutEvent(status string, eventType string) {
 				Status:    status,
 			},
 		},
+	}
+
+	if len(infos) != 0 {
+		d.Events[0].Info = make(map[string]string)
+		for _, info := range infos {
+			values := strings.Split(info, "=")
+			if len(values) == 2 {
+				d.Events[0].Info[values[0]] = values[1]
+			}
+		}
 	}
 
 	data, err := json.Marshal(d)

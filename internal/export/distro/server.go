@@ -94,8 +94,6 @@ func sendScoutEvent(w http.ResponseWriter, r *http.Request) {
 	triggerValues := ""
 	var err error
 
-	LoggingClient.Info(fmt.Sprintf("Received request to send scout event with name: %s", name))
-
 	// Validate required parameters
 	if name == "" {
 		LoggingClient.Error("Missing 'name' parameter")
@@ -123,7 +121,6 @@ func sendScoutEvent(w http.ResponseWriter, r *http.Request) {
 	b, err := ioutil.ReadAll(r.Body)
 
 	if b != nil && err == nil && trigger != "" {
-		LoggingClient.Info(fmt.Sprintf("Received event with body: %s", string(b)))
 		// Here we need to extract from the JSON body the value that corresponds with the "trigger" key
 		listOfTriggers := strings.Split(trigger, ",")
 		triggerValues = extractTriggers(listOfTriggers, b)
@@ -191,7 +188,7 @@ func extractTriggers(keys []string, data []byte) string {
 		return ""
 	}
 
-	return "[" + finalString[:len(finalString)-1] + "]"
+	return finalString[:len(finalString)-1]
 }
 
 // Helper function for encoding things for returning from REST calls

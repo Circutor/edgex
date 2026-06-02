@@ -61,6 +61,5 @@ func parseEvent(str string) *models.Event {
 		return nil
 	}
 
-	LoggingClient.Info(fmt.Sprintf("Parsed event: %s with original contents %s", event.ID, str))
 	return &event
 }
