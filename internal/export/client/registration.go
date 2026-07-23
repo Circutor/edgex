@@ -268,6 +268,9 @@ func checkKey(keyRegister string) (err error) {
 }
 
 func fillRegister(reg *models.Registration) (err error) {
+	// Remove leading and trailing whitespace from the password
+	reg.Addressable.Password = strings.TrimSpace(reg.Addressable.Password)
+
 	switch reg.Format {
 	case models.FormatThingsBoardJSON:
 		reg.Addressable.Protocol = "tls"
@@ -441,7 +444,8 @@ func updateReg(w http.ResponseWriter, r *http.Request) {
 		toReg.Addressable.Certificate = encCert
 	}
 	if fromReg.Addressable.Password != "" {
-		toReg.Addressable.Password = fromReg.Addressable.Password
+		// Remove leading and trailing whitespace from the password
+		toReg.Addressable.Password = strings.TrimSpace(fromReg.Addressable.Password)
 		if toReg.Format == models.FormatAWSJSON || toReg.Format == models.FormatIoTCoreJSON {
 			err = checkKey(toReg.Addressable.Password)
 			if err != nil {
